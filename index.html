@@ -358,6 +358,10 @@
         welcome_owner_title: 'Owner sign-in',
         welcome_worker_title: 'Employee sign-in',
         welcome_biz_name_label: 'Business name (shown to your staff)',
+        welcome_owner_name_label: 'Your name (shown on your dashboard)',
+        owner_name: 'Owner name',
+        owner_label: 'Owner',
+        welcome_to_biz: 'Welcome to {biz}',
         welcome_join_code_label: 'Join code from your owner',
         welcome_supabase_section: 'Supabase project',
         welcome_supabase_hint: 'One-time: paste your Supabase URL + anon key. See the setup guide.',
@@ -664,6 +668,10 @@
         welcome_owner_title: 'मालिक साइन इन',
         welcome_worker_title: 'कर्मचारी साइन इन',
         welcome_biz_name_label: 'व्यवसाय नाम (स्टाफ को दिखे)',
+        welcome_owner_name_label: 'आपका नाम (डैशबोर्ड पर दिखेगा)',
+        owner_name: 'मालिक का नाम',
+        owner_label: 'मालिक',
+        welcome_to_biz: '{biz} में आपका स्वागत है',
         welcome_join_code_label: 'मालिक से जॉइन कोड',
         welcome_supabase_section: 'Supabase प्रोजेक्ट',
         welcome_supabase_hint: 'एक बार: Supabase URL + anon key पेस्ट करें। सेटअप गाइड देखें।',
@@ -968,6 +976,10 @@
         welcome_owner_title: 'मालक साइन इन',
         welcome_worker_title: 'कर्मचारी साइन इन',
         welcome_biz_name_label: 'व्यवसाय (कर्मचाऱ्यांना दिसते)',
+        welcome_owner_name_label: 'तुमचे नाव (डॅशबोर्डवर दिसेल)',
+        owner_name: 'मालकाचे नाव',
+        owner_label: 'मालक',
+        welcome_to_biz: '{biz} मध्ये स्वागत आहे',
         welcome_join_code_label: 'मालकाकडून जॉइन कोड',
         welcome_supabase_section: 'Supabase प्रकल्प',
         welcome_supabase_hint: 'एकदा: URL + anon key. मार्गदर्शक पहा.',
@@ -1272,6 +1284,10 @@
         welcome_owner_title: 'உரிமையாளர்',
         welcome_worker_title: 'ஊழியர்',
         welcome_biz_name_label: 'வணிகப் பெயர் (ஊழியர்க்கு)',
+        welcome_owner_name_label: 'உங்கள் பெயர் (டாஷ்போர்டில் காட்டும்)',
+        owner_name: 'உரிமையாளர் பெயர்',
+        owner_label: 'உரிமையாளர்',
+        welcome_to_biz: '{biz}-க்கு வரவேற்கிறோம்',
         welcome_join_code_label: 'உரிமையாளரின் ஜோயின்',
         welcome_supabase_section: 'Supabase',
         welcome_supabase_hint: 'ஒருமுறை: URL + anon key. வழிமுறை.',
@@ -1576,6 +1592,10 @@
         welcome_owner_title: 'యజమాని సైన్ ఇన్',
         welcome_worker_title: 'ఉద్యోగి సైన్ ఇన్',
         welcome_biz_name_label: 'వ్యాపార పేరు (సిబ్బందికి)',
+        welcome_owner_name_label: 'మీ పేరు (డాష్‌బోర్డ్‌లో చూపబడుతుంది)',
+        owner_name: 'యజమాని పేరు',
+        owner_label: 'యజమాని',
+        welcome_to_biz: '{biz}కు స్వాగతం',
         welcome_join_code_label: 'యజమాని నుండి కోడ్',
         welcome_supabase_section: 'Supabase ప్రాజెక్ట్',
         welcome_supabase_hint: 'ఒకసారి: URL + anon key. గైడ్ చూడండి.',
@@ -2042,7 +2062,7 @@
 
     // ============== State ==============
     const defaultState = {
-      business: { name: '', address: '', upi: '' },
+      business: { name: '', address: '', upi: '', ownerName: '' },
       staff: [],          // see migration for full shape
       attendance: {},     // { 'YYYY-MM-DD': { staffId: 'P'|'A'|'H'|'L' } }
       overtime: {},       // { 'YYYY-MM-DD': { staffId: hours } }
@@ -3587,6 +3607,10 @@
       const ownerIsSignup = welcomeUI.mode === 'signup';
       const ownerExtra = !ownerIsSignup ? '' :
         `<div>
+           <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_owner_name_label'))}</label>
+           <input name="ownerName" required class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+         </div>
+         <div>
            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_biz_name_label'))}</label>
            <input name="bizName" required class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
          </div>`;
@@ -3765,9 +3789,10 @@
       const email = (f.get('email') || '').trim();
       const password = (f.get('password') || '').trim();
       const bizName = (f.get('bizName') || '').trim();
+      const ownerName = (f.get('ownerName') || '').trim();
 
       if (!email || !password) { setMsg(t('welcome_missing_fields'), 'red'); return; }
-      if (welcomeUI.mode === 'signup' && !bizName) { setMsg(t('welcome_missing_fields'), 'red'); return; }
+      if (welcomeUI.mode === 'signup' && (!bizName || !ownerName)) { setMsg(t('welcome_missing_fields'), 'red'); return; }
 
       welcomeUI.busy = true;
       try {
@@ -3811,6 +3836,7 @@
           setMsg(t('welcome_creating_biz'));
           await cloudBiz.createBusiness(bizName);
           state.business.name = bizName;
+          if (ownerName) state.business.ownerName = ownerName;
         } else {
           await cloudBiz.boot();
         }
@@ -4043,13 +4069,16 @@
       );
       const annPreview = annSorted[0];
 
+      const ownerNameStr = state.business.ownerName || (state.cloud?.email ? state.cloud.email.split('@')[0] : '');
+      const greeting = ownerNameStr ? t('worker_hi', { name: ownerNameStr.split(' ')[0] }) : t('hi_there');
       root.innerHTML = `
         <div class="mb-5 flex items-start justify-between gap-3">
-          <div>
+          <div class="min-w-0">
             <div class="text-slate-500 text-xs">${escapeHtml(dateLabel)}</div>
-            <h1 class="text-2xl font-extrabold tracking-tight">${escapeHtml(t('hi_there'))}</h1>
+            <h1 class="text-2xl font-extrabold tracking-tight truncate">${escapeHtml(greeting)}</h1>
+            ${state.business.name ? `<div class="text-xs text-slate-500 mt-0.5 truncate"><span class="font-semibold text-slate-700">${escapeHtml(state.business.name)}</span> · ${escapeHtml(t('owner_label'))}</div>` : ''}
           </div>
-          <button id="annBell" class="relative w-10 h-10 rounded-full bg-white border border-slate-100 shadow-soft flex items-center justify-center" aria-label="${escapeHtml(t('announcements'))}">
+          <button id="annBell" class="relative w-10 h-10 rounded-full bg-white border border-slate-100 shadow-soft flex items-center justify-center flex-shrink-0" aria-label="${escapeHtml(t('announcements'))}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
             ${state.announcements.length ? `<span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"></span>` : ''}
           </button>
@@ -5781,7 +5810,8 @@
             <div class="min-w-0">
               <div class="text-slate-500 text-xs">${escapeHtml(new Date().toLocaleDateString(state.settings.language === 'en' ? 'en-IN' : state.settings.language, { weekday:'long', day:'numeric', month:'long'}))}</div>
               <h1 class="text-2xl font-extrabold tracking-tight truncate">${escapeHtml(t('worker_hi', { name: w.name.split(' ')[0] }))}</h1>
-              <div class="text-xs text-slate-500 mt-0.5 truncate">${escapeHtml(w.role || '—')} · <span class="text-brand-600 font-semibold">${escapeHtml(t('worker_my_profile'))} ›</span></div>
+              ${state.business.name ? `<div class="text-xs text-slate-500 mt-0.5 truncate"><span class="font-semibold text-slate-700">${escapeHtml(state.business.name)}</span>${w.role ? ' · ' + escapeHtml(w.role) : ''}</div>` : `<div class="text-xs text-slate-500 mt-0.5 truncate">${escapeHtml(w.role || '—')}</div>`}
+              <div class="text-[11px] text-brand-600 font-semibold mt-0.5">${escapeHtml(t('worker_my_profile'))} ›</div>
             </div>
           </button>
           <button id="workerAnnBell" class="relative w-10 h-10 rounded-full bg-white border border-slate-100 shadow-soft flex items-center justify-center flex-shrink-0" aria-label="${escapeHtml(t('announcements'))}">
@@ -6144,6 +6174,10 @@
             <input name="businessName" value="${escapeHtml(state.business.name)}" placeholder="${escapeHtml(t('biz_default'))}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
           </div>
           <div>
+            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('owner_name'))}</label>
+            <input name="ownerName" value="${escapeHtml(state.business.ownerName || '')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+          </div>
+          <div>
             <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('working_days_pm'))}</label>
             <input name="wdpm" type="number" min="1" max="31" value="${state.settings.workingDaysPerMonth}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
           </div>
@@ -6229,6 +6263,7 @@
         const f = new FormData(e.target);
         if (state.settings.role !== 'worker') {
           state.business.name = (f.get('businessName') || '').trim();
+          state.business.ownerName = (f.get('ownerName') || '').trim();
           state.settings.workingDaysPerMonth = Math.max(1, Math.min(31, Number(f.get('wdpm') || 26)));
           state.settings.punchSelfie = !!f.get('punchSelfie');
           state.settings.punchGps = !!f.get('punchGps');

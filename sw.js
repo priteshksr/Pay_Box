@@ -1,4 +1,4 @@
-const CACHE = 'paybox-v8';
+const CACHE = 'paybox-v9';
 const ASSETS = [
   './',
   './index.html',
