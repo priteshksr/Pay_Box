@@ -2696,7 +2696,14 @@
     //   Both sides subscribe to postgres_changes on the two tables filtered
     //   by business_id, so every member sees changes within ~1-2s.
     const cloudBiz = (() => {
-      const CONFIG_KEYS = ['business','staff','shifts','holidays','announcements','loans','adjustments','settings','attendance','overtime','punches'];
+      const CONFIG_KEYS = ['business','staff','shifts','holidays','announcements','loans','adjustments','settings','attendance','overtime','punches','taskCategories','taskLog'];
+      // Per-device settings that must NEVER cross between owner and worker:
+      // - role / workerId / onboarded: identity of the device
+      // - language: per-user UI preference
+      // - pinEnabled / pinHash: per-device security
+      // Without this filter the owner's settings.role='owner' would overwrite
+      // the worker's settings.role='worker' on the next pullConfig().
+      const DEVICE_SETTING_KEYS = ['role','workerId','onboarded','language','pinEnabled','pinHash'];
       let channel = null;         // realtime subscription
       let cfgTimer = null;        // debounce handle for config push
       let flushTimer = null;      // offline queue flusher
@@ -2720,15 +2727,29 @@
       function extractConfig() {
         const out = {};
         for (const k of CONFIG_KEYS) out[k] = structuredClone(state[k]);
+        // Strip device-only fields from settings so the owner never publishes
+        // their own role/workerId/language/PIN to the shared business blob.
+        if (out.settings && typeof out.settings === 'object') {
+          for (const dk of DEVICE_SETTING_KEYS) delete out.settings[dk];
+        }
         return out;
       }
 
       /** Merge a remote config blob into local state without clobbering
-       *  cloud/biz or bumping updatedAt (silent save). */
+       *  cloud/biz or bumping updatedAt (silent save). Device-only settings
+       *  (role, workerId, onboarded, language, PIN) are preserved so a
+       *  worker's pullConfig never silently flips them into owner mode. */
       function applyConfig(config) {
         if (!config || typeof config !== 'object') return;
         for (const k of CONFIG_KEYS) {
-          if (config[k] !== undefined) state[k] = deepMerge(structuredClone(defaultState[k] ?? (Array.isArray(config[k]) ? [] : {})), config[k]);
+          if (config[k] === undefined) continue;
+          if (k === 'settings') {
+            const incoming = { ...(config.settings || {}) };
+            for (const dk of DEVICE_SETTING_KEYS) delete incoming[dk];
+            state.settings = deepMerge(structuredClone(state.settings || defaultState.settings), incoming);
+          } else {
+            state[k] = deepMerge(structuredClone(defaultState[k] ?? (Array.isArray(config[k]) ? [] : {})), config[k]);
+          }
         }
         save({ silent: true });
       }
@@ -3820,7 +3841,6 @@
       // so each entry URL is its own front door, even when both roles
       // share localStorage on the same browser.
       if (welcomeUI.lockedRole
-          && state.settings.onboarded
           && state.settings.role
           && state.settings.role !== welcomeUI.lockedRole) {
         // Tear down the wrong-role session so realtime / RPCs don't fire
