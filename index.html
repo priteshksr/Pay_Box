@@ -4955,6 +4955,7 @@
           </details>` : ''}
 
           <div class="pt-2 flex gap-2">
+            <button type="button" id="cancelStaffForm" class="flex-1 py-3 rounded-lg border border-slate-200 text-slate-600 text-sm font-semibold">${escapeHtml(t('cancel'))}</button>
             ${editing ? (editing.active === false
               ? `<button type="button" id="delStaff" class="flex-1 py-3 rounded-lg border border-emerald-200 text-emerald-700 text-sm font-semibold">${escapeHtml(t('reactivate'))}</button>`
               : `<button type="button" id="delStaff" class="flex-1 py-3 rounded-lg border border-rose-200 text-rose-600 text-sm font-semibold">${escapeHtml(t('remove_employee'))}</button>`
@@ -4963,6 +4964,8 @@
           </div>
         </form>
       `);
+
+      $('#cancelStaffForm').addEventListener('click', () => closeSheet());
 
       let pendingPhoto = editing?.photo || null;
       let photoRemoved = false;
