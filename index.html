@@ -3791,10 +3791,12 @@
         $('#bottomNav').innerHTML = '';
         $('#fab')?.classList.add('hidden');
         $('#roleChip')?.classList.add('hidden');
+        $('#settingsBtn')?.classList.add('hidden');
         renderWelcome(root);
         return;
       }
 
+      $('#settingsBtn')?.classList.remove('hidden');
       renderBottomNav();
       renderRoleChip();
 
