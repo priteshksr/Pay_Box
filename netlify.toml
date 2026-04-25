@@ -1,0 +1,41 @@
+# Netlify config for the PayBox static PWA.
+# Drag-and-drop this folder at https://app.netlify.com/drop to deploy, or
+# connect the repo and Netlify will pick this file up automatically.
+
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(self), geolocation=(), microphone=()"
+
+# Service worker must NOT be cached with a long TTL, otherwise users are
+# stuck on an old build forever.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Manifest changes rarely but we want fast updates for store listings.
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Digital Asset Links file proves the Trusted Web Activity Android app
+# owns this domain. Required by PWABuilder-generated TWAs.
+[[headers]]
+  for = "/.well-known/assetlinks.json"
+  [headers.values]
+    Content-Type = "application/json"
+    Cache-Control = "public, max-age=300"
+
+# PWA icons get content-hash-free names but are fine with a week of caching.
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

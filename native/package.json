@@ -1,0 +1,36 @@
+{
+  "name": "paybox-native",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor shell for the PayBox PWA — produces installable iOS + Android apps from the same web code.",
+  "scripts": {
+    "build": "node scripts/sync-web.js",
+    "sync": "npm run build && npx cap sync",
+    "sync:ios": "npm run build && npx cap sync ios",
+    "sync:android": "npm run build && npx cap sync android",
+    "add:ios": "npm run build && npx cap add ios && npm run sync:ios",
+    "add:android": "npm run build && npx cap add android && npm run sync:android",
+    "open:ios": "npx cap open ios",
+    "open:android": "npx cap open android",
+    "run:ios": "npm run sync:ios && npx cap run ios",
+    "run:android": "npm run sync:android && npx cap run android",
+    "doctor": "npx cap doctor",
+    "clean": "rm -rf www/* node_modules && echo 'cleaned'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/camera": "^6.1.2",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/filesystem": "^6.0.3",
+    "@capacitor/ios": "^6.2.0",
+    "@capacitor/preferences": "^6.0.3",
+    "@capacitor/share": "^6.0.3",
+    "@capacitor/splash-screen": "^6.0.3",
+    "@capacitor/status-bar": "^6.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0",
+    "typescript": "^6.0.3"
+  }
+}

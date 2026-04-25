@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="apple-mobile-web-app-title" content="PayBox · Worker" />
+    <meta name="application-name" content="PayBox · Worker" />
+    <title>PayBox · Worker login</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230f766e'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-family='system-ui,-apple-system,Segoe UI,Roboto,sans-serif' font-size='40' font-weight='900' fill='white'%3EW%3C/text%3E%3C/svg%3E" />
+    <meta http-equiv="refresh" content="0; url=./index.html?role=worker" />
+    <style>
+      :root { color-scheme: light; }
+      html, body { margin: 0; padding: 0; height: 100%; background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #064e3b; }
+      .wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+      .logo { width: 76px; height: 76px; border-radius: 22px; background: linear-gradient(135deg, #10b981, #047857); color: #fff; font-weight: 900; font-size: 36px; display: flex; align-items: center; justify-content: center; box-shadow: 0 14px 30px rgba(16, 185, 129, 0.35); margin-bottom: 18px; }
+      h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+      p  { margin: 6px 0 0; font-size: 13px; color: #047857; opacity: 0.9; }
+      .pulse { margin-top: 20px; width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgba(4, 120, 87, 0.25); border-top-color: #047857; animation: spin 0.85s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      a { color: #047857; font-weight: 600; text-decoration: none; margin-top: 18px; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="logo">P</div>
+      <h1>PayBox · Worker login</h1>
+      <p>Loading the staff sign-in screen…</p>
+      <div class="pulse" aria-hidden="true"></div>
+      <a href="./index.html?role=worker" id="manual">Tap here if it doesn't load</a>
+    </div>
+    <script>
+      // Belt-and-suspenders: meta refresh handles JS-disabled browsers,
+      // this redirect kicks in immediately when JS is on.
+      location.replace('./index.html?role=worker');
+    </script>
+  </body>
+</html>

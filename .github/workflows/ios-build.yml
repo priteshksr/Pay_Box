@@ -1,0 +1,167 @@
+name: iOS build
+
+# Builds an unsigned simulator .app on every push + PR (no secrets
+# required — useful as a smoke test that the iOS project still compiles).
+#
+# If the APPLE_* signing secrets are set, ALSO builds a signed .ipa you
+# can upload to TestFlight / App Store Connect.
+#
+# Trigger manually from the Actions tab ("Run workflow") or on push to
+# main / tag. See NATIVE_CI.md for the signing secrets setup.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build unsigned + (optional) signed .ipa
+    # macos-14 has Xcode 15.x and Apple Silicon — required for modern
+    # Capacitor + iOS 17 SDK.
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    env:
+      WORKSPACE: native/ios/App/App.xcworkspace
+      SCHEME:    App
+      CONFIG:    Release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: native/package-lock.json
+
+      - name: Select Xcode 15
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Install Capacitor + plugins
+        working-directory: native
+        run: npm ci
+
+      - name: Sync web assets into native/www/
+        working-directory: native
+        run: npm run build
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: native/ios/App/Pods
+          key: pods-${{ hashFiles('native/ios/App/Podfile.lock') }}
+          restore-keys: pods-
+
+      - name: pod install
+        working-directory: native/ios/App
+        run: pod install --repo-update
+
+      # --- Unsigned simulator build (always, no secrets needed) -----
+      # Proves the project compiles and the web bundle is valid. This
+      # .app CANNOT be installed on a real device — use the signed
+      # path below for that.
+      - name: Build unsigned simulator .app
+        run: |
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build \
+            -derivedDataPath build
+
+      - name: Zip simulator .app
+        run: |
+          cd build/Build/Products/Debug-iphonesimulator
+          zip -r -q "$GITHUB_WORKSPACE/paybox-simulator.app.zip" App.app
+
+      - name: Upload unsigned .app
+        uses: actions/upload-artifact@v4
+        with:
+          name: paybox-simulator-app
+          path: paybox-simulator.app.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      # --- Signed device .ipa (only if signing secrets are set) -----
+      # Needs: an App Store Connect API key (p8 file) + the dev team.
+      # See NATIVE_CI.md for how to generate these.
+      - name: Import signing certificate + profile
+        id: signing
+        if: env.APPLE_API_KEY_BASE64 != '' && env.APPLE_TEAM_ID != ''
+        env:
+          APPLE_API_KEY_BASE64:      ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID:          ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID:       ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_TEAM_ID:             ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$APPLE_API_KEY_BASE64" | base64 --decode > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+          echo "has_signing=true" >> "$GITHUB_OUTPUT"
+
+      - name: Archive + export signed .ipa
+        if: steps.signing.outputs.has_signing == 'true'
+        env:
+          APPLE_API_KEY_ID:    ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_TEAM_ID:       ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > exportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>uploadBitcode</key><false/>
+            <key>uploadSymbols</key><true/>
+            <key>compileBitcode</key><false/>
+            <key>signingStyle</key><string>automatic</string>
+            <key>destination</key><string>export</string>
+          </dict></plist>
+          EOF
+
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration "$CONFIG" \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/App.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8 \
+            -authenticationKeyID "$APPLE_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" \
+            archive
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath build/ipa \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8 \
+            -authenticationKeyID "$APPLE_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID"
+
+      - name: Upload signed .ipa
+        if: steps.signing.outputs.has_signing == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: paybox-release-ipa
+          path: build/ipa/*.ipa
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Clean up signing material
+        if: always()
+        run: rm -rf ~/private_keys exportOptions.plist
