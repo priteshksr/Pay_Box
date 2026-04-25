@@ -51,6 +51,10 @@ jobs:
         working-directory: native
         run: npm run build
 
+      - name: Capacitor sync (generate native bridge files)
+        working-directory: native
+        run: npx cap sync android --no-build
+
       # --- Debug APK (always, no secrets needed) ---------------------
       - name: Build debug APK
         working-directory: native/android
