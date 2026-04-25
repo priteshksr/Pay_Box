@@ -176,6 +176,13 @@ Track actual hours worked per day.
 - The UI flags mismatches (unclosed pair, total < shift duration, etc.).
 - Useful for cross-checking attendance and feeding OT calculations
   manually.
+- **Optional selfie**: Owner can toggle "Require selfie on punch" in
+  Settings. When off, punch records without opening the camera.
+- **GPS location capture**: On each punch, the browser/app captures a
+  one-time GPS coordinate (latitude, longitude, accuracy). The owner
+  sees a 📍 map pin next to punch times — tapping opens Google Maps.
+  Location is never blocking: if the worker denies permission or GPS
+  times out, the punch still records normally.
 
 ---
 
@@ -490,6 +497,8 @@ a spotty connection — the target user.
 | Dashboard      | Charts, top absentees, loan total         | ✓                                                            |              |               |
 | Announcements  | Pinned messages for workers               | ✓                                                            |              |               |
 | Worker mode    | Per-staff read-only view                  | ✓                                                            |              |               |
+| Punch          | Optional selfie toggle                    | ✓                                                            |              |               |
+| Punch          | GPS location on punch in/out              | ✓                                                            |              |               |
 | Security       | PIN lock (SHA-256)                        | ✓                                                            |              |               |
 | Security       | Audit log                                 | ✓                                                            |              |               |
 | Multi-device   | Push / pull / realtime sync               |                                                              | ✓            |               |

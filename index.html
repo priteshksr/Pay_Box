@@ -207,6 +207,8 @@
         signed_employee: 'Employee signature', signed_employer: 'Employer signature',
         designation: 'Designation',
         now_time: 'Now', punch_in_time: 'Punch in time', punch_out_time: 'Punch out time',
+        punch_selfie_required: 'Require selfie on punch',
+        view_on_map: 'View on map', punch_in_loc: 'Punch-in location', punch_out_loc: 'Punch-out location',
         // B2 staff profile
         photo: 'Photo', tap_to_change: 'Tap to change', remove_photo: 'Remove',
         dob: 'Date of birth', join_date: 'Joining date', emp_code: 'Employee code',
@@ -488,6 +490,8 @@
         signed_employee: 'कर्मचारी के हस्ताक्षर', signed_employer: 'मालिक के हस्ताक्षर',
         designation: 'पदनाम',
         now_time: 'अभी', punch_in_time: 'पंच इन समय', punch_out_time: 'पंच आउट समय',
+        punch_selfie_required: 'पंच पर सेल्फी अनिवार्य',
+        view_on_map: 'मैप पर देखें', punch_in_loc: 'पंच-इन स्थान', punch_out_loc: 'पंच-आउट स्थान',
         // B2 staff profile
         photo: 'फोटो', tap_to_change: 'बदलने के लिए टैप करें', remove_photo: 'हटाएँ',
         dob: 'जन्म तिथि', join_date: 'ज्वाइनिंग तिथि', emp_code: 'कर्मचारी कोड',
@@ -769,6 +773,8 @@
         signed_employee: 'कर्मचारी सही', signed_employer: 'मालक सही',
         designation: 'पदनाम',
         now_time: 'आता', punch_in_time: 'पंच इन वेळ', punch_out_time: 'पंच आउट वेळ',
+        punch_selfie_required: 'पंच वर सेल्फी अनिवार्य',
+        view_on_map: 'नकाशावर पहा', punch_in_loc: 'पंच-इन ठिकाण', punch_out_loc: 'पंच-आउट ठिकाण',
         // B2 staff profile
         photo: 'फोटो', tap_to_change: 'बदलण्यासाठी टॅप करा', remove_photo: 'काढा',
         dob: 'जन्मतारीख', join_date: 'जॉइनिंग तारीख', emp_code: 'कर्मचारी कोड',
@@ -1050,6 +1056,8 @@
         signed_employee: 'ஊழியர் கையொப்பம்', signed_employer: 'உரிமையாளர் கையொப்பம்',
         designation: 'பதவி',
         now_time: 'இப்போது', punch_in_time: 'பஞ்ச் இன் நேரம்', punch_out_time: 'பஞ்ச் அவுட் நேரம்',
+        punch_selfie_required: 'பஞ்சில் செல்ஃபி கட்டாயம்',
+        view_on_map: 'வரைபடத்தில் காண்க', punch_in_loc: 'பஞ்ச்-இன் இடம்', punch_out_loc: 'பஞ்ச்-அவுட் இடம்',
         // B2 staff profile
         photo: 'படம்', tap_to_change: 'மாற தட்டு', remove_photo: 'நீக்கு',
         dob: 'பிறந்த தேதி', join_date: 'சேர்ந்த தேதி', emp_code: 'ஊழியர் குறியீடு',
@@ -1331,6 +1339,8 @@
         signed_employee: 'ఉద్యోగి సంతకం', signed_employer: 'యజమాని సంతకం',
         designation: 'పదవి',
         now_time: 'ఇప్పుడు', punch_in_time: 'పంచ్ ఇన్ సమయం', punch_out_time: 'పంచ్ అవుట్ సమయం',
+        punch_selfie_required: 'పంచ్‌లో సెల్ఫీ తప్పనిసరి',
+        view_on_map: 'మ్యాప్‌లో చూడండి', punch_in_loc: 'పంచ్-ఇన్ స్థానం', punch_out_loc: 'పంచ్-అవుట్ స్థానం',
         // B2 staff profile
         photo: 'ఫోటో', tap_to_change: 'మార్చడానికి నొక్కు', remove_photo: 'తొలగించు',
         dob: 'పుట్టిన తేదీ', join_date: 'చేరిన తేదీ', emp_code: 'ఉద్యోగి కోడ్',
@@ -1661,11 +1671,18 @@
     // ============== Utilities ==============
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-    const LS_KEY = 'paybox_v2';
+    // Per-role localStorage isolation: worker.html and owner.html each get
+    // their own key so the two sessions never overwrite each other.
+    const _urlRole = (() => {
+      try { const r = new URLSearchParams(location.search).get('role'); return (r === 'owner' || r === 'worker') ? r : null; } catch { return null; }
+    })();
+    const LS_KEY = _urlRole ? `paybox_v2_${_urlRole}` : 'paybox_v2';
     // Older PayBox keys we will silently migrate from on first load. The
-    // chain is paybox_v2 (current) ← mybox_v2 ← mybox_v1, so users who
-    // were running any earlier build keep their data after the rename.
-    const LEGACY_KEYS = ['mybox_v2', 'mybox_v1'];
+    // chain is paybox_v2_<role> (current) ← paybox_v2 ← mybox_v2 ← mybox_v1,
+    // so users who were running any earlier build keep their data after the
+    // rename. We only migrate into a role-specific key if it doesn't already
+    // have data (first visit after this change).
+    const LEGACY_KEYS = _urlRole ? ['paybox_v2', 'mybox_v2', 'mybox_v1'] : ['mybox_v2', 'mybox_v1'];
 
     // ============== Built-in cloud backend ==============
     // If you (the app publisher) host a single Supabase project for all
@@ -1754,6 +1771,18 @@
         };
         input.oncancel = () => { input.remove(); resolve(null); };
         input.click();
+      });
+    }
+
+    function getPunchLocation() {
+      if (!navigator.geolocation) return Promise.resolve(null);
+      return new Promise(resolve => {
+        const timer = setTimeout(() => resolve(null), 10000);
+        navigator.geolocation.getCurrentPosition(
+          pos => { clearTimeout(timer); resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, locAcc: Math.round(pos.coords.accuracy) }); },
+          () => { clearTimeout(timer); resolve(null); },
+          { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 }
+        );
       });
     }
 
@@ -1920,6 +1949,7 @@
       settings: {
         workingDaysPerMonth: 26, language: 'en', role: 'owner', workerId: null,
         pinEnabled: false, pinHash: null,
+        punchSelfie: true,  // owner toggle: require selfie on punch in/out
         onboarded: false,   // gates the first-run welcome / login screen
       },
       // Cloud sync config. `enabled` gates the sync engine. `session` is rehydrated
@@ -1956,10 +1986,14 @@
         // Walk the chain of older keys (post-MyBox→PayBox rename) and
         // adopt the first match. We write it back under LS_KEY so the
         // legacy keys can be safely removed by a future cleanup pass.
+        // When a role-specific key is active, only adopt legacy data
+        // whose saved role actually matches (prevents owner data leaking
+        // into the worker slot or vice-versa).
         for (const old of LEGACY_KEYS) {
           const legacy = localStorage.getItem(old);
           if (!legacy) continue;
           const parsed = migrate(deepMerge(structuredClone(defaultState), JSON.parse(legacy)));
+          if (_urlRole && parsed.settings?.role && parsed.settings.role !== _urlRole) continue;
           try { localStorage.setItem(LS_KEY, JSON.stringify(parsed)); } catch (_) {}
           return parsed;
         }
@@ -2246,7 +2280,7 @@
         if (!isConfigured()) throw new Error('cloud_not_configured');
         const sdk = await loadSdk();
         client = sdk.createClient(config().url, config().anonKey, {
-          auth: { persistSession: true, storageKey: 'paybox_auth' },
+          auth: { persistSession: true, storageKey: _urlRole ? `paybox_auth_${_urlRole}` : 'paybox_auth' },
         });
         // Refresh session from SDK on every auth change; keep the email for UI.
         // We intentionally do NOT store the full session (JWT tokens) in
@@ -2601,8 +2635,8 @@
             p.in = d.time || p.in;
             p.inAt = d.at || p.inAt || new Date().toISOString();
             if (d.selfie) p.selfie = d.selfie;
+            if (d.lat != null) { p.inLat = d.lat; p.inLng = d.lng; p.inLocAcc = d.locAcc; }
             state.punches[d.date][sid] = p;
-            // Auto-mark Present on punch-in for today.
             if (d.date === todayISO()) {
               state.attendance[d.date] = state.attendance[d.date] || {};
               if (!state.attendance[d.date][sid]) state.attendance[d.date][sid] = 'P';
@@ -2615,6 +2649,7 @@
             const p = state.punches[d.date][sid] || {};
             p.out = d.time || p.out;
             p.outAt = d.at || p.outAt || new Date().toISOString();
+            if (d.lat != null) { p.outLat = d.lat; p.outLng = d.lng; p.outLocAcc = d.locAcc; }
             state.punches[d.date][sid] = p;
             break;
           }
@@ -3253,23 +3288,16 @@
     // ============== Welcome / Login (first-run gate) ==============
     // Step state is held in a local singleton so reload returns the user to
     // the right sub-screen (role pick / sign-in / sign-up).
-    // Optional role lock from the URL — visiting `worker.html` (or
-    // index.html?role=worker) pins this device to the worker login flow,
-    // skipping the role picker and snapping back to it after sign-out so
-    // staff devices behave like a single-purpose app. Same for owner.
-    const _roleParam = (() => {
-      try {
-        const r = new URLSearchParams(location.search).get('role');
-        return r === 'owner' || r === 'worker' ? r : null;
-      } catch { return null; }
-    })();
+    // _urlRole is computed once at the top (near LS_KEY) from ?role= param.
+    // It pins the session to worker.html or owner.html so both roles get
+    // fully independent localStorage + Supabase auth.
     const welcomeUI = {
-      step: _roleParam ? 'auth' : 'pick',
-      role: _roleParam || null,
+      step: _urlRole ? 'auth' : 'pick',
+      role: _urlRole || null,
       mode: 'signup',
       busy: false,
-      lockedRole: _roleParam, // null when neutral, 'owner' / 'worker' when locked
-      workerHasCode: false,   // false = phone-only (returning), true = phone+invite (first-time)
+      lockedRole: _urlRole, // null when neutral, 'owner' / 'worker' when locked
+      workerHasCode: false, // false = phone-only (returning), true = phone+invite (first-time)
     };
 
     function renderWelcome(root) {
@@ -3408,7 +3436,7 @@
           <div>
             <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_phone_label'))}</label>
             <input name="phone" type="tel" required inputmode="tel" autocomplete="tel"
-                   value="${escapeHtml(state.cloud?.phone || '')}"
+                   value="${escapeHtml(state.cloud?.phone || '+91')}"
                    placeholder="${escapeHtml(t('welcome_phone_placeholder'))}"
                    class="w-full mt-1 px-3 py-3 border border-slate-200 rounded-lg text-base">
             <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(t('welcome_phone_hint'))}</div>
@@ -3726,6 +3754,12 @@
       const role = state.settings.role;
 
       if (role === 'worker') {
+        // Auto-select the worker profile from the biz membership if not set
+        // or if the current workerId doesn't match any local staff entry.
+        if (state.biz?.staffId && (!state.settings.workerId || !state.staff.find(s => s.id === state.settings.workerId))) {
+          state.settings.workerId = state.biz.staffId;
+          save({ silent: true });
+        }
         const worker = state.staff.find(s => s.id === state.settings.workerId);
         if (!worker) return renderNoWorkerSelected(root);
         if (tab === 'my_attendance') renderWorkerAttendance(root, worker);
@@ -4022,8 +4056,10 @@
                 const inHere = !!r.p?.in;
                 const out = !!r.p?.out;
                 const dotClass = inHere && out ? 'bg-slate-300' : inHere ? 'bg-emerald-500' : 'bg-slate-200';
+                const inLocLink = (r.p?.inLat != null) ? ` <a href="https://www.google.com/maps?q=${r.p.inLat},${r.p.inLng}" target="_blank" rel="noopener" class="text-brand-600 hover:text-brand-800" title="${escapeHtml(t('view_on_map'))}">📍</a>` : '';
+                const outLocLink = (r.p?.outLat != null) ? ` <a href="https://www.google.com/maps?q=${r.p.outLat},${r.p.outLng}" target="_blank" rel="noopener" class="text-brand-600 hover:text-brand-800" title="${escapeHtml(t('view_on_map'))}">📍</a>` : '';
                 const meta = inHere
-                  ? `<span class="text-emerald-700 font-semibold">${escapeHtml(r.p.in)}</span>${r.inAt ? ` <span class="text-slate-400">· ${escapeHtml(relTime(r.inAt))}</span>` : ''}${out ? ` <span class="text-slate-400">· ${escapeHtml(t('out_time'))} ${escapeHtml(r.p.out)}</span>` : ''}`
+                  ? `<span class="text-emerald-700 font-semibold">${escapeHtml(r.p.in)}</span>${inLocLink}${r.inAt ? ` <span class="text-slate-400">· ${escapeHtml(relTime(r.inAt))}</span>` : ''}${out ? ` <span class="text-slate-400">· ${escapeHtml(t('out_time'))} ${escapeHtml(r.p.out)}</span>${outLocLink}` : ''}`
                   : `<span class="text-slate-400">${escapeHtml(t('home_not_checked_in'))}</span>`;
                 return `
                   <div class="flex items-center gap-2.5 px-1 py-1">
@@ -4127,8 +4163,16 @@
       if (!p || (!p.in && !p.out)) return `<span class="text-slate-400">${escapeHtml(t('not_punched'))}</span>`;
       const span = workedSpan(p.in, p.out);
       const parts = [];
-      if (p.in) parts.push(`<span class="text-emerald-700 font-semibold">${escapeHtml(t('in_time'))} ${p.in}</span>`);
-      if (p.out) parts.push(`<span class="text-rose-700 font-semibold">${escapeHtml(t('out_time'))} ${p.out}</span>`);
+      if (p.in) {
+        let loc = '';
+        if (p.inLat != null) loc = ` <a href="https://www.google.com/maps?q=${p.inLat},${p.inLng}" target="_blank" rel="noopener" title="${escapeHtml(t('view_on_map'))}">📍</a>`;
+        parts.push(`<span class="text-emerald-700 font-semibold">${escapeHtml(t('in_time'))} ${p.in}</span>${loc}`);
+      }
+      if (p.out) {
+        let loc = '';
+        if (p.outLat != null) loc = ` <a href="https://www.google.com/maps?q=${p.outLat},${p.outLng}" target="_blank" rel="noopener" title="${escapeHtml(t('view_on_map'))}">📍</a>`;
+        parts.push(`<span class="text-rose-700 font-semibold">${escapeHtml(t('out_time'))} ${p.out}</span>${loc}`);
+      }
       if (span) parts.push(`<span class="text-slate-500">· ${escapeHtml(t('worked_hrs', { h: span.h, m: pad2(span.m) }))}</span>`);
       return parts.join(' ');
     }
@@ -4225,14 +4269,14 @@
           <div class="text-xs text-slate-500">${escapeHtml(s.name)} · ${escapeHtml(date)}</div>
         </div>
         <form id="punchForm" class="space-y-3">
-          <div class="flex items-center gap-3">
+          ${state.settings.punchSelfie ? `<div class="flex items-center gap-3">
             <div id="selfiePreview" class="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 text-[10px]">
               ${p.selfie ? `<img src="${p.selfie}" class="w-full h-full object-cover" alt="">` : escapeHtml(t('selfie'))}
             </div>
             <button type="button" id="selfieBtn" class="text-xs font-semibold px-3 py-2 rounded-lg bg-slate-100">
               ${escapeHtml(p.selfie ? t('retake_selfie') : t('take_selfie'))}
             </button>
-          </div>
+          </div>` : ''}
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('punch_in_time'))}</label>
@@ -4249,6 +4293,10 @@
               </div>
             </div>
           </div>
+          ${(p.inLat != null || p.outLat != null) ? `<div class="text-xs text-slate-500 space-y-1">
+            ${p.inLat != null ? `<div>📍 ${escapeHtml(t('punch_in_loc'))}: <a href="https://www.google.com/maps?q=${p.inLat},${p.inLng}" target="_blank" rel="noopener" class="text-brand-600 underline">${escapeHtml(t('view_on_map'))}</a> <span class="text-slate-400">(±${p.inLocAcc || '?'}m)</span></div>` : ''}
+            ${p.outLat != null ? `<div>📍 ${escapeHtml(t('punch_out_loc'))}: <a href="https://www.google.com/maps?q=${p.outLat},${p.outLng}" target="_blank" rel="noopener" class="text-brand-600 underline">${escapeHtml(t('view_on_map'))}</a> <span class="text-slate-400">(±${p.outLocAcc || '?'}m)</span></div>` : ''}
+          </div>` : ''}
           <div class="flex gap-2 pt-1">
             <button type="button" id="punchClear" class="flex-1 py-3 rounded-lg border border-rose-200 text-rose-600 font-semibold text-sm">${escapeHtml(t('clear_punches'))}</button>
             <button type="button" id="punchCancel" class="flex-1 py-3 rounded-lg border border-slate-200 font-semibold text-sm">${escapeHtml(t('cancel'))}</button>
@@ -4259,13 +4307,15 @@
 
       let pendingSelfie = p.selfie || null;
 
-      $('#selfieBtn').addEventListener('click', async () => {
-        const data = await pickAndCompressImage();
-        if (!data) return;
-        pendingSelfie = data;
-        $('#selfiePreview').innerHTML = `<img src="${data}" class="w-full h-full object-cover" alt="">`;
-        $('#selfieBtn').textContent = t('retake_selfie');
-      });
+      if ($('#selfieBtn')) {
+        $('#selfieBtn').addEventListener('click', async () => {
+          const data = await pickAndCompressImage();
+          if (!data) return;
+          pendingSelfie = data;
+          $('#selfiePreview').innerHTML = `<img src="${data}" class="w-full h-full object-cover" alt="">`;
+          $('#selfieBtn').textContent = t('retake_selfie');
+        });
+      }
 
       $$('[data-set]').forEach(b => b.addEventListener('click', () => {
         const field = b.dataset.set;
@@ -4279,7 +4329,7 @@
         save(); closeSheet(); render();
       });
 
-      $('#punchForm').addEventListener('submit', (e) => {
+      $('#punchForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const f = new FormData(e.target);
         const inT = f.get('in') || '';
@@ -4290,15 +4340,23 @@
         const inChanged  = inT && inT !== existing.in;
         const outChanged = outT && outT !== existing.out;
         const selfieChanged = pendingSelfie && pendingSelfie !== existing.selfie;
-        if (inT) { next.in = inT; next.inAt = next.inAt || new Date().toISOString(); } else { delete next.in; delete next.inAt; }
-        if (outT) { next.out = outT; next.outAt = next.outAt || new Date().toISOString(); } else { delete next.out; delete next.outAt; }
+        const loc = (inChanged || outChanged) ? await getPunchLocation() : null;
+        if (inT) {
+          next.in = inT; next.inAt = next.inAt || new Date().toISOString();
+          if (loc && inChanged) { next.inLat = loc.lat; next.inLng = loc.lng; next.inLocAcc = loc.locAcc; }
+        } else { delete next.in; delete next.inAt; delete next.inLat; delete next.inLng; delete next.inLocAcc; }
+        if (outT) {
+          next.out = outT; next.outAt = next.outAt || new Date().toISOString();
+          if (loc && outChanged) { next.outLat = loc.lat; next.outLng = loc.lng; next.outLocAcc = loc.locAcc; }
+        } else { delete next.out; delete next.outAt; delete next.outLat; delete next.outLng; delete next.outLocAcc; }
         if (pendingSelfie) next.selfie = pendingSelfie; else delete next.selfie;
         if (!next.in && !next.out && !next.selfie) delete state.punches[date][staffId];
         else state.punches[date][staffId] = next;
         save(); closeSheet(); toast(t('saved')); render();
         if (cloudBiz.active()) {
-          if (inChanged)  cloudBiz.emit('punch_in',  staffId, { date, time: next.in,  at: next.inAt,  selfie: selfieChanged ? pendingSelfie : undefined }).catch(() => {});
-          if (outChanged) cloudBiz.emit('punch_out', staffId, { date, time: next.out, at: next.outAt }).catch(() => {});
+          const locFields = loc ? { lat: loc.lat, lng: loc.lng, locAcc: loc.locAcc } : {};
+          if (inChanged)  cloudBiz.emit('punch_in',  staffId, { date, time: next.in,  at: next.inAt,  selfie: selfieChanged ? pendingSelfie : undefined, ...locFields }).catch(() => {});
+          if (outChanged) cloudBiz.emit('punch_out', staffId, { date, time: next.out, at: next.outAt, ...locFields }).catch(() => {});
           if (selfieChanged && !inChanged) cloudBiz.emit('selfie', staffId, { date, dataUrl: pendingSelfie }).catch(() => {});
         }
       });
@@ -5395,17 +5453,22 @@
         const action = e.currentTarget.dataset.action;
         const btn = e.currentTarget;
         btn.disabled = true; btn.style.opacity = '0.6';
-        const selfie = await pickAndCompressImage();
+        const [selfie, loc] = await Promise.all([
+          state.settings.punchSelfie ? pickAndCompressImage() : Promise.resolve(null),
+          getPunchLocation()
+        ]);
         state.punches[today] = state.punches[today] || {};
         const p = state.punches[today][w.id] || {};
         if (action === 'in') {
           p.in = nowHM();
           p.inAt = new Date().toISOString();
+          if (loc) { p.inLat = loc.lat; p.inLng = loc.lng; p.inLocAcc = loc.locAcc; }
           state.attendance[today] = state.attendance[today] || {};
           if (!state.attendance[today][w.id]) state.attendance[today][w.id] = 'P';
         } else {
           p.out = nowHM();
           p.outAt = new Date().toISOString();
+          if (loc) { p.outLat = loc.lat; p.outLng = loc.lng; p.outLocAcc = loc.locAcc; }
         }
         if (selfie) p.selfie = selfie;
         state.punches[today][w.id] = p;
@@ -5413,11 +5476,12 @@
         toast(action === 'in' ? t('punched_in') : t('punched_out'));
         render();
         if (cloudBiz.active()) {
+          const locFields = loc ? { lat: loc.lat, lng: loc.lng, locAcc: loc.locAcc } : {};
           if (action === 'in') {
-            cloudBiz.emit('punch_in', w.id, { date: today, time: p.in, at: p.inAt, selfie: selfie || undefined }).catch(() => {});
+            cloudBiz.emit('punch_in', w.id, { date: today, time: p.in, at: p.inAt, selfie: selfie || undefined, ...locFields }).catch(() => {});
             cloudBiz.emit('attendance', w.id, { date: today, status: 'P' }).catch(() => {});
           } else {
-            cloudBiz.emit('punch_out', w.id, { date: today, time: p.out, at: p.outAt }).catch(() => {});
+            cloudBiz.emit('punch_out', w.id, { date: today, time: p.out, at: p.outAt, ...locFields }).catch(() => {});
             if (selfie) cloudBiz.emit('selfie', w.id, { date: today, dataUrl: selfie }).catch(() => {});
           }
         }
@@ -5581,6 +5645,13 @@
             <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('working_days_pm'))}</label>
             <input name="wdpm" type="number" min="1" max="31" value="${state.settings.workingDaysPerMonth}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
           </div>
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('punch_selfie_required'))}</label>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" name="punchSelfie" ${state.settings.punchSelfie ? 'checked' : ''} class="sr-only peer">
+              <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+            </label>
+          </div>
           <div>
             <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('language'))}</label>
             <div class="grid grid-cols-5 gap-1.5 mt-1">
@@ -5663,6 +5734,7 @@
         const f = new FormData(e.target);
         state.business.name = (f.get('businessName') || '').trim();
         state.settings.workingDaysPerMonth = Math.max(1, Math.min(31, Number(f.get('wdpm') || 26)));
+        state.settings.punchSelfie = !!f.get('punchSelfie');
         state.settings.language = f.get('language') || 'en';
         const newRole = f.get('role') || 'owner';
         const newWorker = f.get('workerId') || null;
@@ -5673,7 +5745,7 @@
       });
       $('#resetData').addEventListener('click', () => {
         if (!confirm(t('reset_confirm'))) return;
-        localStorage.removeItem(LS_KEY); localStorage.removeItem(LEGACY_KEY);
+        localStorage.removeItem(LS_KEY); LEGACY_KEYS.forEach(k => localStorage.removeItem(k));
         state = load(); closeSheet(); toast(t('all_data_cleared')); render();
       });
       $('#loadDemo').addEventListener('click', () => {
@@ -6411,7 +6483,8 @@
     }
     async function pinGate() {
       if (!state.settings.pinEnabled || !state.settings.pinHash) return true;
-      if (sessionStorage.getItem('paybox_unlocked') === '1') return true;
+      const _pinKey = _urlRole ? `paybox_unlocked_${_urlRole}` : 'paybox_unlocked';
+      if (sessionStorage.getItem(_pinKey) === '1') return true;
       return new Promise((resolve) => {
         const overlay = document.createElement('div');
         overlay.className = 'fixed inset-0 bg-slate-900/95 backdrop-blur-sm z-[100] flex items-center justify-center p-6';
@@ -6435,7 +6508,7 @@
           const pin = (f.get('pin') || '').trim();
           const h = await sha256Hex(pin);
           if (h === state.settings.pinHash) {
-            sessionStorage.setItem('paybox_unlocked', '1');
+            sessionStorage.setItem(_pinKey, '1');
             overlay.remove();
             resolve(true);
           } else {
@@ -6445,7 +6518,7 @@
         });
         overlay.querySelector('#pinForgot').addEventListener('click', () => {
           if (!confirm(t('reset_confirm'))) return;
-          localStorage.removeItem(LS_KEY); localStorage.removeItem(LEGACY_KEY);
+          localStorage.removeItem(LS_KEY); LEGACY_KEYS.forEach(k => localStorage.removeItem(k));
           state = load();
           overlay.remove();
           resolve(true);
@@ -6589,6 +6662,12 @@
             'Out': p.out || '',
             'In At': p.inAt || '',
             'Out At': p.outAt || '',
+            'In Lat': p.inLat ?? '',
+            'In Lng': p.inLng ?? '',
+            'In Acc (m)': p.inLocAcc ?? '',
+            'Out Lat': p.outLat ?? '',
+            'Out Lng': p.outLng ?? '',
+            'Out Acc (m)': p.outLocAcc ?? '',
           });
         });
       });

@@ -669,8 +669,8 @@ The events table uses a small string taxonomy. The client fold logic in
 
 | kind            | Who writes   | Payload shape                                        |
 | --------------- | ------------ | ---------------------------------------------------- |
-| `punch_in`      | worker/owner | `{ date, time, at, selfie? }`                        |
-| `punch_out`     | worker/owner | `{ date, time, at }`                                 |
+| `punch_in`      | worker/owner | `{ date, time, at, selfie?, lat?, lng?, locAcc? }`   |
+| `punch_out`     | worker/owner | `{ date, time, at, lat?, lng?, locAcc? }`            |
 | `attendance`    | owner only   | `{ date, status }`  — `P`/`A`/`H`/`L` or `''`        |
 | `ot`            | owner only   | `{ date, hours }`                                    |
 | `adjust`        | owner only   | full adjustment row                                  |
@@ -681,6 +681,18 @@ The events table uses a small string taxonomy. The client fold logic in
 Events are **append-only** — we never edit old rows, we just write a newer
 one. Folding is idempotent because each row carries the canonical
 identifiers (`staff_id`, `date`, etc.).
+
+### GPS location fields
+
+`punch_in` and `punch_out` events optionally carry `lat` (latitude),
+`lng` (longitude), and `locAcc` (accuracy in meters). These are captured
+via `navigator.geolocation.getCurrentPosition()` at punch time with a
+10-second timeout. If the worker denies permission or GPS times out, the
+fields are simply omitted — the punch still records normally.
+
+On the client side, `applyEvent` stores these as `inLat`/`inLng`/`inLocAcc`
+(for punch-in) and `outLat`/`outLng`/`outLocAcc` (for punch-out) on the
+punch object in `state.punches[date][staffId]`.
 
 ## Push notifications (optional)
 
