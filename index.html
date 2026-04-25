@@ -160,6 +160,7 @@
         status_P: 'Present', status_A: 'Absent', status_H: 'Half-day', status_L: 'Leave',
         staff: 'Staff', employee: 'employee', employees: 'employees', add: '+ Add',
         no_staff_title: 'No staff yet', no_staff_sub: 'Add your first employee to start tracking.',
+        search_employee: 'Search employee…', no_results: 'No matching employees found.',
         full_name: 'Full name', role: 'Role', phone: 'Phone',
         salary_type: 'Salary type', monthly: 'Monthly', daily_wage: 'Daily wage',
         amount: 'Amount (₹)', ot_rate_label: 'Overtime rate (₹/hour, optional)',
@@ -181,7 +182,7 @@
         outstanding_advance: 'Outstanding this month',
         settings: 'Settings', biz_prefs: 'Business & preferences',
         business_name: 'Business name', working_days_pm: 'Working days per month (monthly salary)',
-        language: 'Language', mode: 'Mode', owner: 'Owner', worker: 'Worker',
+        language: 'Language', mode: 'Mode', owner: 'Owner', worker: 'Employee',
         pick_your_profile: 'Pick your staff profile',
         reset_all: 'Reset all data', save: 'Save',
         logout: 'Logout', logout_confirm: 'Sign out of PayBox? Your data stays safe in the cloud and on this device.',
@@ -208,7 +209,7 @@
         designation: 'Designation',
         now_time: 'Now', punch_in_time: 'Punch in time', punch_out_time: 'Punch out time',
         punch_settings_title: 'Punch settings',
-        punch_selfie_required: 'Selfie on punch', punch_selfie_hint: 'Worker must take a photo when punching in/out',
+        punch_selfie_required: 'Selfie on punch', punch_selfie_hint: 'Employee must take a photo when punching in/out',
         punch_gps_required: 'GPS location on punch', punch_gps_hint: 'Capture employee location on punch in/out',
         view_on_map: 'View on map', punch_in_loc: 'Punch-in location', punch_out_loc: 'Punch-out location',
         // B2 staff profile
@@ -336,7 +337,7 @@
         welcome_pick_role: 'How will you use PayBox?',
         welcome_owner_card: "I'm an Owner",
         welcome_owner_desc: 'Run your staff, payroll, attendance.',
-        welcome_worker_card: "I'm a Worker",
+        welcome_worker_card: "I'm an Employee",
         welcome_worker_desc: 'See my attendance, payslip, announcements.',
         welcome_offline_card: 'Use offline without sign-in',
         welcome_offline_desc: 'Data stays on this device only.',
@@ -347,7 +348,7 @@
         welcome_signin_title: 'Sign in',
         welcome_signup_title: 'Create account',
         welcome_owner_title: 'Owner sign-in',
-        welcome_worker_title: 'Worker sign-in',
+        welcome_worker_title: 'Employee sign-in',
         welcome_biz_name_label: 'Business name (shown to your staff)',
         welcome_join_code_label: 'Join code from your owner',
         welcome_supabase_section: 'Supabase project',
@@ -357,7 +358,7 @@
         welcome_back_roles: 'Choose a different role',
         welcome_skip_cloud: 'Skip sign-in — use offline',
         welcome_open_owner_login: 'Are you the owner? Open the owner login →',
-        welcome_open_worker_login: 'Are you a worker? Open the worker login →',
+        welcome_open_worker_login: 'Are you an employee? Open the employee login →',
         welcome_worker_pinned_hint: 'This device is set up for staff. Enter your phone number to sign in.',
         welcome_phone_label: 'Your phone number',
         welcome_phone_placeholder: '+91 98765 43210',
@@ -373,13 +374,13 @@
         welcome_worker_continue_signin: 'Sign in',
         welcome_worker_phone_not_found: 'No account found for this phone number. If this is your first time, use the invite code your owner gave you.',
         welcome_worker_reconnecting: 'Signing you in…',
-        welcome_worker_anon_disabled: 'Worker login is not enabled on the server. Owner: turn on Anonymous Sign-Ins in Supabase → Authentication → Providers.',
-        welcome_worker_anon_unsupported: 'This app version is too old for worker login. Reload the page to update.',
-        welcome_owner_pinned_hint: 'Owner sign-in. Workers should use the worker URL instead.',
-        cloud_worker_url_label: 'Worker sign-in URL (share with staff)',
+        welcome_worker_anon_disabled: 'Employee login is not enabled on the server. Owner: turn on Anonymous Sign-Ins in Supabase → Authentication → Providers.',
+        welcome_worker_anon_unsupported: 'This app version is too old for employee login. Reload the page to update.',
+        welcome_owner_pinned_hint: 'Owner sign-in. Employees should use the employee URL instead.',
+        cloud_worker_url_label: 'Employee sign-in URL (share with staff)',
         cloud_worker_url_share: 'Share',
         cloud_worker_url_copy: 'Copy',
-        cloud_worker_url_copied: 'Worker URL copied',
+        cloud_worker_url_copied: 'Employee URL copied',
         // Per-staff invite codes
         staff_invite_btn: 'Invite', staff_invite_hint: 'Personal invite code for this staff',
         staff_invite_title: 'Staff invite code',
@@ -445,6 +446,7 @@
         status_P: 'उपस्थित', status_A: 'अनुपस्थित', status_H: 'आधा दिन', status_L: 'छुट्टी',
         staff: 'स्टाफ़', employee: 'कर्मचारी', employees: 'कर्मचारी', add: '+ जोड़ें',
         no_staff_title: 'अभी कोई स्टाफ़ नहीं', no_staff_sub: 'ट्रैकिंग शुरू करने के लिए पहला कर्मचारी जोड़ें।',
+        search_employee: 'कर्मचारी खोजें…', no_results: 'कोई कर्मचारी नहीं मिला।',
         full_name: 'पूरा नाम', role: 'भूमिका', phone: 'फ़ोन',
         salary_type: 'वेतन प्रकार', monthly: 'मासिक', daily_wage: 'दैनिक वेतन',
         amount: 'राशि (₹)', ot_rate_label: 'ओवरटाइम दर (₹/घंटा, वैकल्पिक)',
@@ -730,6 +732,7 @@
         status_P: 'हजर', status_A: 'गैरहजर', status_H: 'अर्धा दिवस', status_L: 'रजा',
         staff: 'कर्मचारी', employee: 'कर्मचारी', employees: 'कर्मचारी', add: '+ जोडा',
         no_staff_title: 'अजून कर्मचारी नाहीत', no_staff_sub: 'ट्रॅकिंग सुरू करण्यासाठी पहिला कर्मचारी जोडा.',
+        search_employee: 'कर्मचारी शोधा…', no_results: 'कोणताही कर्मचारी सापडला नाही.',
         full_name: 'पूर्ण नाव', role: 'भूमिका', phone: 'फोन',
         salary_type: 'पगार प्रकार', monthly: 'मासिक', daily_wage: 'दैनिक',
         amount: 'रक्कम (₹)', ot_rate_label: 'ओव्हरटाइम दर (₹/तास, पर्यायी)',
@@ -1015,6 +1018,7 @@
         status_P: 'வந்தார்', status_A: 'வரவில்லை', status_H: 'அரை நாள்', status_L: 'விடுமுறை',
         staff: 'ஊழியர்', employee: 'ஊழியர்', employees: 'ஊழியர்கள்', add: '+ சேர்',
         no_staff_title: 'ஊழியர் இல்லை', no_staff_sub: 'முதல் ஊழியரை சேர்க்கவும்.',
+        search_employee: 'ஊழியரைத் தேடு…', no_results: 'ஊழியர் கிடைக்கவில்லை.',
         full_name: 'முழு பெயர்', role: 'பங்கு', phone: 'தொலைபேசி',
         salary_type: 'சம்பள வகை', monthly: 'மாதாந்திர', daily_wage: 'தினசரி',
         amount: 'தொகை (₹)', ot_rate_label: 'OT விகிதம் (₹/மணி, விருப்பம்)',
@@ -1300,6 +1304,7 @@
         status_P: 'హాజరు', status_A: 'గైర్‌హాజరు', status_H: 'అర్ధ రోజు', status_L: 'సెలవు',
         staff: 'సిబ్బంది', employee: 'ఉద్యోగి', employees: 'ఉద్యోగులు', add: '+ జోడించు',
         no_staff_title: 'సిబ్బంది లేరు', no_staff_sub: 'మొదటి ఉద్యోగిని జోడించండి.',
+        search_employee: 'ఉద్యోగిని వెతకండి…', no_results: 'ఉద్యోగి కనుగొనబడలేదు.',
         full_name: 'పూర్తి పేరు', role: 'పాత్ర', phone: 'ఫోన్',
         salary_type: 'వేతన రకం', monthly: 'నెలవారీ', daily_wage: 'రోజువారీ',
         amount: 'మొత్తం (₹)', ot_rate_label: 'OT రేటు (₹/గంట, ఐచ్ఛిక)',
@@ -4415,6 +4420,8 @@
 
     // ============== Owner: Staff ==============
     function renderStaff(root) {
+      const q = (state._staffSearch || '').toLowerCase();
+      const filtered = q ? state.staff.filter(s => (s.name || '').toLowerCase().includes(q) || (s.phone || '').includes(q) || (s.role || '').toLowerCase().includes(q) || (s.empCode || '').toLowerCase().includes(q)) : state.staff;
       root.innerHTML = `
         <div class="mb-4 flex items-end justify-between">
           <div>
@@ -4423,6 +4430,11 @@
           </div>
           <button id="addStaffBtn" class="text-xs font-semibold bg-brand-600 text-white px-3 py-2 rounded-lg">${escapeHtml(t('add'))}</button>
         </div>
+        ${state.staff.length > 3 ? `
+        <div class="mb-3">
+          <input id="staffSearch" type="search" placeholder="${escapeHtml(t('search_employee'))}" value="${escapeHtml(state._staffSearch || '')}"
+                 class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-200">
+        </div>` : ''}
 
         ${state.staff.length === 0 ? `
           <div class="bg-white border border-dashed border-slate-200 rounded-2xl p-8 text-center">
@@ -4432,10 +4444,17 @@
             <div class="font-semibold">${escapeHtml(t('no_staff_title'))}</div>
             <div class="text-sm text-slate-500 mt-1">${escapeHtml(t('no_staff_sub'))}</div>
             <button id="addStaffBtn2" class="mt-4 px-4 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg">${escapeHtml(t('add_staff'))}</button>
-          </div>` : `
-          <div class="space-y-2">${state.staff.map(staffCard).join('')}</div>
+          </div>` : filtered.length === 0 ? `
+          <div class="text-center text-sm text-slate-400 py-8">${escapeHtml(t('no_results'))}</div>` : `
+          <div class="space-y-2">${filtered.map(staffCard).join('')}</div>
         `}
       `;
+      $('#staffSearch')?.addEventListener('input', (e) => {
+        state._staffSearch = e.target.value;
+        renderStaff(root);
+        const el = $('#staffSearch');
+        if (el) { el.focus(); el.selectionStart = el.selectionEnd = el.value.length; }
+      });
       $('#addStaffBtn')?.addEventListener('click', () => openStaffForm());
       $('#addStaffBtn2')?.addEventListener('click', () => openStaffForm());
       $$('[data-staff-edit]').forEach(b => b.addEventListener('click', () => openStaffForm(b.dataset.staffEdit)));
