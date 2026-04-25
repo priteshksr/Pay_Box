@@ -160,14 +160,22 @@
         status_P: 'Present', status_A: 'Absent', status_H: 'Half-day', status_L: 'Leave',
         staff: 'Staff', employee: 'employee', employees: 'employees', add: '+ Add',
         no_staff_title: 'No staff yet', no_staff_sub: 'Add your first employee to start tracking.',
-        search_employee: 'Search employee…', no_results: 'No matching employees found.',
+        search_employee: 'Search employee…', no_results: 'No matching employees found.', exit_date: 'Exit date',
         full_name: 'Full name', role: 'Role', phone: 'Phone',
         salary_type: 'Salary type', monthly: 'Monthly', daily_wage: 'Daily wage',
         amount: 'Amount (₹)', ot_rate_label: 'Overtime rate (₹/hour, optional)',
         ot_rate_hint: 'If blank, auto = 1.5× hourly rate (8h/day)',
         save_changes: 'Save changes', delete: 'Delete', add_staff_btn: 'Add staff',
-        confirm_delete: 'Remove this staff member? Their attendance history will be kept.',
-        staff_added: 'Staff added', staff_updated: 'Staff updated', staff_removed: 'Staff removed',
+        confirm_delete: 'Move this employee to Ex-Employees? All their data will be kept.',
+        reactivate: 'Re-activate', reactivate_confirm: 'Re-activate this employee?',
+        staff_reactivated: 'Employee re-activated',
+        remove_employee: 'Remove', active_employees: 'Active', ex_employees: 'Ex-Employees',
+        no_ex_employees: 'No ex-employees.',
+        ex_employee_banner: 'You are no longer active in this company',
+        ex_employee_no_punch: 'Punch disabled — no longer active',
+        present_today: 'Present Today', absent_today: 'Absent Today',
+        no_one_present: 'No one is present today.', all_present: 'Everyone is present today!',
+        staff_added: 'Staff added', staff_updated: 'Staff updated', staff_removed: 'Moved to Ex-Employees',
         tap_to_edit: 'Tap to edit', no_phone: 'No phone',
         payroll: 'Payroll', auto_calc: 'Auto-calculated from attendance',
         net_payable: 'Net Payable', effective_days: 'Effective days',
@@ -446,14 +454,22 @@
         status_P: 'उपस्थित', status_A: 'अनुपस्थित', status_H: 'आधा दिन', status_L: 'छुट्टी',
         staff: 'स्टाफ़', employee: 'कर्मचारी', employees: 'कर्मचारी', add: '+ जोड़ें',
         no_staff_title: 'अभी कोई स्टाफ़ नहीं', no_staff_sub: 'ट्रैकिंग शुरू करने के लिए पहला कर्मचारी जोड़ें।',
-        search_employee: 'कर्मचारी खोजें…', no_results: 'कोई कर्मचारी नहीं मिला।',
+        search_employee: 'कर्मचारी खोजें…', no_results: 'कोई कर्मचारी नहीं मिला।', exit_date: 'निकास तिथि',
         full_name: 'पूरा नाम', role: 'भूमिका', phone: 'फ़ोन',
         salary_type: 'वेतन प्रकार', monthly: 'मासिक', daily_wage: 'दैनिक वेतन',
         amount: 'राशि (₹)', ot_rate_label: 'ओवरटाइम दर (₹/घंटा, वैकल्पिक)',
         ot_rate_hint: 'यदि खाली है तो = 1.5× प्रति घंटा (8 घंटे/दिन)',
         save_changes: 'सहेजें', delete: 'हटाएँ', add_staff_btn: 'स्टाफ़ जोड़ें',
-        confirm_delete: 'क्या इस कर्मचारी को हटाना है? हाज़िरी इतिहास सुरक्षित रहेगा।',
-        staff_added: 'स्टाफ़ जोड़ा गया', staff_updated: 'स्टाफ़ अपडेट हुआ', staff_removed: 'स्टाफ़ हटाया गया',
+        confirm_delete: 'इस कर्मचारी को पूर्व-कर्मचारी में ले जाएं? सारा डेटा सुरक्षित रहेगा।',
+        reactivate: 'पुनः सक्रिय करें', reactivate_confirm: 'इस कर्मचारी को पुनः सक्रिय करें?',
+        staff_reactivated: 'कर्मचारी पुनः सक्रिय',
+        remove_employee: 'हटाएं', active_employees: 'सक्रिय', ex_employees: 'पूर्व-कर्मचारी',
+        no_ex_employees: 'कोई पूर्व-कर्मचारी नहीं।',
+        ex_employee_banner: 'आप अब इस कंपनी में सक्रिय नहीं हैं',
+        ex_employee_no_punch: 'पंच अक्षम — अब सक्रिय नहीं',
+        present_today: 'आज उपस्थित', absent_today: 'आज अनुपस्थित',
+        no_one_present: 'आज कोई उपस्थित नहीं।', all_present: 'आज सभी उपस्थित हैं!',
+        staff_added: 'स्टाफ़ जोड़ा गया', staff_updated: 'स्टाफ़ अपडेट हुआ', staff_removed: 'पूर्व-कर्मचारी में भेजा',
         tap_to_edit: 'संपादन करें', no_phone: 'फ़ोन नहीं',
         payroll: 'पेरोल', auto_calc: 'हाज़िरी से स्वतः गणना',
         net_payable: 'शुद्ध देय', effective_days: 'प्रभावी दिन',
@@ -732,14 +748,22 @@
         status_P: 'हजर', status_A: 'गैरहजर', status_H: 'अर्धा दिवस', status_L: 'रजा',
         staff: 'कर्मचारी', employee: 'कर्मचारी', employees: 'कर्मचारी', add: '+ जोडा',
         no_staff_title: 'अजून कर्मचारी नाहीत', no_staff_sub: 'ट्रॅकिंग सुरू करण्यासाठी पहिला कर्मचारी जोडा.',
-        search_employee: 'कर्मचारी शोधा…', no_results: 'कोणताही कर्मचारी सापडला नाही.',
+        search_employee: 'कर्मचारी शोधा…', no_results: 'कोणताही कर्मचारी सापडला नाही.', exit_date: 'निर्गमन तारीख',
         full_name: 'पूर्ण नाव', role: 'भूमिका', phone: 'फोन',
         salary_type: 'पगार प्रकार', monthly: 'मासिक', daily_wage: 'दैनिक',
         amount: 'रक्कम (₹)', ot_rate_label: 'ओव्हरटाइम दर (₹/तास, पर्यायी)',
         ot_rate_hint: 'रिक्त असल्यास = 1.5× प्रति तास (8 तास/दिवस)',
         save_changes: 'जतन करा', delete: 'हटवा', add_staff_btn: 'कर्मचारी जोडा',
-        confirm_delete: 'हा कर्मचारी काढून टाकायचा का? हजेरी इतिहास राहील.',
-        staff_added: 'कर्मचारी जोडला', staff_updated: 'अपडेट झाले', staff_removed: 'काढून टाकला',
+        confirm_delete: 'हा कर्मचारी माजी-कर्मचारी मध्ये हलवायचा? सर्व डेटा सुरक्षित राहील.',
+        reactivate: 'पुन्हा सक्रिय करा', reactivate_confirm: 'हा कर्मचारी पुन्हा सक्रिय करायचा?',
+        staff_reactivated: 'कर्मचारी पुन्हा सक्रिय',
+        remove_employee: 'काढा', active_employees: 'सक्रिय', ex_employees: 'माजी-कर्मचारी',
+        no_ex_employees: 'कोणीही माजी-कर्मचारी नाही.',
+        ex_employee_banner: 'तुम्ही आता या कंपनीमध्ये सक्रिय नाही',
+        ex_employee_no_punch: 'पंच अक्षम — आता सक्रिय नाही',
+        present_today: 'आज उपस्थित', absent_today: 'आज अनुपस्थित',
+        no_one_present: 'आज कोणीही उपस्थित नाही.', all_present: 'आज सगळे उपस्थित आहेत!',
+        staff_added: 'कर्मचारी जोडला', staff_updated: 'अपडेट झाले', staff_removed: 'माजी-कर्मचारी मध्ये हलवले',
         tap_to_edit: 'संपादन', no_phone: 'फोन नाही',
         payroll: 'पगार', auto_calc: 'हजेरीवरून आपोआप गणना',
         net_payable: 'देय रक्कम', effective_days: 'प्रभावी दिवस',
@@ -1018,14 +1042,22 @@
         status_P: 'வந்தார்', status_A: 'வரவில்லை', status_H: 'அரை நாள்', status_L: 'விடுமுறை',
         staff: 'ஊழியர்', employee: 'ஊழியர்', employees: 'ஊழியர்கள்', add: '+ சேர்',
         no_staff_title: 'ஊழியர் இல்லை', no_staff_sub: 'முதல் ஊழியரை சேர்க்கவும்.',
-        search_employee: 'ஊழியரைத் தேடு…', no_results: 'ஊழியர் கிடைக்கவில்லை.',
+        search_employee: 'ஊழியரைத் தேடு…', no_results: 'ஊழியர் கிடைக்கவில்லை.', exit_date: 'வெளியேறிய தேதி',
         full_name: 'முழு பெயர்', role: 'பங்கு', phone: 'தொலைபேசி',
         salary_type: 'சம்பள வகை', monthly: 'மாதாந்திர', daily_wage: 'தினசரி',
         amount: 'தொகை (₹)', ot_rate_label: 'OT விகிதம் (₹/மணி, விருப்பம்)',
         ot_rate_hint: 'காலியாக இருந்தால் = 1.5× மணிக்கான (8 மணி/நாள்)',
         save_changes: 'சேமி', delete: 'நீக்கு', add_staff_btn: 'ஊழியர் சேர்',
-        confirm_delete: 'இந்த ஊழியரை நீக்கவா? வருகை வரலாறு இருக்கும்.',
-        staff_added: 'சேர்க்கப்பட்டது', staff_updated: 'புதுப்பிக்கப்பட்டது', staff_removed: 'நீக்கப்பட்டது',
+        confirm_delete: 'இந்த ஊழியரை முன்னாள் ஊழியர் பட்டியலுக்கு நகர்த்தவா? அனைத்து தரவும் பாதுகாக்கப்படும்.',
+        reactivate: 'மீண்டும் செயல்படுத்து', reactivate_confirm: 'இந்த ஊழியரை மீண்டும் செயல்படுத்தவா?',
+        staff_reactivated: 'ஊழியர் மீண்டும் செயல்படுத்தப்பட்டார்',
+        remove_employee: 'நீக்கு', active_employees: 'செயலில்', ex_employees: 'முன்னாள் ஊழியர்கள்',
+        no_ex_employees: 'முன்னாள் ஊழியர்கள் இல்லை.',
+        ex_employee_banner: 'இந்த நிறுவனத்தில் நீங்கள் இனி செயலில் இல்லை',
+        ex_employee_no_punch: 'பஞ்ச் முடக்கப்பட்டது — இனி செயலில் இல்லை',
+        present_today: 'இன்று வந்தவர்கள்', absent_today: 'இன்று வராதவர்கள்',
+        no_one_present: 'இன்று யாரும் வரவில்லை.', all_present: 'இன்று அனைவரும் வந்துள்ளனர்!',
+        staff_added: 'சேர்க்கப்பட்டது', staff_updated: 'புதுப்பிக்கப்பட்டது', staff_removed: 'முன்னாள் ஊழியர் பட்டியலுக்கு நகர்த்தப்பட்டது',
         tap_to_edit: 'திருத்த தட்டு', no_phone: 'தொலைபேசி இல்லை',
         payroll: 'ஊதியம்', auto_calc: 'வருகையிலிருந்து தானாக',
         net_payable: 'செலுத்த வேண்டிய தொகை', effective_days: 'பயனுள்ள நாட்கள்',
@@ -1304,14 +1336,22 @@
         status_P: 'హాజరు', status_A: 'గైర్‌హాజరు', status_H: 'అర్ధ రోజు', status_L: 'సెలవు',
         staff: 'సిబ్బంది', employee: 'ఉద్యోగి', employees: 'ఉద్యోగులు', add: '+ జోడించు',
         no_staff_title: 'సిబ్బంది లేరు', no_staff_sub: 'మొదటి ఉద్యోగిని జోడించండి.',
-        search_employee: 'ఉద్యోగిని వెతకండి…', no_results: 'ఉద్యోగి కనుగొనబడలేదు.',
+        search_employee: 'ఉద్యోగిని వెతకండి…', no_results: 'ఉద్యోగి కనుగొనబడలేదు.', exit_date: 'నిష్క్రమణ తేదీ',
         full_name: 'పూర్తి పేరు', role: 'పాత్ర', phone: 'ఫోన్',
         salary_type: 'వేతన రకం', monthly: 'నెలవారీ', daily_wage: 'రోజువారీ',
         amount: 'మొత్తం (₹)', ot_rate_label: 'OT రేటు (₹/గంట, ఐచ్ఛిక)',
         ot_rate_hint: 'ఖాళీగా ఉంటే = 1.5× గంటకు (8 గం/రోజు)',
         save_changes: 'సేవ్', delete: 'తొలగించు', add_staff_btn: 'సిబ్బంది జోడించు',
-        confirm_delete: 'ఈ సిబ్బందిని తొలగించాలా? హాజరు చరిత్ర ఉంటుంది.',
-        staff_added: 'జోడించబడింది', staff_updated: 'నవీకరించబడింది', staff_removed: 'తొలగించబడింది',
+        confirm_delete: 'ఈ ఉద్యోగిని మాజీ ఉద్యోగులకు తరలించాలా? మొత్తం డేటా భద్రంగా ఉంటుంది.',
+        reactivate: 'పునఃసక్రియం', reactivate_confirm: 'ఈ ఉద్యోగిని పునఃసక్రియం చేయాలా?',
+        staff_reactivated: 'ఉద్యోగి పునఃసక్రియం చేయబడింది',
+        remove_employee: 'తొలగించు', active_employees: 'సక్రియ', ex_employees: 'మాజీ ఉద్యోగులు',
+        no_ex_employees: 'మాజీ ఉద్యోగులు లేరు.',
+        ex_employee_banner: 'మీరు ఇకపై ఈ కంపెనీలో యాక్టివ్ కాదు',
+        ex_employee_no_punch: 'పంచ్ నిలిపివేయబడింది — ఇకపై యాక్టివ్ కాదు',
+        present_today: 'ఈ రోజు హాజరు', absent_today: 'ఈ రోజు గైర్హాజరు',
+        no_one_present: 'ఈ రోజు ఎవరూ హాజరు కాలేదు.', all_present: 'ఈ రోజు అందరూ హాజరయ్యారు!',
+        staff_added: 'జోడించబడింది', staff_updated: 'నవీకరించబడింది', staff_removed: 'మాజీ ఉద్యోగులకు తరలించబడింది',
         tap_to_edit: 'మార్చడానికి నొక్కు', no_phone: 'ఫోన్ లేదు',
         payroll: 'వేతనం', auto_calc: 'హాజరు నుండి స్వయంచాలకంగా',
         net_payable: 'చెల్లించవలసినది', effective_days: 'సమర్థవంతమైన రోజులు',
@@ -3296,8 +3336,9 @@
 
     function monthTotals(ym) {
       let total = 0;
-      state.staff.forEach(s => { total += salaryForMonth(s, ym).net; });
-      return { total, staffCount: state.staff.length };
+      const active = state.staff.filter(s => s.active !== false);
+      active.forEach(s => { total += salaryForMonth(s, ym).net; });
+      return { total, staffCount: active.length };
     }
 
     // ============== Render router ==============
@@ -3861,6 +3902,7 @@
       }
 
       // Avg attendance last 30 days (% vs total staff)
+      const activeStaffHome = state.staff.filter(s => s.active !== false);
       let attSum = 0, attDays = 0;
       for (let i = 29; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
@@ -3869,7 +3911,7 @@
         const marks = Object.values(m).filter(v => v);
         if (!marks.length) continue;
         const p = marks.filter(v => v === 'P' || v === 'H').length;
-        attSum += p / Math.max(1, state.staff.length);
+        attSum += p / Math.max(1, activeStaffHome.length);
         attDays++;
       }
       const avgPct = attDays ? Math.round((attSum / attDays) * 100) : 0;
@@ -3884,13 +3926,13 @@
       }
 
       // Top absentees this month
-      const topAbs = state.staff.map(s => {
+      const topAbs = activeStaffHome.map(s => {
         const { absent } = monthAttendanceForStaff(s.id, ym);
         return { s, absent };
       }).filter(x => x.absent > 0).sort((a, b) => b.absent - a.absent).slice(0, 3);
 
       // Loan outstanding total
-      const loanTotal = state.staff.reduce((a, s) => a + loanOutstandingFor(s.id), 0);
+      const loanTotal = activeStaffHome.reduce((a, s) => a + loanOutstandingFor(s.id), 0);
 
       // Announcements preview
       const annSorted = [...state.announcements].sort((a, b) =>
@@ -3940,14 +3982,14 @@
             <span class="text-xs text-slate-500">${escapeHtml(t('avg_attendance'))}: <span class="font-semibold text-slate-700">${avgPct}%</span></span>
           </div>
           <div class="grid grid-cols-3 gap-2 mb-3">
-            <div class="bg-emerald-50 rounded-lg p-2 text-center">
+            <button id="showPresentList" class="bg-emerald-50 rounded-lg p-2 text-center active:scale-[.97] transition">
               <div class="text-lg font-extrabold text-emerald-700">${presentToday}</div>
               <div class="text-[10px] text-emerald-700/80 font-semibold uppercase">${escapeHtml(t('status_P'))}</div>
-            </div>
-            <div class="bg-rose-50 rounded-lg p-2 text-center">
+            </button>
+            <button id="showAbsentList" class="bg-rose-50 rounded-lg p-2 text-center active:scale-[.97] transition">
               <div class="text-lg font-extrabold text-rose-700">${Math.max(0, staffCount - presentToday)}</div>
               <div class="text-[10px] text-rose-700/80 font-semibold uppercase">${escapeHtml(t('status_A'))}</div>
-            </div>
+            </button>
             <div class="bg-amber-50 rounded-lg p-2 text-center">
               <div class="text-lg font-extrabold text-amber-700">${fmtINR(loanTotal).replace('₹', '₹')}</div>
               <div class="text-[10px] text-amber-700/80 font-semibold uppercase">${escapeHtml(t('loan_outstanding_total'))}</div>
@@ -3990,9 +4032,9 @@
             <button data-go="staff" class="text-xs text-brand-600 font-semibold">${escapeHtml(t('see_all'))}</button>
           </div>
           <div>
-            ${state.staff.length === 0
+            ${state.staff.filter(s => s.active !== false).length === 0
               ? `<div class="px-4 pb-5 pt-2 text-sm text-slate-500">${escapeHtml(t('no_staff_hint'))}</div>`
-              : state.staff.slice(0, 5).map(staffRow).join('')}
+              : state.staff.filter(s => s.active !== false).slice(0, 5).map(staffRow).join('')}
           </div>
         </div>
       `;
@@ -4004,6 +4046,45 @@
       $$('[data-checkin-mark]').forEach(b => b.addEventListener('click', () => {
         markAttendance(b.dataset.checkinMark, 'P');
       }));
+      $('#showPresentList')?.addEventListener('click', () => openAttendanceFilterSheet('present'));
+      $('#showAbsentList')?.addEventListener('click', () => openAttendanceFilterSheet('absent'));
+    }
+
+    function openAttendanceFilterSheet(mode) {
+      const today = todayISO();
+      const marks = state.attendance[today] || {};
+      const active = state.staff.filter(s => s.active !== false);
+      const present = active.filter(s => marks[s.id] === 'P' || marks[s.id] === 'H');
+      const absent = active.filter(s => !marks[s.id] || (marks[s.id] !== 'P' && marks[s.id] !== 'H'));
+      const list = mode === 'present' ? present : absent;
+      const title = mode === 'present' ? t('present_today') : t('absent_today');
+      const color = mode === 'present' ? 'emerald' : 'rose';
+
+      openSheet(`
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-bold">${escapeHtml(title)}</h2>
+            <p class="text-xs text-slate-500">${today} · ${list.length} ${escapeHtml(t('employees'))}</p>
+          </div>
+          <span class="text-2xl font-extrabold text-${color}-700">${list.length}</span>
+        </div>
+        ${list.length === 0 ? `<div class="text-center text-sm text-slate-400 py-8">${mode === 'present' ? escapeHtml(t('no_one_present')) : escapeHtml(t('all_present'))}</div>` : `
+        <div class="space-y-2">
+          ${list.map(s => {
+            const punch = state.punches[today]?.[s.id] || {};
+            const status = marks[s.id];
+            return `
+            <div class="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl">
+              ${avatarHTML(s, 'w-10 h-10')}
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-sm truncate">${escapeHtml(s.name)}</div>
+                <div class="text-xs text-slate-500">${escapeHtml(s.role || '—')}${punch.in ? ` · In: ${punch.in}` : ''}${punch.out ? ` · Out: ${punch.out}` : ''}</div>
+              </div>
+              ${status ? `<span class="chip ${ATT_COLOR[status]} border text-xs">${escapeHtml(ATT_LABEL(status))}</span>` : `<span class="chip bg-slate-100 text-slate-500 text-xs">—</span>`}
+            </div>`;
+          }).join('')}
+        </div>`}
+      `);
     }
 
     /** Relative-time formatter used by the "Today's check-ins" strip. */
@@ -4402,22 +4483,32 @@
     // ============== Owner: Staff ==============
     function renderStaff(root) {
       const q = (state._staffSearch || '').toLowerCase();
-      const filtered = q ? state.staff.filter(s => (s.name || '').toLowerCase().includes(q) || (s.phone || '').includes(q) || (s.role || '').toLowerCase().includes(q) || (s.empCode || '').toLowerCase().includes(q)) : state.staff;
+      const showEx = !!state._showExEmployees;
+      const activeStaff = state.staff.filter(s => s.active !== false);
+      const exStaff = state.staff.filter(s => s.active === false);
+      const pool = showEx ? exStaff : activeStaff;
+      const filtered = q ? pool.filter(s => (s.name || '').toLowerCase().includes(q) || (s.phone || '').includes(q) || (s.role || '').toLowerCase().includes(q) || (s.empCode || '').toLowerCase().includes(q)) : pool;
       root.innerHTML = `
         <div class="mb-4 flex items-end justify-between">
           <div>
             <h1 class="text-xl font-extrabold tracking-tight">${escapeHtml(t('staff'))}</h1>
-            <p class="text-sm text-slate-500">${state.staff.length} ${escapeHtml(state.staff.length === 1 ? t('employee') : t('employees'))}</p>
+            <p class="text-sm text-slate-500">${activeStaff.length} ${escapeHtml(t('employees'))}${exStaff.length ? ` · ${exStaff.length} ${escapeHtml(t('ex_employees'))}` : ''}</p>
           </div>
           <button id="addStaffBtn" class="text-xs font-semibold bg-brand-600 text-white px-3 py-2 rounded-lg">${escapeHtml(t('add'))}</button>
         </div>
-        ${state.staff.length > 3 ? `
+        ${exStaff.length ? `
+        <div class="flex mb-3 bg-slate-100 rounded-xl p-0.5">
+          <button id="tabActive" class="flex-1 py-2 text-xs font-semibold rounded-lg transition ${!showEx ? 'bg-white shadow-sm text-brand-700' : 'text-slate-500'}">${escapeHtml(t('active_employees'))} (${activeStaff.length})</button>
+          <button id="tabEx" class="flex-1 py-2 text-xs font-semibold rounded-lg transition ${showEx ? 'bg-white shadow-sm text-rose-700' : 'text-slate-500'}">${escapeHtml(t('ex_employees'))} (${exStaff.length})</button>
+        </div>` : ''}
+        ${pool.length > 3 ? `
         <div class="mb-3">
           <input id="staffSearch" type="search" placeholder="${escapeHtml(t('search_employee'))}" value="${escapeHtml(state._staffSearch || '')}"
                  class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-200">
         </div>` : ''}
 
-        ${state.staff.length === 0 ? `
+        ${pool.length === 0 ? (showEx ? `
+          <div class="text-center text-sm text-slate-400 py-8">${escapeHtml(t('no_ex_employees'))}</div>` : `
           <div class="bg-white border border-dashed border-slate-200 rounded-2xl p-8 text-center">
             <div class="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-3">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2b43ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
@@ -4425,11 +4516,13 @@
             <div class="font-semibold">${escapeHtml(t('no_staff_title'))}</div>
             <div class="text-sm text-slate-500 mt-1">${escapeHtml(t('no_staff_sub'))}</div>
             <button id="addStaffBtn2" class="mt-4 px-4 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg">${escapeHtml(t('add_staff'))}</button>
-          </div>` : filtered.length === 0 ? `
+          </div>`) : filtered.length === 0 ? `
           <div class="text-center text-sm text-slate-400 py-8">${escapeHtml(t('no_results'))}</div>` : `
           <div class="space-y-2">${filtered.map(staffCard).join('')}</div>
         `}
       `;
+      $('#tabActive')?.addEventListener('click', () => { state._showExEmployees = false; state._staffSearch = ''; renderStaff(root); });
+      $('#tabEx')?.addEventListener('click', () => { state._showExEmployees = true; state._staffSearch = ''; renderStaff(root); });
       $('#staffSearch')?.addEventListener('input', (e) => {
         state._staffSearch = e.target.value;
         renderStaff(root);
@@ -4449,14 +4542,16 @@
       const salaryLabel = s.salaryType === 'daily' ? `${fmtINR(s.amount)}/${t('day')}` : `${fmtINR(s.amount)}/${t('mo')}`;
       const outstandingLoan = loanOutstandingFor(s.id);
       const canInvite = !!(cloudBiz.isOwner && cloudBiz.isOwner());
+      const isEx = s.active === false;
       return `
-        <div class="bg-white border border-slate-100 rounded-2xl shadow-soft overflow-hidden">
+        <div class="${isEx ? 'bg-slate-50 border border-slate-200 opacity-80' : 'bg-white border border-slate-100'} rounded-2xl shadow-soft overflow-hidden">
           <button data-staff-edit="${s.id}" class="w-full text-left p-3 active:scale-[.99] transition">
             <div class="flex items-center gap-3">
-              ${avatarHTML(s, 'w-10 h-10')}
+              ${avatarHTML(s, 'w-10 h-10' + (isEx ? ' grayscale' : ''))}
               <div class="flex-1 min-w-0">
-                <div class="font-semibold text-sm truncate">${escapeHtml(s.name)}${s.active === false ? ` <span class="chip bg-slate-100 text-slate-500">${escapeHtml(t('inactive'))}</span>` : ''}</div>
+                <div class="font-semibold text-sm truncate">${escapeHtml(s.name)}${isEx ? ` <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-500">${escapeHtml(t('ex_employees'))}</span>` : ''}</div>
                 <div class="text-xs text-slate-500 truncate">${escapeHtml(s.role || '—')} · ${escapeHtml(s.phone || t('no_phone'))}</div>
+                ${isEx && s.exitDate ? `<div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(t('exit_date'))}: ${s.exitDate}</div>` : ''}
                 ${outstandingLoan > 0 ? `<div class="text-[11px] text-amber-700 mt-0.5">${escapeHtml(t('loan'))}: ${fmtINR(outstandingLoan)}</div>` : ''}
               </div>
               <div class="text-right">
@@ -4465,7 +4560,7 @@
               </div>
             </div>
           </button>
-          ${canInvite ? `
+          ${canInvite && !isEx ? `
           <div class="border-t border-slate-100 px-3 py-2 flex items-center justify-between gap-2 bg-slate-50">
             <div class="text-[11px] text-slate-500">${escapeHtml(t('staff_invite_hint'))}</div>
             <button data-staff-invite="${s.id}" class="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-emerald-600 text-white">${escapeHtml(t('staff_invite_btn'))}</button>
@@ -4622,7 +4717,10 @@
           </details>` : ''}
 
           <div class="pt-2 flex gap-2">
-            ${editing ? `<button type="button" id="delStaff" class="flex-1 py-3 rounded-lg border border-rose-200 text-rose-600 text-sm font-semibold">${escapeHtml(t('delete'))}</button>` : ''}
+            ${editing ? (editing.active === false
+              ? `<button type="button" id="delStaff" class="flex-1 py-3 rounded-lg border border-emerald-200 text-emerald-700 text-sm font-semibold">${escapeHtml(t('reactivate'))}</button>`
+              : `<button type="button" id="delStaff" class="flex-1 py-3 rounded-lg border border-rose-200 text-rose-600 text-sm font-semibold">${escapeHtml(t('remove_employee'))}</button>`
+            ) : ''}
             <button type="submit" class="flex-1 py-3 rounded-lg bg-brand-600 text-white text-sm font-semibold">${escapeHtml(editing ? t('save_changes') : t('add_staff_btn'))}</button>
           </div>
         </form>
@@ -4709,11 +4807,24 @@
         }
       });
       $('#delStaff')?.addEventListener('click', () => {
-        if (!confirm(t('confirm_delete'))) return;
-        state.staff = state.staff.filter(s => s.id !== staffId);
-        if (state.settings.workerId === staffId) state.settings.workerId = null;
-        audit('staff_removed', { id: staffId });
-        save(); closeSheet(); toast(t('staff_removed')); render();
+        const s = state.staff.find(x => x.id === staffId);
+        if (!s) return;
+        if (s.active === false) {
+          // Re-activate ex-employee
+          if (!confirm(t('reactivate_confirm'))) return;
+          s.active = true;
+          delete s.exitDate;
+          audit('staff_reactivated', { id: staffId, name: s.name });
+          save(); closeSheet(); toast(t('staff_reactivated')); render();
+        } else {
+          // Soft-delete: move to ex-employees
+          if (!confirm(t('confirm_delete'))) return;
+          s.active = false;
+          s.exitDate = s.exitDate || todayISO();
+          if (state.settings.workerId === staffId) state.settings.workerId = null;
+          audit('staff_removed', { id: staffId, name: s.name });
+          save(); closeSheet(); toast(t('staff_removed')); render();
+        }
       });
     }
 
@@ -5411,6 +5522,9 @@
           </button>
         </div>
 
+        ${w.active === false ? `
+        <div class="rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm p-3 mb-4 text-center font-semibold">${escapeHtml(t('ex_employee_banner'))}${w.exitDate ? ` · ${w.exitDate}` : ''}</div>` : ''}
+
         <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white p-5 shadow-card mb-4">
           <div class="text-xs text-brand-100 uppercase tracking-wider font-semibold">${escapeHtml(t('worker_this_month'))}</div>
           <div class="text-3xl font-extrabold mt-1">${fmtINR(calc.net)}</div>
@@ -5455,6 +5569,9 @@
           </div>
           <div class="text-xs text-slate-600 mb-3">${punchSummary(state.punches[today]?.[w.id])}</div>
           ${(() => {
+            if (w.active === false) {
+              return `<div class="w-full py-3 rounded-xl bg-slate-100 text-slate-500 font-semibold text-sm text-center">${escapeHtml(t('ex_employee_no_punch'))}</div>`;
+            }
             const p = state.punches[today]?.[w.id] || {};
             if (p.in && p.out) {
               return `<button disabled class="w-full py-3 rounded-xl bg-slate-100 text-slate-500 font-semibold text-sm">${escapeHtml(t('worker_done_today'))}</button>`;
@@ -5716,7 +5833,7 @@
             <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('pick_your_profile'))}</label>
             <select name="workerId" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-white">
               <option value="">—</option>
-              ${state.staff.map(s => `<option value="${s.id}" ${state.settings.workerId === s.id ? 'selected' : ''}>${escapeHtml(s.name)}${s.role ? ' — ' + escapeHtml(s.role) : ''}</option>`).join('')}
+              ${state.staff.filter(s => s.active !== false).map(s => `<option value="${s.id}" ${state.settings.workerId === s.id ? 'selected' : ''}>${escapeHtml(s.name)}${s.role ? ' — ' + escapeHtml(s.role) : ''}</option>`).join('')}
             </select>
           </div>
 
@@ -6164,7 +6281,7 @@
       const pendEl = $('#bizPendingList');
       const memEl = $('#bizMembersList');
       if (!pendEl || !memEl) return;
-      const staffOpts = (selected) => state.staff.map(s => `<option value="${escapeHtml(s.id)}" ${selected === s.id ? 'selected' : ''}>${escapeHtml(s.name)}${s.role ? ' · ' + escapeHtml(s.role) : ''}</option>`).join('');
+      const staffOpts = (selected) => state.staff.filter(s => s.active !== false).map(s => `<option value="${escapeHtml(s.id)}" ${selected === s.id ? 'selected' : ''}>${escapeHtml(s.name)}${s.role ? ' · ' + escapeHtml(s.role) : ''}</option>`).join('');
       pendEl.innerHTML = pending.length
         ? pending.map(m => `
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
@@ -6668,8 +6785,9 @@
         UPI: s.upiId || '',
         'Salary Type': s.salaryType || '',
         Rate: s.amount ?? '',
-        Status: (s.active !== false) ? 'active' : 'inactive',
+        Status: (s.active !== false) ? 'Active' : 'Ex-Employee',
         'Join Date': s.joinDate || s.joinedAt || '',
+        'Exit Date': s.exitDate || '',
       })), { Name: '(no staff)' });
 
       // --- Attendance grid (one row per employee, columns = days) ---
