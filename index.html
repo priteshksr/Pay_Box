@@ -3547,9 +3547,12 @@
           await cloudSync.ensureClient();
 
           const c = await cloudSync.ensureClient();
-          // Always sign out first to clear any stale/orphaned JWT (e.g.
-          // after a database wipe), then create a fresh anonymous session.
-          try { await c.auth.signOut(); } catch (_) {}
+          // Always create a fresh anonymous session. Sign out first only
+          // if there's already a session, to avoid deleting a usable one.
+          const { data: prevSess } = await c.auth.getSession();
+          if (prevSess?.session) {
+            try { await c.auth.signOut({ scope: 'local' }); } catch (_) {}
+          }
           setMsg(t('welcome_signing_in'));
           try {
             await cloudSync.signInAnonymously();
@@ -3565,6 +3568,13 @@
               return;
             }
             throw e;
+          }
+          // Verify we have a valid session before proceeding
+          const { data: freshSess } = await c.auth.getSession();
+          if (!freshSess?.session?.user?.id) {
+            setMsg('Anonymous sign-in failed. Please try again.', 'red');
+            welcomeUI.busy = false;
+            return;
           }
 
           if (hasCode) {
