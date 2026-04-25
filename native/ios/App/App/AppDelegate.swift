@@ -59,6 +59,10 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        completionHandler([.badge, .sound, .banner])
+        if #available(iOS 14.0, *) {
+            completionHandler([.badge, .sound, .banner])
+        } else {
+            completionHandler([.badge, .sound, .alert])
+        }
     }
 }
