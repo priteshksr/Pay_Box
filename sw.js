@@ -1,4 +1,4 @@
-const CACHE = 'paybox-v1';
+const CACHE = 'paybox-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -45,10 +45,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const CACHEABLE_ORIGINS = [
+    'https://cdn.tailwindcss.com',
+    'https://cdn.jsdelivr.net',
+    'https://fonts.googleapis.com',
+    'https://fonts.gstatic.com',
+  ];
+  if (!CACHEABLE_ORIGINS.some((o) => url.href.startsWith(o))) return;
+
   event.respondWith(
     caches.match(req).then((cached) => {
       const networkFetch = fetch(req).then((res) => {
-        if (res && res.status === 200) {
+        if (res && res.status === 200 && res.type !== 'opaque') {
           const resClone = res.clone();
           caches.open(CACHE).then((cache) => cache.put(req, resClone)).catch(() => {});
         }

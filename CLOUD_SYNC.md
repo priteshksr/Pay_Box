@@ -161,7 +161,7 @@ create policy "mem delete owner or self" on public.members
   for delete using ( public.is_owner(business_id) or user_id = auth.uid() );
 
 -- events: any member can read; workers can only insert events mapped to their
--- own staff_id; owners can insert anything.
+-- own staff_id AND only worker-allowed kinds; owners can insert anything.
 drop policy if exists "ev select members" on public.events;
 drop policy if exists "ev insert member"  on public.events;
 drop policy if exists "ev update owner"   on public.events;
@@ -172,7 +172,13 @@ create policy "ev insert member"  on public.events
   for insert with check (
     author_id = auth.uid()
     and public.is_member(business_id)
-    and ( public.is_owner(business_id) or staff_id = public.my_staff_id(business_id) )
+    and (
+      public.is_owner(business_id)
+      or (
+        staff_id = public.my_staff_id(business_id)
+        and kind in ('punch_in', 'punch_out', 'selfie', 'staff_update')
+      )
+    )
   );
 create policy "ev update owner"   on public.events
   for update using ( public.is_owner(business_id) ) with check ( public.is_owner(business_id) );
