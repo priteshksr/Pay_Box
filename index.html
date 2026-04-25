@@ -3547,24 +3547,24 @@
           await cloudSync.ensureClient();
 
           const c = await cloudSync.ensureClient();
-          const { data: existingSess } = await c.auth.getSession();
-          if (!existingSess?.session) {
-            setMsg(t('welcome_signing_in'));
-            try {
-              await cloudSync.signInAnonymously();
-            } catch (e) {
-              if (e && e.message === 'anonymous_provider_disabled') {
-                setMsg(t('welcome_worker_anon_disabled'), 'red');
-                welcomeUI.busy = false;
-                return;
-              }
-              if (e && e.message === 'anonymous_signin_unsupported_sdk') {
-                setMsg(t('welcome_worker_anon_unsupported'), 'red');
-                welcomeUI.busy = false;
-                return;
-              }
-              throw e;
+          // Always sign out first to clear any stale/orphaned JWT (e.g.
+          // after a database wipe), then create a fresh anonymous session.
+          try { await c.auth.signOut(); } catch (_) {}
+          setMsg(t('welcome_signing_in'));
+          try {
+            await cloudSync.signInAnonymously();
+          } catch (e) {
+            if (e && e.message === 'anonymous_provider_disabled') {
+              setMsg(t('welcome_worker_anon_disabled'), 'red');
+              welcomeUI.busy = false;
+              return;
             }
+            if (e && e.message === 'anonymous_signin_unsupported_sdk') {
+              setMsg(t('welcome_worker_anon_unsupported'), 'red');
+              welcomeUI.busy = false;
+              return;
+            }
+            throw e;
           }
 
           if (hasCode) {
@@ -4484,7 +4484,7 @@
             </div>
             <div>
               <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('phone'))}</label>
-              <input name="phone" value="${escapeHtml(editing?.phone || '')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <input name="phone" type="tel" inputmode="tel" value="${escapeHtml(editing?.phone || '+91')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
@@ -5304,7 +5304,7 @@
           </div>
           <div>
             <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('worker_profile_phone'))}</label>
-            <input name="phone" type="tel" value="${escapeHtml(w.phone || '')}" placeholder="+91…" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+            <input name="phone" type="tel" inputmode="tel" value="${escapeHtml(w.phone || '+91')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
           </div>
           <div class="pt-2 flex gap-2">
             <button type="button" id="workerProfileCancel" class="flex-1 py-3 rounded-lg bg-slate-100 font-semibold text-sm">${escapeHtml(t('cancel'))}</button>
