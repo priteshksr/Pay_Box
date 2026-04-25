@@ -4861,10 +4861,10 @@
               </label>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div id="amountOtRow" class="grid grid-cols-2 gap-3 ${editing?.salaryType === 'piece' ? 'hidden' : ''}">
             <div>
               <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('amount'))} *</label>
-              <input name="amount" type="number" min="0" step="1" required value="${editing?.amount || ''}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <input name="amount" type="number" min="0" step="1" value="${editing?.amount || ''}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
             </div>
             <div>
               <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('ot_rate_label'))}</label>
@@ -4872,7 +4872,7 @@
             </div>
           </div>
           <div id="pieceRateRow" class="${editing?.salaryType === 'piece' ? '' : 'hidden'}">
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('piece_rate'))} (₹/${escapeHtml(t('per_piece'))})</label>
+            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('piece_rate'))} (₹/${escapeHtml(t('per_piece'))}) *</label>
             <input name="pieceRate" type="number" min="0" step="0.5" value="${editing?.pieceRate || ''}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="e.g. 5">
           </div>
 
@@ -4979,7 +4979,9 @@
       });
 
       $$('input[name="salaryType"]').forEach(r => r.addEventListener('change', e => {
-        $('#pieceRateRow')?.classList.toggle('hidden', e.target.value !== 'piece');
+        const isPiece = e.target.value === 'piece';
+        $('#pieceRateRow')?.classList.toggle('hidden', !isPiece);
+        $('#amountOtRow')?.classList.toggle('hidden', isPiece);
       }));
 
       if (editing) renderStaffLoanList(editing.id);
