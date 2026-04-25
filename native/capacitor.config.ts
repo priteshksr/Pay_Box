@@ -41,6 +41,9 @@ const config: CapacitorConfig = {
     Preferences: {
       group: 'PayBoxGroup',
     },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
     Camera: {
       saveToGallery: false,
     },

@@ -378,20 +378,24 @@ Optional Supabase-backed sync with two tiers:
   full-screen role picker:
   - **I'm an Owner** → enter email + password + business name → sign up
     and instantly create a business (join code generated for you).
-  - **I'm a Worker** → enter **phone number + invite code** → instantly
-    mapped to the right staff record. No email, no password, no OTP.
-    The invite code is the proof of identity (it was issued by the
-    owner and is one-shot). The phone is stored on the staff record
-    so the owner can call them.
+  - **I'm a Worker** → two sub-flows:
+    - **First time** (has invite code): tap "First time? I have an
+      invite code" → enter phone + invite code → instantly mapped to
+      the right staff record. The invite code is one-shot proof of
+      identity. The phone is stored on `members.phone` for future
+      reconnect.
+    - **Returning** (default): enter phone number only → tap "Sign in"
+      → the app calls `reconnect_worker_by_phone(phone)` which finds
+      the existing `members` row, re-links it to a new anonymous
+      session, and restores the worker's business association. No
+      invite code needed on subsequent logins.
   - **Use offline** → skip cloud entirely and use PayBox locally (data
     stays on this device).
 
   Returning owners on a new device simply pick their role and sign in —
   PayBox discovers their existing business membership automatically
   (querying the `members` table) and hydrates their state without
-  creating a second business. Returning workers are auto-signed-in via
-  the persisted anonymous JWT on the same device; on a new device the
-  owner rotates the invite (one tap) and reshares.
+  creating a second business.
 
 - **Worker self-service profile** — after signing in, the worker home
   screen exposes a **My profile** sheet where they can set / edit their
@@ -411,8 +415,18 @@ Optional Supabase-backed sync with two tiers:
   (uses the native share sheet on iOS / Android, clipboard on web).
 
 - **Logout** is exposed prominently at the top of Settings (with a
-  confirmation that's role-aware: workers are warned they'll need a new
-  invite code from the owner to sign back in).
+  role-aware confirmation. Workers can sign back in using just their
+  phone number — no new invite code needed).
+
+- **Push notifications** — when running as a native app (iOS / Android),
+  the owner's device registers for push notifications via FCM / APNs.
+  Whenever a worker punches in or out, a Supabase Edge Function
+  (`notify-punch`) fires and delivers a system notification to the
+  owner — even when the app is in the background or closed. Example:
+  *"Ramesh punched in at 9:02 AM"*. Requires a one-time Firebase
+  project setup (see [CLOUD_SYNC.md](CLOUD_SYNC.md)). On the web
+  (PWA), the same events show as in-app toasts via the realtime
+  WebSocket — no Firebase needed.
 
 ---
 
@@ -479,6 +493,8 @@ a spotty connection — the target user.
 | Security       | PIN lock (SHA-256)                        | ✓                                                            |              |               |
 | Security       | Audit log                                 | ✓                                                            |              |               |
 | Multi-device   | Push / pull / realtime sync               |                                                              | ✓            |               |
+| Multi-device   | Push notifications (punch in/out)         |                                                              | ✓            | ✓             |
+| Multi-device   | In-app toast (punch in/out, PWA too)      |                                                              | ✓            |               |
 | Multi-device   | Magic-link auth                           |                                                              | ✓            |               |
 | Languages      | EN / HI / MR / TA / TE                    | ✓                                                            |              |               |
 | Platform       | PWA install, offline, auto-update         | ✓                                                            |              |               |
@@ -493,8 +509,6 @@ a spotty connection — the target user.
 Explicit non-goals so expectations stay clear:
 
 - Multi-business login (one owner = one business today).
-- Push notifications (plugin scaffolded for native, not wired to any
-  delivery backend).
 - Face / fingerprint check-in with liveness detection.
 - Statutory reports (PF / ESI / PT / TDS) — India-specific; planned.
 - In-app salary advance / lending (fintech layer) — planned.

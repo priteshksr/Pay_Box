@@ -174,7 +174,7 @@
         pick_your_profile: 'Pick your staff profile',
         reset_all: 'Reset all data', save: 'Save',
         logout: 'Logout', logout_confirm: 'Sign out of PayBox? Your data stays safe in the cloud and on this device.',
-        logout_worker_confirm: 'Sign out? You\u2019ll need a new invite code from your owner to sign back in. (Your attendance and data are safe.)',
+        logout_worker_confirm: 'Sign out? You can sign back in anytime with your phone number. (Your attendance and data are safe.)',
         signed_in_as: 'Signed in as',
         reset_confirm: 'Erase ALL data? This cannot be undone.',
         saved: 'Saved', all_data_cleared: 'All data cleared', backup_downloaded: 'Backup downloaded',
@@ -343,16 +343,21 @@
         welcome_skip_cloud: 'Skip sign-in — use offline',
         welcome_open_owner_login: 'Are you the owner? Open the owner login →',
         welcome_open_worker_login: 'Are you a worker? Open the worker login →',
-        welcome_worker_pinned_hint: 'This device is set up for staff. Sign in with your phone number and the invite code your owner sent you.',
+        welcome_worker_pinned_hint: 'This device is set up for staff. Enter your phone number to sign in.',
         welcome_phone_label: 'Your phone number',
         welcome_phone_placeholder: '+91 98765 43210',
-        welcome_phone_hint: 'Used so your owner can reach you. No SMS is sent.',
+        welcome_phone_hint: 'The number you registered with when you first joined.',
         welcome_phone_invalid: 'Enter a valid phone number (at least 7 digits).',
+        welcome_worker_first_time: 'First time? I have an invite code',
+        welcome_worker_returning: 'Already joined? Sign in with phone only',
         welcome_invite_code_label: 'Invite code from your owner',
         welcome_invite_code_hint: '8-character code your owner shared with you (WhatsApp / SMS).',
         welcome_invite_code_invalid: 'The invite code looks too short. Check with your owner.',
         welcome_invite_invalid_or_used: 'This invite code is invalid or already used. Ask your owner to send a new one.',
         welcome_worker_continue: 'Continue',
+        welcome_worker_continue_signin: 'Sign in',
+        welcome_worker_phone_not_found: 'No account found for this phone number. If this is your first time, use the invite code your owner gave you.',
+        welcome_worker_reconnecting: 'Signing you in…',
         welcome_worker_anon_disabled: 'Worker login is not enabled on the server. Owner: turn on Anonymous Sign-Ins in Supabase → Authentication → Providers.',
         welcome_worker_anon_unsupported: 'This app version is too old for worker login. Reload the page to update.',
         welcome_owner_pinned_hint: 'Owner sign-in. Workers should use the worker URL instead.',
@@ -736,6 +741,40 @@
           if (!App || !App.addListener) return () => {};
           const handle = App.addListener('appUrlOpen', (ev) => { try { cb(ev); } catch (_) {} });
           return () => { try { handle && handle.remove && handle.remove(); } catch (_) {} };
+        },
+        // Push Notifications — only available inside Capacitor native shell.
+        pushAvailable() { return !!plug('PushNotifications'); },
+        async pushRequestPermission() {
+          const PN = plug('PushNotifications');
+          if (!PN) return false;
+          try {
+            let perm = await PN.checkPermissions();
+            if (perm.receive === 'prompt') { perm = await PN.requestPermissions(); }
+            return perm.receive === 'granted';
+          } catch (_) { return false; }
+        },
+        async pushRegister() {
+          const PN = plug('PushNotifications');
+          if (!PN) return;
+          await PN.register();
+        },
+        onPushRegistration(cb) {
+          const PN = plug('PushNotifications');
+          if (!PN || !PN.addListener) return () => {};
+          const h = PN.addListener('registration', (t) => { try { cb(t); } catch (_) {} });
+          return () => { try { h && h.remove && h.remove(); } catch (_) {} };
+        },
+        onPushReceived(cb) {
+          const PN = plug('PushNotifications');
+          if (!PN || !PN.addListener) return () => {};
+          const h = PN.addListener('pushNotificationReceived', (n) => { try { cb(n); } catch (_) {} });
+          return () => { try { h && h.remove && h.remove(); } catch (_) {} };
+        },
+        onPushAction(cb) {
+          const PN = plug('PushNotifications');
+          if (!PN || !PN.addListener) return () => {};
+          const h = PN.addListener('pushNotificationActionPerformed', (n) => { try { cb(n); } catch (_) {} });
+          return () => { try { h && h.remove && h.remove(); } catch (_) {} };
         },
       };
     })();
@@ -1881,6 +1920,14 @@
                 applyEvent(row);
                 save({ silent: true });
                 render();
+                // Toast for owners when a worker punches in/out.
+                if (isOwner() && (row.kind === 'punch_in' || row.kind === 'punch_out')) {
+                  const staff = (state.staff || []).find(s => s.id === row.staff_id);
+                  const name = staff?.name || row.staff_id;
+                  const time = (row.payload || {}).time || '';
+                  const verb = row.kind === 'punch_in' ? 'punched in' : 'punched out';
+                  toast(time ? `${name} ${verb} at ${time}` : `${name} ${verb}`);
+                }
               })
             .on('postgres_changes',
               { event: '*', schema: 'public', table: 'members', filter: 'business_id=eq.' + state.biz.id },
@@ -2116,6 +2163,43 @@
         return { business_id: bizId, staff_id: staffId };
       }
 
+      // Returning worker: phone-only reconnect (no invite code needed).
+      // Calls the `reconnect_worker_by_phone` RPC which finds the member
+      // row by phone and re-links it to the caller's new anonymous uid.
+      async function reconnectWorkerByPhone(phone) {
+        const c = await client();
+        const { data: sess } = await c.auth.getSession();
+        if (!sess?.session) throw new Error('biz_need_signin');
+        const cleanPhone = (phone || '').replace(/[^0-9+]/g, '') || null;
+        if (!cleanPhone || cleanPhone.replace(/\D/g, '').length < 7) {
+          throw new Error('invalid_phone');
+        }
+        const { data, error } = await c.rpc('reconnect_worker_by_phone', {
+          p_phone: cleanPhone,
+        });
+        if (error) throw error;
+        const raw = Array.isArray(data) ? data[0] : data;
+        const bizId = raw?.out_business_id || raw?.business_id;
+        const staffId = raw?.out_staff_id || raw?.staff_id;
+        if (!bizId || !staffId) throw new Error('phone_not_found');
+        state.biz = {
+          ...state.biz,
+          id: bizId,
+          role: 'worker',
+          ownerId: null,
+          staffId: staffId,
+          joinCode: null,
+          lastEventId: 0,
+          pendingWrites: [],
+          status: 'synced',
+        };
+        state.settings.role = 'worker';
+        state.settings.workerId = staffId;
+        state.cloud.phone = cleanPhone;
+        save();
+        return { business_id: bizId, staff_id: staffId };
+      }
+
       // Owner-side helper: list every invite for the current business so
       // the staff list can show "code: ABCD1234 (sent)" / "(claimed)".
       async function listStaffInvites() {
@@ -2178,7 +2262,7 @@
         boot, subscribe, teardown,
         createBusiness, joinBusiness, approveMember, rejectMember, rotateJoinCode,
         leaveBusiness, listPendingMembers, listAllMembers, discoverMembership,
-        createStaffInvite, revokeStaffInvite, claimStaffInvite, listStaffInvites,
+        createStaffInvite, revokeStaffInvite, claimStaffInvite, reconnectWorkerByPhone, listStaffInvites,
         emit, scheduleConfigPush, pushConfig, pullConfig, pullEventsSince,
         applyEvent, extractConfig, flushQueue,
         onStatus, currentStatus, active, isOwner,
@@ -2303,6 +2387,7 @@
       mode: 'signup',
       busy: false,
       lockedRole: _roleParam, // null when neutral, 'owner' / 'worker' when locked
+      workerHasCode: false,   // false = phone-only (returning), true = phone+invite (first-time)
     };
 
     function renderWelcome(root) {
@@ -2420,13 +2505,23 @@
                </details>`
             : '');
 
-      // -------- WORKER form: phone + invite code only --------
-      // No email, no password, no signup/signin toggle. The invite code
-      // proves identity (it was issued by the owner and is one-shot);
-      // the phone is just stored on the worker's staff record so the
-      // owner can call them.
+      // -------- WORKER form: two modes --------
+      // Default (workerHasCode=false): phone-only → returning worker reconnect.
+      // Toggle (workerHasCode=true):   phone + invite code → first-time claim.
+      const wHasCode = welcomeUI.workerHasCode;
+      const inviteSection = wHasCode ? `
+          <div>
+            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_invite_code_label'))}</label>
+            <input name="joinCode" required maxlength="10" autocomplete="one-time-code"
+                   class="w-full mt-1 px-3 py-3 border border-slate-200 rounded-lg text-lg font-mono uppercase tracking-[0.35em] text-center">
+            <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(t('welcome_invite_code_hint'))}</div>
+          </div>` : '';
+      const workerToggle = wHasCode
+        ? `<button type="button" id="workerToggleCode" class="w-full text-xs font-semibold text-emerald-700">${escapeHtml(t('welcome_worker_returning'))}</button>`
+        : `<button type="button" id="workerToggleCode" class="w-full text-xs font-semibold text-emerald-700">${escapeHtml(t('welcome_worker_first_time'))}</button>`;
+      const workerCta = wHasCode ? t('welcome_worker_continue') : t('welcome_worker_continue_signin');
       const workerForm = `
-        <form id="welcomeAuthForm" class="space-y-4" data-flow="worker">
+        <form id="welcomeAuthForm" class="space-y-4" data-flow="worker" data-has-code="${wHasCode ? '1' : '0'}">
           ${supabaseInputs}
           <div>
             <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_phone_label'))}</label>
@@ -2436,14 +2531,10 @@
                    class="w-full mt-1 px-3 py-3 border border-slate-200 rounded-lg text-base">
             <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(t('welcome_phone_hint'))}</div>
           </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_invite_code_label'))}</label>
-            <input name="joinCode" required maxlength="10" autocomplete="one-time-code"
-                   class="w-full mt-1 px-3 py-3 border border-slate-200 rounded-lg text-lg font-mono uppercase tracking-[0.35em] text-center">
-            <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(t('welcome_invite_code_hint'))}</div>
-          </div>
-          <button type="submit" class="w-full py-3 rounded-lg bg-emerald-600 text-white font-semibold text-sm">${escapeHtml(t('welcome_worker_continue'))}</button>
+          ${inviteSection}
+          <button type="submit" class="w-full py-3 rounded-lg bg-emerald-600 text-white font-semibold text-sm">${escapeHtml(workerCta)}</button>
           <div id="welcomeMsg" class="text-xs text-slate-500 min-h-[1em]"></div>
+          ${workerToggle}
         </form>`;
 
       // -------- OWNER form: classic email + password --------
@@ -2497,6 +2588,10 @@
         welcomeUI.mode = welcomeUI.mode === 'signup' ? 'signin' : 'signup';
         renderWelcome(root);
       });
+      $('#workerToggleCode')?.addEventListener('click', () => {
+        welcomeUI.workerHasCode = !welcomeUI.workerHasCode;
+        renderWelcome(root);
+      });
       $('#welcomeAuthForm').addEventListener('submit', welcomeSubmit);
     }
 
@@ -2519,17 +2614,19 @@
       if (!url || !anonKey) { setMsg(t('welcome_missing_cloud'), 'red'); return; }
 
       // ===================== WORKER FLOW =====================
-      // Phone + invite code → anonymous Supabase sign-in → claim_staff_invite.
-      // No email, no password, no SMS. The invite code is the proof.
+      // Two modes controlled by `data-has-code` on the form:
+      //   "1" → first-time: phone + invite code → anonymous sign-in → claim_staff_invite
+      //   "0" → returning: phone only → anonymous sign-in → reconnect_worker_by_phone
       if (flow === 'worker') {
         const phoneRaw = (f.get('phone') || '').trim();
         const phone = phoneRaw.replace(/[^0-9+]/g, '');
-        const joinCode = (f.get('joinCode') || '').trim().toUpperCase();
+        const hasCode = form.dataset.hasCode === '1';
+        const joinCode = hasCode ? (f.get('joinCode') || '').trim().toUpperCase() : '';
 
         if (!phone || phone.replace(/\D/g, '').length < 7) {
           setMsg(t('welcome_phone_invalid'), 'red'); return;
         }
-        if (!joinCode || joinCode.length < 6) {
+        if (hasCode && (!joinCode || joinCode.length < 6)) {
           setMsg(t('welcome_invite_code_invalid'), 'red'); return;
         }
 
@@ -2539,9 +2636,6 @@
           await cloudSync.enable({ url, anonKey });
           await cloudSync.ensureClient();
 
-          // Reuse an existing anonymous session if one is in localStorage —
-          // the worker may be re-trying after a typo and we don't want to
-          // pile up unused anon users.
           const c = await cloudSync.ensureClient();
           const { data: existingSess } = await c.auth.getSession();
           if (!existingSess?.session) {
@@ -2563,21 +2657,41 @@
             }
           }
 
-          setMsg(t('welcome_joining_biz'));
-          // displayName intentionally omitted on first screen — worker
-          // sets it from My Profile. We pass null so the server uses the
-          // owner-supplied default name from the invite.
-          try {
-            await cloudBiz.claimStaffInvite(joinCode, null, phone);
-          } catch (err) {
-            const m = (err && err.message) || '';
-            if (/invalid_or_used_invite|invalid_code/i.test(m)) {
-              setMsg(t('welcome_invite_invalid_or_used'), 'red');
-              welcomeUI.busy = false;
-              return;
+          if (hasCode) {
+            // ---------- FIRST-TIME: invite code path ----------
+            setMsg(t('welcome_joining_biz'));
+            try {
+              await cloudBiz.claimStaffInvite(joinCode, null, phone);
+            } catch (err) {
+              const m = (err && err.message) || '';
+              if (/invalid_or_used_invite|invalid_code/i.test(m)) {
+                setMsg(t('welcome_invite_invalid_or_used'), 'red');
+                welcomeUI.busy = false;
+                return;
+              }
+              throw err;
             }
-            throw err;
+          } else {
+            // ---------- RETURNING: phone-only reconnect ----------
+            setMsg(t('welcome_worker_reconnecting'));
+            try {
+              await cloudBiz.reconnectWorkerByPhone(phone);
+            } catch (err) {
+              const m = (err && err.message) || '';
+              if (/phone_not_found/i.test(m)) {
+                setMsg(t('welcome_worker_phone_not_found'), 'red');
+                welcomeUI.busy = false;
+                return;
+              }
+              if (/invalid_phone/i.test(m)) {
+                setMsg(t('welcome_phone_invalid'), 'red');
+                welcomeUI.busy = false;
+                return;
+              }
+              throw err;
+            }
           }
+
           await cloudBiz.boot();
           state.cloud.phone = phone;
           state.settings.role = 'worker';
@@ -2703,6 +2817,7 @@
         welcomeUI.step = 'auth';
         welcomeUI.role = welcomeUI.lockedRole;
         welcomeUI.mode = 'signin';
+        welcomeUI.workerHasCode = false;
         save({ silent: true });
       }
 
@@ -4546,6 +4661,7 @@
         state.cloud.isAnonymous = false;
         if (isWorker) { state.cloud.phone = ''; }
       }
+      welcomeUI.workerHasCode = false;
       if (welcomeUI.lockedRole) {
         welcomeUI.step = 'auth';
         welcomeUI.role = welcomeUI.lockedRole;
@@ -5863,7 +5979,54 @@
       // channel without delaying the first paint.
       cloudSync.boot();
       cloudBiz.boot();
+
+      // Push notification setup — owners only, native shells only.
+      // Requests permission, registers with FCM/APNs, and upserts the
+      // device token into the push_tokens table so the Edge Function
+      // can deliver notifications when workers punch in/out.
+      initPushNotifications();
     })();
+
+    async function initPushNotifications() {
+      if (!Native.pushAvailable()) return;
+      if (!state.settings.onboarded || state.settings.role !== 'owner') return;
+      if (!state.biz?.id || !cloudSync.isConfigured()) return;
+
+      const granted = await Native.pushRequestPermission();
+      if (!granted) return;
+
+      Native.onPushRegistration(async (token) => {
+        if (!token?.value) return;
+        try {
+          const c = await cloudSync.ensureClient();
+          const { data: sess } = await c.auth.getSession();
+          if (!sess?.session) return;
+          await c.from('push_tokens').upsert({
+            user_id: sess.session.user.id,
+            business_id: state.biz.id,
+            token: token.value,
+            platform: Native.platform,
+          }, { onConflict: 'user_id,token' });
+        } catch (e) { console.warn('[push] token save failed:', e); }
+      });
+
+      Native.onPushReceived((notification) => {
+        if (notification?.title || notification?.body) {
+          toast(notification.body || notification.title);
+        }
+      });
+
+      Native.onPushAction((action) => {
+        const data = action?.notification?.data;
+        if (data?.tab) {
+          state.currentTab = data.tab;
+          save({ silent: true });
+          render();
+        }
+      });
+
+      await Native.pushRegister();
+    }
   </script>
 </body>
 </html>
