@@ -54,7 +54,7 @@ jobs:
 
       - name: Capacitor sync (generate native bridge files)
         working-directory: native
-        run: npx cap sync ios --no-build
+        run: npx cap sync ios
 
       - name: Cache CocoaPods
         uses: actions/cache@v4

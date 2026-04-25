@@ -53,7 +53,7 @@ jobs:
 
       - name: Capacitor sync (generate native bridge files)
         working-directory: native
-        run: npx cap sync android --no-build
+        run: npx cap sync android
 
       # --- Debug APK (always, no secrets needed) ---------------------
       - name: Build debug APK
