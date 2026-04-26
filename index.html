@@ -422,6 +422,18 @@
         live_map_offline: 'Offline', live_map_active: 'Active',
         live_map_last_seen: 'Last seen {when}',
         live_map_loading: 'Loading map…',
+        live_map_meta_empty: 'Waiting for the first ping',
+        live_map_on_map: 'on map',
+        live_map_diag_in_shift: 'Clocked in', live_map_diag_consented: 'Consented', live_map_diag_on_map: 'On map',
+        live_map_hint_no_shift: 'No employees are clocked in right now. Tracking starts when a worker punches in.',
+        live_map_hint_no_consent: 'Workers are clocked in but none have agreed to share their location yet. They will be asked at next punch-in.',
+        live_map_hint_no_pings_yet: 'Workers are clocked in and have agreed — first ping can take up to a minute to arrive.',
+        live_map_hint_pwa_limitation: 'Browser tabs stop sharing GPS when minimised. Install the PayBox app for non-stop tracking.',
+        live_map_refreshed: 'Map refreshed',
+        live_map_test: 'Test pipeline', live_map_test_running: 'Streaming your location… (60 s)',
+        live_map_test_marker: 'You (test)', live_map_test_marker_hint: 'This is a local preview — workers appear here for real while clocked in.',
+        live_map_test_denied: 'Location permission denied', live_map_test_failed: 'Could not get your location', live_map_test_unsupported: 'Geolocation not supported on this device',
+        refresh: 'Refresh',
         route_today: "Today's route", route_view: 'View route', route_no_data: 'No route recorded for this day',
         route_distance: 'Distance', route_points: 'Points', route_start: 'Start', route_end: 'End',
         route_pick_date: 'Pick date', route_export_gpx: 'Export GPX',
@@ -5052,20 +5064,28 @@
       }
       openSheet(`
         <div class="flex items-center justify-between mb-3">
-          <div>
+          <div class="min-w-0">
             <div class="text-lg font-bold tracking-tight">${escapeHtml(t('live_map'))}</div>
-            <div class="text-xs text-slate-500" id="liveMapMeta">${escapeHtml(t('live_map_loading'))}</div>
+            <div class="text-xs text-slate-500 truncate" id="liveMapMeta">${escapeHtml(t('live_map_loading'))}</div>
           </div>
-          <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-1">
+          <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-1 flex-shrink-0">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>${escapeHtml(t('live_map_active'))}
           </span>
         </div>
-        <div id="liveMap" class="w-full h-[60vh] rounded-2xl overflow-hidden border border-slate-200 bg-slate-100" style="min-height:380px;"></div>
+        <div id="liveMapDiag" class="grid grid-cols-3 gap-2 mb-3 text-center"></div>
+        <div id="liveMap" class="w-full h-[52vh] rounded-2xl overflow-hidden border border-slate-200 bg-slate-100" style="min-height:340px;"></div>
         <div id="liveMapList" class="mt-3 space-y-1.5"></div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <button id="liveMapRefresh" class="btn btn-secondary btn-sm">${escapeHtml(t('refresh') || 'Refresh')}</button>
+          <button id="liveMapTest" class="btn btn-primary btn-sm">${escapeHtml(t('live_map_test'))}</button>
+        </div>
       `);
 
       let unsubLive = null;
       let pruneTimer = null;
+      let testMarker = null;
+      let testTimer = null;
+      let testWatchIdRef = { id: null };
       const markers = new Map();         // staff_id → leaflet marker
       const lastSeen = new Map();        // staff_id → ts (ms)
       const lastPos = new Map();         // staff_id → {lat,lng}
@@ -5074,6 +5094,11 @@
       const cleanup = () => {
         try { unsubLive && unsubLive(); } catch (_) {}
         try { pruneTimer && clearInterval(pruneTimer); } catch (_) {}
+        try { testTimer && clearTimeout(testTimer); } catch (_) {}
+        if (navigator.geolocation && testWatchIdRef.id != null) {
+          try { navigator.geolocation.clearWatch(testWatchIdRef.id); } catch (_) {}
+          testWatchIdRef.id = null;
+        }
       };
       const sheet = $('#sheet');
       const obs = new MutationObserver(() => {
@@ -5108,6 +5133,53 @@
           });
         }
 
+        function diagCounts() {
+          const today = todayISO();
+          const punchedToday = state.punches[today] || {};
+          const allActiveStaff = (state.staff || []).filter(s => s.active !== false);
+          const inShift = allActiveStaff.filter(s => {
+            const p = punchedToday[s.id];
+            return p && p.in && !p.out;
+          });
+          const consented = allActiveStaff.filter(s => s.locConsent?.agreed);
+          return { staff: allActiveStaff.length, inShift: inShift.length, consented: consented.length };
+        }
+
+        function refreshDiag() {
+          const d = diagCounts();
+          const counts = [
+            { v: d.inShift, k: 'live_map_diag_in_shift' },
+            { v: d.consented, k: 'live_map_diag_consented' },
+            { v: markers.size, k: 'live_map_diag_on_map' },
+          ];
+          $('#liveMapDiag').innerHTML = counts.map(c => `
+            <div class="card p-2">
+              <div class="text-xl font-extrabold leading-none">${c.v}</div>
+              <div class="text-[10px] text-slate-500 mt-1 uppercase font-semibold tracking-wider">${escapeHtml(t(c.k))}</div>
+            </div>`).join('');
+        }
+
+        function emptyStateHtml() {
+          const d = diagCounts();
+          // Decide which hint to show first — most actionable wins.
+          const bullets = [];
+          if (d.inShift === 0) {
+            bullets.push(t('live_map_hint_no_shift'));
+          } else if (d.consented === 0) {
+            bullets.push(t('live_map_hint_no_consent'));
+          } else {
+            bullets.push(t('live_map_hint_no_pings_yet'));
+          }
+          bullets.push(t('live_map_hint_pwa_limitation'));
+          return `
+            <div class="card p-3 space-y-2">
+              <div class="text-sm font-semibold text-slate-700">${escapeHtml(t('live_map_empty'))}</div>
+              <ul class="text-[11px] text-slate-500 leading-relaxed space-y-1.5 list-disc pl-4">
+                ${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}
+              </ul>
+            </div>`;
+        }
+
         function refreshList() {
           const rows = [...lastSeen.entries()]
             .sort((a, b) => b[1] - a[1])
@@ -5127,8 +5199,12 @@
                   <button data-live-route="${escapeHtml(sid)}" class="text-[11px] font-semibold px-2 py-1 rounded-md bg-brand-50 text-brand-700 border border-brand-200">${escapeHtml(t('route_view'))}</button>
                 </div>`;
             }).join('');
-          $('#liveMapList').innerHTML = rows || `<div class="text-center text-xs text-slate-400 py-3">${escapeHtml(t('live_map_empty'))}</div>`;
-          $('#liveMapMeta').textContent = `${markers.size} ${markers.size === 1 ? t('employee') : t('employees')}`;
+          $('#liveMapList').innerHTML = rows || emptyStateHtml();
+          const onMap = markers.size;
+          $('#liveMapMeta').textContent = onMap > 0
+            ? `${onMap} ${onMap === 1 ? t('employee') : t('employees')} ${t('live_map_on_map')}`
+            : t('live_map_meta_empty');
+          refreshDiag();
           $$('[data-live-route]').forEach(b => b.addEventListener('click', (e) => {
             e.stopPropagation();
             openRouteSheet(b.dataset.liveRoute, todayISO());
@@ -5186,6 +5262,85 @@
           }
           refreshList();
         }, 30 * 1000);
+
+        // Manual refresh — re-fetch latest pings and rebuild markers.
+        $('#liveMapRefresh')?.addEventListener('click', async () => {
+          const btn = $('#liveMapRefresh');
+          btn.disabled = true; btn.style.opacity = '0.5';
+          try {
+            const fresh = await cloudBiz.tracker.fetchLatestPerStaff();
+            const seen = new Set(fresh.map(r => r.staff_id));
+            // Drop markers for staff that haven't pinged in 24h.
+            for (const sid of [...markers.keys()]) {
+              if (!seen.has(sid)) {
+                try { map.removeLayer(markers.get(sid)); } catch {}
+                markers.delete(sid); lastSeen.delete(sid); lastPos.delete(sid);
+              }
+            }
+            fresh.forEach(applyPing);
+            if (markers.size) {
+              const grp = L.featureGroup([...markers.values()]);
+              map.fitBounds(grp.getBounds().pad(0.25), { maxZoom: 16 });
+            }
+            refreshList();
+            toast(t('live_map_refreshed'));
+          } finally {
+            btn.disabled = false; btn.style.opacity = '';
+          }
+        });
+
+        // Owner self-test — verifies the whole pipeline (geolocation
+        // permission → device → map render) without depending on a
+        // worker being clocked in. Pure client-side preview: it does
+        // NOT touch the database, so it doesn't pollute route history.
+        $('#liveMapTest')?.addEventListener('click', async () => {
+          if (!navigator.geolocation) { toast(t('live_map_test_unsupported')); return; }
+          const btn = $('#liveMapTest');
+          btn.disabled = true; btn.style.opacity = '0.5';
+          btn.textContent = t('live_map_test_running');
+          if (testMarker) { try { map.removeLayer(testMarker); } catch {} testMarker = null; }
+          let cleared = false;
+          const stopTest = () => {
+            if (cleared) return; cleared = true;
+            if (testWatchIdRef.id != null) {
+              try { navigator.geolocation.clearWatch(testWatchIdRef.id); } catch {}
+              testWatchIdRef.id = null;
+            }
+            if (testTimer) { clearTimeout(testTimer); testTimer = null; }
+            btn.disabled = false; btn.style.opacity = '';
+            btn.textContent = t('live_map_test');
+            if ($('#liveMapMeta')) refreshList();
+          };
+          try {
+            const onPos = (pos) => {
+              const { latitude, longitude } = pos.coords;
+              const ll = [latitude, longitude];
+              const html = `
+                <div class="paybox-marker" style="--ring:#a855f7">
+                  <div class="paybox-marker-bubble" style="background:#faf5ff;color:#7e22ce">★</div>
+                </div>`;
+              const icon = L.divIcon({ html, className: 'paybox-marker-wrap', iconSize: [44, 44], iconAnchor: [22, 22] });
+              if (!testMarker) {
+                testMarker = L.marker(ll, { icon, title: t('live_map_test_marker') }).addTo(map);
+                testMarker.bindPopup(`<div style="font-weight:600">${escapeHtml(t('live_map_test_marker'))}</div><div style="font-size:11px;color:#64748b">${escapeHtml(t('live_map_test_marker_hint'))}</div>`).openPopup();
+                map.setView(ll, Math.max(15, map.getZoom() || 15));
+              } else {
+                testMarker.setLatLng(ll);
+              }
+              if ($('#liveMapMeta')) $('#liveMapMeta').textContent = t('live_map_test_running');
+            };
+            const onErr = (e) => {
+              toast(e?.code === 1 ? t('live_map_test_denied') : t('live_map_test_failed'));
+              stopTest();
+            };
+            testWatchIdRef.id = navigator.geolocation.watchPosition(onPos, onErr, {
+              enableHighAccuracy: true, maximumAge: 5000, timeout: 15000,
+            });
+            // Auto-stop after 60 s — long enough to verify, short enough
+            // to not chew battery.
+            testTimer = setTimeout(stopTest, 60 * 1000);
+          } catch (_) { stopTest(); }
+        });
 
         refreshList();
       })();
