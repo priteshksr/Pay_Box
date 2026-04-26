@@ -43,6 +43,16 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Background location foreground service. Required by
+             @capacitor-community/background-geolocation on Android 8+.
+             The service runs only while the worker is clocked in and
+             a sticky notification is shown so the user is always aware
+             that their location is being shared (Play Store policy). -->
+        <service
+            android:name="com.equimaps.capacitor_background_geolocation.BackgroundGeolocationService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
     </application>
 
     <!-- Permissions -->
@@ -55,9 +65,28 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Live location tracking (Phase 6 — native).
+         FINE + COARSE drive the foreground watcher; BACKGROUND lets
+         the foreground service keep delivering fixes when the app is
+         backgrounded; FOREGROUND_SERVICE is the umbrella permission for
+         Android 9+; FOREGROUND_SERVICE_LOCATION is a finer-grained
+         declaration required on Android 14+; POST_NOTIFICATIONS is
+         needed on Android 13+ so the sticky notification shows. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <!-- Hardware features — declared "not required" so devices without
          a camera can still install the app (payslip printing doesn't
-         need one). -->
+         need one). GPS is also "not required" so workers without a GPS
+         radio (rare, but tablets exist) can still use the rest of the
+         app — the live tracker simply does nothing on those devices. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.location.network" android:required="false" />
 </manifest>

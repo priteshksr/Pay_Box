@@ -57,6 +57,23 @@
 	<string>PayBox does not use the microphone.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>PayBox uses Face ID to unlock the app when PIN lock is enabled.</string>
+	<!-- Live location tracking (Phase 6 — iOS).
+	     "WhenInUse" covers foreground sampling; "Always" is what unlocks
+	     the @capacitor-community/background-geolocation watcher while
+	     the worker is clocked in but the app is backgrounded. We also
+	     declare the Location background mode below so iOS keeps the
+	     CLLocationManager alive when the app is suspended. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>PayBox shares your live location with your employer only while you are clocked in, so the team can see who is on a route.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>PayBox keeps sharing your location while the app is in the background — but only while you are clocked in. Sharing stops automatically when you punch out.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>PayBox keeps sharing your location while the app is in the background — but only while you are clocked in. Sharing stops automatically when you punch out.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+	</array>
 	<!-- Supabase magic-link callbacks use paybox:// so the user is
 	     returned to the app after authenticating in Mobile Safari. -->
 	<key>CFBundleURLTypes</key>

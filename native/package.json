@@ -18,6 +18,7 @@
     "clean": "rm -rf www/* node_modules && echo 'cleaned'"
   },
   "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.21",
     "@capacitor/android": "^6.2.0",
     "@capacitor/app": "^6.0.2",
     "@capacitor/camera": "^6.1.2",

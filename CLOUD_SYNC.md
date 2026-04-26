@@ -561,11 +561,90 @@ create policy "push_tokens_delete_own" on public.push_tokens
   for delete to authenticated
   using (user_id = auth.uid());
 
--- 12) Realtime — publish the tables so postgres_changes events fire.
+-- 12) Live location pings — owner-only opt-in feature. Captures a GPS
+-- stream while a worker is clocked in so the owner can see live
+-- markers on a map and replay each day's route. Disabled by default
+-- (settings.locTracking.enabled) and gated behind a worker consent
+-- modal. Punch-time GPS continues to live on `events.payload`; this
+-- table is *only* for the in-shift moving-dot stream.
+create table if not exists public.location_pings (
+  id           bigserial primary key,
+  business_id  uuid       not null references public.businesses(id) on delete cascade,
+  staff_id     text       not null,
+  author_id    uuid       not null references auth.users(id),
+  ts           timestamptz not null default now(),
+  lat          double precision not null,
+  lng          double precision not null,
+  acc          real,
+  speed        real,
+  heading      real,
+  battery      real,
+  src          text       not null default 'web' check (src in ('web','android','ios','manual'))
+);
+create index if not exists location_pings_biz_staff_ts_idx
+  on public.location_pings(business_id, staff_id, ts desc);
+create index if not exists location_pings_biz_day_idx
+  on public.location_pings(business_id, (date_trunc('day', ts)));
+
+alter table public.location_pings enable row level security;
+drop policy if exists "loc select members"     on public.location_pings;
+drop policy if exists "loc insert author"      on public.location_pings;
+drop policy if exists "loc update owner"       on public.location_pings;
+drop policy if exists "loc delete owner"       on public.location_pings;
+create policy "loc select members" on public.location_pings
+  for select using (
+    public.is_owner(business_id)
+    or (
+      public.is_member(business_id)
+      and staff_id = public.my_staff_id(business_id)
+    )
+  );
+create policy "loc insert author" on public.location_pings
+  for insert with check (
+    author_id = auth.uid()
+    and public.is_member(business_id)
+    and (
+      public.is_owner(business_id)
+      or staff_id = public.my_staff_id(business_id)
+    )
+  );
+create policy "loc update owner" on public.location_pings
+  for update using (public.is_owner(business_id))
+  with check (public.is_owner(business_id));
+create policy "loc delete owner" on public.location_pings
+  for delete using (public.is_owner(business_id));
+
+create or replace function public.prune_location_pings(biz uuid, days int default 30)
+returns int language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  if not public.is_owner(biz) then raise exception 'not_owner'; end if;
+  delete from public.location_pings
+   where business_id = biz
+     and ts < now() - make_interval(days => greatest(1, days));
+  get diagnostics n = row_count;
+  return n;
+end $$;
+revoke all on function public.prune_location_pings(uuid, int) from public;
+grant execute on function public.prune_location_pings(uuid, int) to authenticated;
+
+-- 13) Realtime — publish the tables so postgres_changes events fire.
 alter publication supabase_realtime add table public.businesses;
 alter publication supabase_realtime add table public.members;
 alter publication supabase_realtime add table public.events;
 alter publication supabase_realtime add table public.staff_invites;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'location_pings'
+  ) then
+    alter publication supabase_realtime add table public.location_pings;
+  end if;
+end $$;
+notify pgrst, 'reload schema';
 ```
 
 > **Upgrading from v1 (single-blob `mybox_state`)?** Keep the old table — the
@@ -693,6 +772,90 @@ fields are simply omitted — the punch still records normally.
 On the client side, `applyEvent` stores these as `inLat`/`inLng`/`inLocAcc`
 (for punch-in) and `outLat`/`outLng`/`outLocAcc` (for punch-out) on the
 punch object in `state.punches[date][staffId]`.
+
+## Live location tracking (`location_pings`)
+
+PayBox can stream **continuous** GPS while a worker is clocked in, so the
+owner sees a Live Map of moving dots and can replay each day's route.
+This is **opt-in per business** and **off by default** — the schema and
+RLS still apply but the client never starts the capture loop unless the
+owner enables `settings.locTracking.enabled`.
+
+### Mental model
+
+| Concept            | Where it lives                                                        |
+| ------------------ | --------------------------------------------------------------------- |
+| Punch-time GPS     | `events.payload.{lat,lng,locAcc}` — one row per punch (existing).     |
+| In-shift stream    | `public.location_pings` — many rows per shift (new).                  |
+| Live transport     | Realtime **broadcast** channel `paybox_loc:<bizId>` (no DB hop).      |
+| Hydration on open  | `select * from location_pings where ... order by ts desc limit 1` per staff. |
+
+### Row shape
+
+| Column        | Type             | Notes                                              |
+| ------------- | ---------------- | -------------------------------------------------- |
+| `id`          | bigserial pk     |                                                    |
+| `business_id` | uuid fk          | Business that owns the row                         |
+| `staff_id`    | text             | Same staff_id used in `members` and `events`       |
+| `author_id`   | uuid fk auth     | The user who recorded the ping (RLS pivot)         |
+| `ts`          | timestamptz      | Server time the ping was recorded                  |
+| `lat` / `lng` | double precision | WGS84                                              |
+| `acc`         | real             | Horizontal accuracy in meters (nullable)           |
+| `speed`       | real             | m/s (web `coords.speed`, native `velocity`)        |
+| `heading`     | real             | Degrees from true north                            |
+| `battery`     | real             | 0..1 if available, used by the throttler          |
+| `src`         | text             | `web` / `android` / `ios` / `manual`               |
+
+### RLS policies
+
+- `loc select members` — owners see every row in their biz; workers see
+  only their own (`staff_id = my_staff_id(biz)`).
+- `loc insert author` — `author_id = auth.uid()`, must be a member, must
+  insert under their own `staff_id` (or be the owner).
+- `loc update / delete owner` — owner-only; workers cannot alter or
+  delete their own pings to keep the audit trail honest.
+
+### Capture rules (client)
+
+The `tracker` module inside `cloudBiz` enforces three filters before a
+ping is queued:
+
+1. **Time gate** — at most one ping per 60 s (90 s when battery < 20 %).
+2. **Distance gate** — drop if moved < 30 m from the previous accepted
+   ping. Pings while stationary fall back to one every ~3 min so the
+   owner still sees a "still here" heartbeat.
+3. **Shift gate** — only active between `punch_in` and `punch_out`.
+
+Pings are buffered in memory + `localStorage` and flushed in batches of
+up to 20 every 3 min, on `visibilitychange`, on `online`, on punch-out,
+and before unload. Each batch does a single `insert([...])` plus a
+`channel.send({ type: 'broadcast', event: 'pings', payload })` so live
+subscribers update without a DB read.
+
+### Free-tier impact (per business, 30 active staff)
+
+- Per row ≈ 80 B in DB. 30 × 8 h × 1 ping/min × 26 days × ~50 % keep
+  rate ≈ **190 K rows ≈ 15 MB DB / month**.
+- Realtime ≈ 15 K msgs / day / business ≈ **390 K / month** (free quota
+  is 2 M msgs).
+- Storage: nothing new (no images).
+- For ≥ 5 active businesses on the free tier, raise the distance gate to
+  ~75 m or stretch the time gate to 90 s.
+- Use `select prune_location_pings('<biz-uuid>', 30);` to keep only the
+  last 30 days of pings (owner-only RPC). Schedule this from the
+  Supabase dashboard's `pg_cron` if you want it automatic.
+
+### Privacy contract
+
+- The owner toggle is `settings.locTracking = { enabled, required }`.
+- Each worker stores `staff[i].locConsent = { agreed, agreedAt, version }`
+  set on first punch-in after the owner enables tracking. Tracking is
+  **never** started without `agreed === true` (or `required === true`,
+  in which case the worker can still decline but their punches won't
+  insert pings — they can also choose to leave the business).
+- The worker home shows a persistent "Location sharing on" banner while
+  capture is running, plus a "Locations shared today" tile in their
+  profile so they can see exactly what's been collected.
 
 ## Push notifications (optional)
 

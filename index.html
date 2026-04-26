@@ -13,11 +13,11 @@
   <meta name="format-detection" content="telephone=no" />
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
-    script-src  'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net;
-    style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
+    script-src  'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com;
+    style-src   'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com;
     font-src    'self' https://fonts.gstatic.com;
-    img-src     'self' data: blob:;
-    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://cdn.tailwindcss.com;
+    img-src     'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com;
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://unpkg.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com;
     frame-src   'none';
     object-src  'none';
     base-uri    'self';
@@ -218,6 +218,34 @@
 
     [dir="rtl"] svg.chevron-right { transform: scaleX(-1); }
 
+    /* ── Leaflet marker styling for Live Map / Route ───────────────── */
+    .paybox-marker-wrap { background: transparent; border: 0; }
+    .paybox-marker {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.18));
+    }
+    .paybox-marker-bubble {
+      width: 36px; height: 36px;
+      border-radius: 999px;
+      background: #fff;
+      color: #0f172a;
+      font-weight: 700; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      border: 3px solid var(--ring, #059669);
+    }
+    .paybox-pin .paybox-pin-dot {
+      width: 14px; height: 14px;
+      border-radius: 999px;
+      background: #2b43ec;
+      border: 3px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,.25);
+    }
+    /* Route polyline + circle markers inherit Leaflet defaults but the
+       circle markers need the cursor to feel interactive. */
+    .leaflet-container { font-family: inherit; }
+    .leaflet-control-attribution { font-size: 9px !important; }
+
     /* Hide default details/summary marker on Safari + Chrome */
     details > summary { list-style: none; }
     details > summary::-webkit-details-marker { display: none; }
@@ -367,6 +395,36 @@
         punch_selfie_required: 'Selfie on punch', punch_selfie_hint: 'Employee must take a photo when punching in/out',
         punch_gps_required: 'GPS location on punch', punch_gps_hint: 'Capture employee location on punch in/out',
         view_on_map: 'View on map', punch_in_loc: 'Punch-in location', punch_out_loc: 'Punch-out location',
+        // Live tracking
+        loc_tracking_title: 'Live location tracking', loc_tracking_hint: 'Stream GPS while staff are clocked in',
+        loc_tracking_enabled: 'Enable live tracking', loc_tracking_enabled_hint: 'Off by default. Workers must consent.',
+        loc_tracking_required: 'Required (no opt-out)', loc_tracking_required_hint: 'Workers can decline but no GPS is recorded; they can still punch.',
+        loc_tracking_interval: 'Min interval between pings (sec)', loc_tracking_minmove: 'Min move between pings (m)',
+        loc_tracking_prune: 'Delete pings older than 30 days', loc_tracking_pruned: '{n} old pings deleted',
+        loc_consent_title: 'Share live location?',
+        loc_consent_what: 'PayBox can share your GPS with the owner while you are clocked in, so the team can see who is on a route and where help is needed.',
+        loc_consent_when: 'Sharing only happens between punch-in and punch-out. It stops automatically when you punch out, log out, or close the app.',
+        loc_consent_who: 'Only the owner of this business can see your live location and route history. Pings are pruned regularly.',
+        loc_consent_required_hint: 'Your business has marked tracking as required. You can still decline; no GPS will be recorded but punches will continue to work.',
+        loc_consent_yes: 'Share my location', loc_consent_no: "Don't share",
+        loc_banner_on: 'Location sharing on · pauses on punch out', loc_banner_paused: 'Location sharing paused', loc_banner_off: 'Location sharing off', loc_banner_consent_pending: 'Tap to enable location sharing for this shift',
+        loc_today_count: '{n} pings shared today', loc_view_my_data: 'My shared locations',
+        worker_loc_title: 'Locations I share', worker_loc_hint: 'Transparency on what your employer can see while you are clocked in.',
+        worker_loc_status: 'Status right now', worker_loc_status_hint: 'Sharing only happens between punch-in and punch-out.',
+        worker_loc_today_pings: 'Pings today', worker_loc_last_seen: 'Last shared',
+        worker_loc_today_hint: 'Updated as your device sends new GPS fixes.',
+        worker_loc_consent_title: 'Your consent',
+        worker_loc_consent_yes: 'Sharing accepted', worker_loc_consent_no: 'Sharing declined', worker_loc_consent_pending: 'Not decided yet — you will be asked at next punch-in.',
+        worker_loc_pause: 'Pause sharing', worker_loc_resume: 'Resume sharing', worker_loc_review: 'Review consent',
+        worker_loc_paused: 'Location sharing paused', worker_loc_resumed: 'Location sharing resumed',
+        live_map: 'Live map', live_map_sub: 'See active staff on a map',
+        live_map_empty: 'No active staff on the map yet',
+        live_map_offline: 'Offline', live_map_active: 'Active',
+        live_map_last_seen: 'Last seen {when}',
+        live_map_loading: 'Loading map…',
+        route_today: "Today's route", route_view: 'View route', route_no_data: 'No route recorded for this day',
+        route_distance: 'Distance', route_points: 'Points', route_start: 'Start', route_end: 'End',
+        route_pick_date: 'Pick date', route_export_gpx: 'Export GPX',
         // B2 staff profile
         photo: 'Photo', tap_to_change: 'Tap to change', remove_photo: 'Remove',
         dob: 'Date of birth', join_date: 'Joining date', emp_code: 'Employee code',
@@ -2239,6 +2297,17 @@
         punchSelfie: false, // owner toggle: require selfie on punch in/out
         punchGps: true,     // capture GPS location on punch in/out
         onboarded: false,   // gates the first-run welcome / login screen
+        // Live in-shift GPS tracking. Off by default — opt-in per business.
+        // The worker still has to consent (see staff[i].locConsent) before
+        // any pings flow. `required` makes consent mandatory: a worker who
+        // declines simply records no GPS, but they can still punch.
+        locTracking: {
+          enabled: false,
+          required: false,
+          intervalSec: 60,        // min seconds between accepted pings
+          minMoveMeters: 30,      // distance gate
+          stationaryHeartbeatSec: 180, // ping at least this often even if still
+        },
       },
       // Cloud sync config. `enabled` gates the sync engine. `session` is rehydrated
       // on load; the Supabase SDK owns the real refresh lifecycle after that.
@@ -2309,6 +2378,17 @@
       s.business.upi = s.business.upi || '';
       s.settings.pinEnabled = s.settings.pinEnabled || false;
       s.settings.pinHash = s.settings.pinHash || null;
+      // Backfill the live-tracking settings shape so older devices don't
+      // crash on the new toggle. Defaults are off / opt-in.
+      if (!s.settings.locTracking || typeof s.settings.locTracking !== 'object') {
+        s.settings.locTracking = { enabled: false, required: false, intervalSec: 60, minMoveMeters: 30, stationaryHeartbeatSec: 180 };
+      } else {
+        s.settings.locTracking.enabled = !!s.settings.locTracking.enabled;
+        s.settings.locTracking.required = !!s.settings.locTracking.required;
+        s.settings.locTracking.intervalSec = Number(s.settings.locTracking.intervalSec) || 60;
+        s.settings.locTracking.minMoveMeters = Number(s.settings.locTracking.minMoveMeters) || 30;
+        s.settings.locTracking.stationaryHeartbeatSec = Number(s.settings.locTracking.stationaryHeartbeatSec) || 180;
+      }
       // Existing users (upgraders) with data or an enabled cloud account are
       // treated as already-onboarded — they've passed this gate before.
       if (typeof s.settings.onboarded !== 'boolean') {
@@ -2995,7 +3075,9 @@
           case 'staff_update': {
             const idx = state.staff.findIndex(s => s.id === sid);
             if (idx === -1) break;
-            const allowed = ['name', 'phone', 'photo'];
+            // `locConsent` is workers-write-own; everything else is name/phone/photo
+            // (already part of the worker-allowed RLS contract).
+            const allowed = ['name', 'phone', 'photo', 'locConsent'];
             const next = { ...state.staff[idx] };
             for (const k of allowed) {
               if (k in d) next[k] = d[k];
@@ -3453,6 +3535,7 @@
       }
 
       async function leaveBusiness() {
+        try { await tracker.stop('leave'); } catch (_) {}
         try {
           const c = await client();
           const { data: sess } = await c.auth.getSession();
@@ -3491,11 +3574,456 @@
       }
 
       // Owner config push is debounced via save() → scheduleConfigPush().
-      window.addEventListener('online', () => { setStatus('synced'); flushQueue(); scheduleConfigPush(); });
+      window.addEventListener('online', () => { setStatus('synced'); flushQueue(); scheduleConfigPush(); tracker.flush().catch(() => {}); });
       window.addEventListener('offline', () => setStatus('offline'));
 
       // Periodic queue flush (every 15s) in case Supabase was transiently down.
       flushTimer = setInterval(() => flushQueue().catch(() => {}), 15000);
+
+      // ============== Live location tracker ==============
+      // Captures the worker's GPS while they're clocked in, applies a
+      // distance + time filter, batches up to 20 pings per insert, and
+      // broadcasts on `paybox_loc:<bizId>` so any owner who's looking at
+      // the Live Map sees them within ~1 s. Falls back to a localStorage
+      // buffer when offline so nothing is lost. Web only by default; on
+      // Capacitor we let the platform-specific background plugin push
+      // pings into this same flush queue (see `tracker.pushExternal`).
+      const tracker = (() => {
+        const BUFFER_KEY = 'paybox_loc_buffer';
+        const MAX_BUFFER = 500;          // hard cap so a stuck offline phone doesn't OOM
+        const MAX_BATCH = 20;
+        const FLUSH_MS = 3 * 60 * 1000;  // server flush every 3 min when online
+        const STILL_HEARTBEAT_MS = 3 * 60 * 1000;
+        let watchId = null;
+        let liveChannel = null;
+        let lastAccepted = null;         // { lat, lng, ts }
+        let flushHandle = null;
+        let visListener = null;
+        let pageHideListener = null;
+        let started = false;
+        let activeStaffId = null;
+        let activeReason = null;         // why we started — used to log when we stop
+
+        function tracking() { return started; }
+
+        function loadBuffer() {
+          try { return JSON.parse(localStorage.getItem(BUFFER_KEY) || '[]') || []; }
+          catch { return []; }
+        }
+        function saveBuffer(rows) {
+          try {
+            const trimmed = rows.length > MAX_BUFFER ? rows.slice(-MAX_BUFFER) : rows;
+            localStorage.setItem(BUFFER_KEY, JSON.stringify(trimmed));
+          } catch {}
+        }
+
+        // Haversine distance in meters. Used by the distance gate.
+        function metersBetween(a, b) {
+          if (!a || !b) return Infinity;
+          const R = 6371000;
+          const toRad = (d) => d * Math.PI / 180;
+          const dLat = toRad(b.lat - a.lat);
+          const dLng = toRad(b.lng - a.lng);
+          const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+          const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+          return 2 * R * Math.asin(Math.sqrt(h));
+        }
+
+        function settings() {
+          return state.settings.locTracking || { enabled: false, required: false, intervalSec: 60, minMoveMeters: 30, stationaryHeartbeatSec: 180 };
+        }
+
+        // Read the current battery level (0..1) if the API is available.
+        // Used by the throttler to stretch the time gate when low.
+        async function batteryLevel() {
+          try {
+            if (navigator.getBattery) {
+              const b = await navigator.getBattery();
+              return typeof b.level === 'number' ? b.level : null;
+            }
+          } catch {}
+          return null;
+        }
+
+        function ensureLiveChannel() {
+          if (liveChannel || !state.biz?.id) return liveChannel;
+          // We use a Broadcast channel (not postgres_changes) so live map
+          // updates don't hit the database — same realtime quota though.
+          // Listeners can subscribe via cloudBiz.subscribeLive().
+          (async () => {
+            try {
+              const c = await client();
+              liveChannel = c.channel('paybox_loc:' + state.biz.id, {
+                config: { broadcast: { self: false } },
+              });
+              liveChannel.subscribe();
+            } catch (_) { liveChannel = null; }
+          })();
+          return liveChannel;
+        }
+
+        async function broadcastBatch(rows) {
+          if (!rows?.length) return;
+          try {
+            const c = await client();
+            // Re-use a single channel for the lifetime of the session.
+            if (!liveChannel) ensureLiveChannel();
+            // Wait a tick for subscribe() to settle if we just opened.
+            const ch = liveChannel;
+            if (!ch) return;
+            await ch.send({
+              type: 'broadcast',
+              event: 'pings',
+              payload: { staff_id: activeStaffId || rows[0].staff_id, rows },
+            });
+          } catch (_) { /* live is best effort, DB row is the source of truth */ }
+        }
+
+        async function flush() {
+          if (!active()) return;
+          if (!navigator.onLine) return;
+          let buf = loadBuffer();
+          if (!buf.length) return;
+          try {
+            const c = await client();
+            const { data: sess } = await c.auth.getSession();
+            if (!sess?.session) return;
+            // Drop rows from past businesses (safety after biz switch).
+            buf = buf.filter(r => r.business_id === state.biz.id);
+            if (!buf.length) { saveBuffer([]); return; }
+            const head = buf.slice(0, MAX_BATCH);
+            const rest = buf.slice(MAX_BATCH);
+            const rows = head.map(r => ({
+              business_id: r.business_id,
+              staff_id: r.staff_id,
+              author_id: sess.session.user.id,
+              ts: new Date(r.ts).toISOString(),
+              lat: r.lat, lng: r.lng,
+              acc: r.acc ?? null, speed: r.speed ?? null, heading: r.heading ?? null,
+              battery: r.battery ?? null,
+              src: r.src || (Native.on ? Native.platform : 'web'),
+            }));
+            const { error } = await c.from('location_pings').insert(rows);
+            if (error) throw error;
+            saveBuffer(rest);
+            broadcastBatch(rows).catch(() => {});
+            // Recurse if more remain so a backlog drains in one online window.
+            if (rest.length) flush().catch(() => {});
+          } catch (_) {
+            // Leave the buffer in place; next online tick will retry.
+          }
+        }
+
+        function scheduleFlush() {
+          if (flushHandle) return;
+          flushHandle = setInterval(() => flush().catch(() => {}), FLUSH_MS);
+        }
+        function clearScheduledFlush() {
+          if (flushHandle) { clearInterval(flushHandle); flushHandle = null; }
+        }
+
+        async function record(coords, src) {
+          if (!started || !active() || !activeStaffId) return;
+          const cfg = settings();
+          const ts = Date.now();
+          // Drop garbage fixes — anything > 200 m accuracy is mostly cell
+          // tower triangulation in disguise and pollutes the route line.
+          if (coords.acc != null && coords.acc > 200) return;
+          const point = {
+            business_id: state.biz.id,
+            staff_id: activeStaffId,
+            ts,
+            lat: coords.lat, lng: coords.lng,
+            acc: coords.acc != null ? Math.round(coords.acc) : null,
+            speed: coords.speed != null ? Number(coords.speed.toFixed(2)) : null,
+            heading: coords.heading != null ? Math.round(coords.heading) : null,
+            battery: coords.battery != null ? Number(coords.battery.toFixed(2)) : null,
+            src: src || (Native.on ? Native.platform : 'web'),
+          };
+
+          // ----- Adaptive sampling -----
+          // Three regimes:
+          //  • MOVING   (speed ≥ 1 m/s ≈ 3.6 km/h, or just moved > minMove
+          //             since last accepted): use the configured base
+          //             interval — gives a fine-grained route polyline.
+          //  • CRAWLING (speed < 1 m/s but > 0.2 m/s): stretch the
+          //             interval by 1.5x to save battery while still
+          //             showing direction.
+          //  • STILL    (speed < 0.2 m/s and inside minMove radius):
+          //             only one beacon every `stationaryHeartbeatSec`
+          //             so the live map shows "still here" without
+          //             spamming rows.
+          // Battery overlay (tiered, applied after regime):
+          //   <20%  → +50% interval
+          //   <10%  → +100% interval
+          let intervalMs = (cfg.intervalSec || 60) * 1000;
+          const minMove = Math.max(5, cfg.minMoveMeters || 30);
+          const stillEvery = (cfg.stationaryHeartbeatSec || 180) * 1000;
+          let movedSinceLast = lastAccepted ? metersBetween(lastAccepted, point) : Infinity;
+          const speed = point.speed != null ? Math.abs(point.speed) : null;
+          // Classify regime — we err on "moving" when we genuinely don't
+          // know (speed missing) so we never under-sample a delivery run.
+          let regime = 'MOVING';
+          if (speed != null) {
+            if (speed < 0.2 && movedSinceLast < minMove) regime = 'STILL';
+            else if (speed < 1) regime = 'CRAWLING';
+          } else if (lastAccepted && movedSinceLast < minMove) {
+            regime = 'STILL';
+          }
+          if (regime === 'CRAWLING') intervalMs = Math.round(intervalMs * 1.5);
+          else if (regime === 'STILL') intervalMs = stillEvery;
+          // Battery tiers
+          if (point.battery != null) {
+            if (point.battery < 0.10) intervalMs = Math.round(intervalMs * 2);
+            else if (point.battery < 0.20) intervalMs = Math.round(intervalMs * 1.5);
+          }
+
+          if (lastAccepted) {
+            const elapsed = ts - lastAccepted.ts;
+            // Time gate (regime-aware)
+            if (elapsed < intervalMs) return;
+            // Distance gate when we're not stationary — a tiny jitter
+            // shouldn't push a row.
+            if (regime !== 'STILL' && movedSinceLast < minMove && elapsed < stillEvery) return;
+          }
+
+          lastAccepted = point;
+          const buf = loadBuffer();
+          buf.push(point);
+          saveBuffer(buf);
+          // Try to flush immediately if the buffer reached batch size; otherwise
+          // the periodic flush handles it. Errors are swallowed (will retry).
+          if (buf.length >= MAX_BATCH) flush().catch(() => {});
+        }
+
+        // Web watchPosition handler. Native shells call pushExternal()
+        // instead so this never runs in Capacitor.
+        function onWebPosition(pos) {
+          const c = pos.coords || {};
+          batteryLevel().then(bat => {
+            record({
+              lat: c.latitude, lng: c.longitude, acc: c.accuracy,
+              speed: c.speed, heading: c.heading, battery: bat,
+            }, 'web');
+          });
+        }
+        function onWebError() { /* permission denied or timeout — silently keep watching */ }
+
+        function startWebWatch() {
+          if (watchId != null || !navigator.geolocation) return;
+          try {
+            watchId = navigator.geolocation.watchPosition(onWebPosition, onWebError, {
+              enableHighAccuracy: true,
+              maximumAge: 30000,
+              timeout: 30000,
+            });
+          } catch (_) { watchId = null; }
+        }
+        function stopWebWatch() {
+          if (watchId != null && navigator.geolocation) {
+            try { navigator.geolocation.clearWatch(watchId); } catch (_) {}
+          }
+          watchId = null;
+        }
+
+        function attachVisibilityHooks() {
+          if (visListener) return;
+          visListener = () => { if (document.visibilityState === 'visible') flush().catch(() => {}); };
+          pageHideListener = () => { flush().catch(() => {}); };
+          document.addEventListener('visibilitychange', visListener);
+          window.addEventListener('pagehide', pageHideListener);
+        }
+        function detachVisibilityHooks() {
+          if (visListener) { document.removeEventListener('visibilitychange', visListener); visListener = null; }
+          if (pageHideListener) { window.removeEventListener('pagehide', pageHideListener); pageHideListener = null; }
+        }
+
+        async function start(staffId, reason) {
+          if (started) return;
+          if (!active() || !staffId) return;
+          if (!settings().enabled) return;
+          // Worker consent gate. Owners doing a self-test still flow
+          // through here and are auto-consented.
+          const me = (state.staff || []).find(s => s.id === staffId);
+          if (!isOwner()) {
+            const consented = !!(me?.locConsent?.agreed);
+            if (!consented) return;
+          }
+          started = true;
+          activeStaffId = staffId;
+          activeReason = reason || 'punch_in';
+          ensureLiveChannel();
+          attachVisibilityHooks();
+          scheduleFlush();
+          if (Native.on) {
+            // The native plugin (when available) will call pushExternal()
+            // for each fix. If it's not installed we fall back to the
+            // Web watcher inside the WebView which only runs while the
+            // app is foregrounded — that's still useful while the user
+            // has the app open.
+            try {
+              const BG = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BackgroundGeolocation) || null;
+              if (BG && BG.addWatcher) {
+                tracker._bgWatchId = await BG.addWatcher(
+                  {
+                    backgroundMessage: 'Sharing your work location',
+                    backgroundTitle: 'PayBox',
+                    requestPermissions: true,
+                    stale: false,
+                    distanceFilter: Math.max(5, settings().minMoveMeters || 30),
+                  },
+                  (location, err) => {
+                    if (err) return;
+                    if (!location) return;
+                    pushExternal({
+                      lat: location.latitude, lng: location.longitude,
+                      acc: location.accuracy,
+                      speed: location.speed,
+                      heading: location.bearing,
+                      battery: null, // plugin doesn't expose; throttler will cope
+                      src: Native.platform,
+                    });
+                  }
+                );
+                return;
+              }
+            } catch (_) { /* fall through to web watcher */ }
+          }
+          startWebWatch();
+        }
+
+        async function stop(reason) {
+          if (!started) return;
+          started = false;
+          activeReason = reason || 'punch_out';
+          stopWebWatch();
+          if (Native.on && tracker._bgWatchId) {
+            try {
+              const BG = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BackgroundGeolocation) || null;
+              if (BG && BG.removeWatcher) await BG.removeWatcher({ id: tracker._bgWatchId });
+            } catch (_) {}
+            tracker._bgWatchId = null;
+          }
+          // One last flush so we don't lose the tail of the shift.
+          await flush().catch(() => {});
+          clearScheduledFlush();
+          detachVisibilityHooks();
+          activeStaffId = null;
+          lastAccepted = null;
+        }
+
+        // Used by the native background plugin (and tests) to push a
+        // single fix into the same filter / flush pipeline.
+        function pushExternal(coords, src) {
+          record(coords, src || (Native.on ? Native.platform : 'web'));
+        }
+
+        // Called when the worker punches in. Decides whether to start the
+        // capture loop based on settings + consent. Safe to call always.
+        function maybeStartFromPunch() {
+          if (!active()) return;
+          const sid = isOwner() ? null : (state.biz?.staffId || state.settings.workerId);
+          if (!sid) return;
+          start(sid, 'punch_in');
+        }
+        function maybeStopFromPunch() {
+          stop('punch_out').catch(() => {});
+        }
+
+        // Owner-side: subscribe to the live ping broadcast for this biz.
+        // Returns an unsubscribe function. Receives `{ staff_id, rows }`
+        // payloads.
+        async function subscribeLive(cb) {
+          if (!state.biz?.id) return () => {};
+          try {
+            const c = await client();
+            const ch = c.channel('paybox_loc:' + state.biz.id, {
+              config: { broadcast: { self: true } },
+            }).on('broadcast', { event: 'pings' }, (msg) => {
+              try { cb(msg.payload); } catch (_) {}
+            });
+            ch.subscribe();
+            return () => { try { c.removeChannel(ch); } catch (_) {} };
+          } catch (_) { return () => {}; }
+        }
+
+        // Owner-side hydration: latest known position per active staff.
+        // Used when the Live Map first opens so the markers don't all
+        // sit at "no data" until someone moves.
+        async function fetchLatestPerStaff() {
+          if (!state.biz?.id) return [];
+          try {
+            const c = await client();
+            const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            const { data } = await c.from('location_pings')
+              .select('staff_id, ts, lat, lng, acc, speed, heading')
+              .eq('business_id', state.biz.id)
+              .gte('ts', since)
+              .order('ts', { ascending: false })
+              .limit(2000);
+            if (!data?.length) return [];
+            // Reduce to most-recent-per-staff in one pass.
+            const seen = new Map();
+            for (const r of data) { if (!seen.has(r.staff_id)) seen.set(r.staff_id, r); }
+            return [...seen.values()];
+          } catch { return []; }
+        }
+
+        // Fetch all pings for a staff between [fromIso, toIso].
+        // Used by the Today's Route view.
+        async function fetchRoute(staffId, fromIso, toIso) {
+          if (!state.biz?.id || !staffId) return [];
+          try {
+            const c = await client();
+            const { data } = await c.from('location_pings')
+              .select('ts, lat, lng, acc, speed')
+              .eq('business_id', state.biz.id)
+              .eq('staff_id', staffId)
+              .gte('ts', fromIso)
+              .lt('ts', toIso)
+              .order('ts', { ascending: true })
+              .limit(5000);
+            return data || [];
+          } catch { return []; }
+        }
+
+        // Worker-side: count today's pings (for the privacy banner /
+        // profile insight).
+        async function fetchMyDailyCount(dateIso) {
+          if (!state.biz?.id) return 0;
+          const sid = state.biz?.staffId || state.settings.workerId;
+          if (!sid) return 0;
+          try {
+            const c = await client();
+            const start = new Date(dateIso + 'T00:00:00').toISOString();
+            const end   = new Date(dateIso + 'T23:59:59.999').toISOString();
+            const { count } = await c.from('location_pings')
+              .select('id', { count: 'exact', head: true })
+              .eq('business_id', state.biz.id)
+              .eq('staff_id', sid)
+              .gte('ts', start).lte('ts', end);
+            return Number(count || 0);
+          } catch { return 0; }
+        }
+
+        // Owner-only: prune rows older than `days` to control DB size.
+        async function pruneOlderThan(days) {
+          if (!isOwner()) return 0;
+          try {
+            const c = await client();
+            const { data } = await c.rpc('prune_location_pings', { biz: state.biz.id, days: Math.max(1, Number(days) || 30) });
+            return Number(data || 0);
+          } catch { return 0; }
+        }
+
+        return {
+          start, stop, tracking,
+          maybeStartFromPunch, maybeStopFromPunch,
+          flush, pushExternal,
+          subscribeLive, fetchLatestPerStaff, fetchRoute, fetchMyDailyCount,
+          pruneOlderThan,
+        };
+      })();
 
       return {
         boot, subscribe, teardown,
@@ -3505,9 +4033,102 @@
         emit, scheduleConfigPush, pushConfig, pullConfig, pullEventsSince,
         applyEvent, extractConfig, flushQueue,
         onStatus, currentStatus, active, isOwner,
+        tracker,
       };
     })();
     window.__cloudBiz = cloudBiz;
+
+    // ============== Live location tracking helpers ==============
+    /** Prompt the worker for location-tracking consent the first time
+     *  they punch in after the owner enables tracking. Records the
+     *  decision on `staff[i].locConsent` and emits a staff_update so
+     *  the owner sees it live. Returns the consent object. Pure no-op
+     *  for owners (they're auto-consented), or when tracking is off. */
+    function ensureLocConsentAndStart(worker) {
+      if (!worker || !worker.id) return;
+      const cfg = (state.settings.locTracking || {});
+      if (!cfg.enabled) return;
+      // Owner-side: just start the tracker (e.g. for a self-test punch).
+      if (cloudBiz.isOwner && cloudBiz.isOwner()) {
+        cloudBiz.tracker.maybeStartFromPunch();
+        return;
+      }
+      const existing = worker.locConsent || null;
+      // Already agreed for the current consent version → start now.
+      if (existing && existing.agreed) {
+        cloudBiz.tracker.maybeStartFromPunch();
+        return;
+      }
+      // Already declined and not required → don't start, don't re-prompt.
+      if (existing && existing.agreed === false && !cfg.required) return;
+      // Otherwise show the modal. We pass `force` when required so the
+      // worker sees clearly that decline is still possible but the
+      // owner has marked tracking as mandatory for this business.
+      openLocConsentModal(worker, cfg, (agreed) => {
+        const w = state.staff.find(s => s.id === worker.id);
+        if (!w) return;
+        w.locConsent = { agreed: !!agreed, agreedAt: new Date().toISOString(), version: 1 };
+        save();
+        if (cloudBiz.active()) {
+          cloudBiz.emit('staff_update', w.id, { locConsent: w.locConsent }).catch(() => {});
+        }
+        if (agreed) cloudBiz.tracker.maybeStartFromPunch();
+        render();
+      });
+    }
+
+    function maybeResumeLocTracking() {
+      try {
+        if (!cloudBiz.active()) return;
+        const cfg = state.settings.locTracking || {};
+        if (!cfg.enabled) return;
+        const sid = cloudBiz.isOwner() ? null : (state.biz?.staffId || state.settings.workerId);
+        if (!sid) return;
+        const today = todayISO();
+        const p = (state.punches[today] || {})[sid];
+        if (!p || !p.in || p.out) return; // not currently in-shift
+        const w = (state.staff || []).find(s => s.id === sid);
+        if (!w) return;
+        if (w.locConsent?.agreed) cloudBiz.tracker.start(sid, 'resume').catch(() => {});
+      } catch (_) {}
+    }
+
+    function openLocConsentModal(worker, cfg, cb) {
+      const required = !!cfg.required;
+      openSheet(`
+        <div class="mb-3">
+          <div class="text-lg font-bold tracking-tight">${escapeHtml(t('loc_consent_title'))}</div>
+          <div class="text-xs text-slate-500">${escapeHtml(state.business?.name || 'PayBox')}</div>
+        </div>
+        <div class="space-y-3 text-sm">
+          <div class="card p-3 flex items-start gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-7-8-13a8 8 0 1 1 16 0c0 6-8 13-8 13z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            </div>
+            <div class="text-xs text-slate-600 leading-relaxed">${escapeHtml(t('loc_consent_what'))}</div>
+          </div>
+          <div class="card p-3 flex items-start gap-3">
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="text-xs text-slate-600 leading-relaxed">${escapeHtml(t('loc_consent_when'))}</div>
+          </div>
+          <div class="card p-3 flex items-start gap-3">
+            <div class="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1l3 6 6 1-4.5 4.4 1 6.6L12 16l-5.5 3 1-6.6L3 8l6-1 3-6z"/></svg>
+            </div>
+            <div class="text-xs text-slate-600 leading-relaxed">${escapeHtml(t('loc_consent_who'))}</div>
+          </div>
+          ${required ? `<div class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">${escapeHtml(t('loc_consent_required_hint'))}</div>` : ''}
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-4">
+          <button id="locConsentNo" class="btn btn-secondary btn-lg">${escapeHtml(t('loc_consent_no'))}</button>
+          <button id="locConsentYes" class="btn btn-primary btn-lg">${escapeHtml(t('loc_consent_yes'))}</button>
+        </div>
+      `);
+      $('#locConsentYes')?.addEventListener('click', () => { closeSheet(); cb(true); });
+      $('#locConsentNo')?.addEventListener('click', () => { closeSheet(); cb(false); });
+    }
 
     // ============== Toast / Sheet ==============
     function toast(msg) {
@@ -4341,6 +4962,23 @@
 
         ${renderTodaysCheckinsStrip()}
 
+        ${state.settings?.locTracking?.enabled ? `
+        <button id="openLiveMapBtn" class="w-full card p-4 mb-4 flex items-center gap-3 text-left active:scale-[.99] transition">
+          <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16M16 6v16"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-sm flex items-center gap-2">
+              <span>${escapeHtml(t('live_map'))}</span>
+              <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>LIVE
+              </span>
+            </div>
+            <div class="text-xs text-slate-500 truncate">${escapeHtml(t('live_map_sub'))}</div>
+          </div>
+          <svg class="chevron-right text-slate-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>` : ''}
+
         <div class="grid grid-cols-2 gap-3 mb-5">
           ${tile('attendance', 'emerald', t('mark_attendance'), t('todays_staff'), `<path d="M20 6L9 17l-5-5"/>`)}
           ${tile('staff', 'brand', t('add_staff'), t('new_employee'), `<path d="M12 5v14M5 12h14"/>`)}
@@ -4376,6 +5014,298 @@
       }));
       $('#showPresentList')?.addEventListener('click', () => openAttendanceFilterSheet('present'));
       $('#showAbsentList')?.addEventListener('click', () => openAttendanceFilterSheet('absent'));
+      $('#openLiveMapBtn')?.addEventListener('click', () => openLiveMap());
+    }
+
+    // ============== Leaflet lazy-loader ==============
+    // Leaflet is only pulled in when the owner actually opens the Live
+    // Map or a Today's Route view. Cached by the service worker after
+    // the first load so subsequent opens are instant + offline-friendly.
+    let _leafletPromise = null;
+    function loadLeaflet() {
+      if (window.L) return Promise.resolve(window.L);
+      if (_leafletPromise) return _leafletPromise;
+      _leafletPromise = new Promise((resolve, reject) => {
+        const css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+        css.crossOrigin = '';
+        document.head.appendChild(css);
+
+        const js = document.createElement('script');
+        js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        js.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+        js.crossOrigin = '';
+        js.onload = () => resolve(window.L);
+        js.onerror = (e) => { _leafletPromise = null; reject(new Error('leaflet_failed')); };
+        document.head.appendChild(js);
+      });
+      return _leafletPromise;
+    }
+
+    // ============== Live Map (owner) ==============
+    function openLiveMap() {
+      if (!cloudBiz.isOwner || !cloudBiz.isOwner()) {
+        toast(t('not_owner') || 'Owner only');
+        return;
+      }
+      openSheet(`
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="text-lg font-bold tracking-tight">${escapeHtml(t('live_map'))}</div>
+            <div class="text-xs text-slate-500" id="liveMapMeta">${escapeHtml(t('live_map_loading'))}</div>
+          </div>
+          <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>${escapeHtml(t('live_map_active'))}
+          </span>
+        </div>
+        <div id="liveMap" class="w-full h-[60vh] rounded-2xl overflow-hidden border border-slate-200 bg-slate-100" style="min-height:380px;"></div>
+        <div id="liveMapList" class="mt-3 space-y-1.5"></div>
+      `);
+
+      let unsubLive = null;
+      let pruneTimer = null;
+      const markers = new Map();         // staff_id → leaflet marker
+      const lastSeen = new Map();        // staff_id → ts (ms)
+      const lastPos = new Map();         // staff_id → {lat,lng}
+
+      // Keep a reference to the map so we can clean it up when the sheet closes.
+      const cleanup = () => {
+        try { unsubLive && unsubLive(); } catch (_) {}
+        try { pruneTimer && clearInterval(pruneTimer); } catch (_) {}
+      };
+      const sheet = $('#sheet');
+      const obs = new MutationObserver(() => {
+        if (!sheet || sheet.classList.contains('hidden')) { cleanup(); obs.disconnect(); }
+      });
+      if (sheet) obs.observe(sheet, { attributes: true, attributeFilter: ['class'] });
+
+      (async () => {
+        let L;
+        try { L = await loadLeaflet(); }
+        catch { $('#liveMap').innerHTML = `<div class="p-6 text-center text-sm text-rose-600">Map failed to load. Check your network.</div>`; return; }
+
+        const map = L.map('liveMap', { zoomControl: true, attributionControl: true })
+          .setView([20.5937, 78.9629], 5); // Center of India by default
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap contributors',
+        }).addTo(map);
+
+        const staffById = new Map((state.staff || []).filter(s => s.active !== false).map(s => [s.id, s]));
+
+        function staffIcon(s, isStale) {
+          const initials = initialsOf(s?.name || '?');
+          const ringColor = isStale ? '#94a3b8' : '#059669';
+          const html = `
+            <div class="paybox-marker" style="--ring:${ringColor}">
+              <div class="paybox-marker-bubble">${escapeHtml(initials)}</div>
+            </div>`;
+          return L.divIcon({
+            html, className: 'paybox-marker-wrap',
+            iconSize: [44, 44], iconAnchor: [22, 22], popupAnchor: [0, -18],
+          });
+        }
+
+        function refreshList() {
+          const rows = [...lastSeen.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .map(([sid, ts]) => {
+              const s = staffById.get(sid);
+              if (!s) return '';
+              const stale = (Date.now() - ts) > 5 * 60 * 1000;
+              return `
+                <div class="card p-2.5 flex items-center gap-3 cursor-pointer" data-live-staff="${escapeHtml(sid)}">
+                  ${avatarHTML(s, 'w-8 h-8')}
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-semibold truncate">${escapeHtml(s.name)}</div>
+                    <div class="text-[11px] ${stale ? 'text-slate-400' : 'text-emerald-700'}">
+                      ${escapeHtml(stale ? t('live_map_offline') : t('live_map_active'))} · ${escapeHtml(t('live_map_last_seen', { when: relTime(new Date(ts).toISOString()) }))}
+                    </div>
+                  </div>
+                  <button data-live-route="${escapeHtml(sid)}" class="text-[11px] font-semibold px-2 py-1 rounded-md bg-brand-50 text-brand-700 border border-brand-200">${escapeHtml(t('route_view'))}</button>
+                </div>`;
+            }).join('');
+          $('#liveMapList').innerHTML = rows || `<div class="text-center text-xs text-slate-400 py-3">${escapeHtml(t('live_map_empty'))}</div>`;
+          $('#liveMapMeta').textContent = `${markers.size} ${markers.size === 1 ? t('employee') : t('employees')}`;
+          $$('[data-live-route]').forEach(b => b.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openRouteSheet(b.dataset.liveRoute, todayISO());
+          }));
+          $$('[data-live-staff]').forEach(b => b.addEventListener('click', () => {
+            const m = markers.get(b.dataset.liveStaff);
+            if (m) { map.setView(m.getLatLng(), Math.max(15, map.getZoom())); m.openPopup(); }
+          }));
+        }
+
+        function applyPing(p) {
+          if (!p?.staff_id || p.lat == null || p.lng == null) return;
+          const sid = p.staff_id;
+          const s = staffById.get(sid);
+          if (!s) return;
+          const ts = new Date(p.ts || Date.now()).getTime();
+          const stale = false;
+          const latlng = [Number(p.lat), Number(p.lng)];
+          if (markers.has(sid)) {
+            markers.get(sid).setLatLng(latlng).setIcon(staffIcon(s, stale));
+          } else {
+            const m = L.marker(latlng, { icon: staffIcon(s, stale), title: s.name }).addTo(map);
+            m.bindPopup(`<div style="font-weight:600">${escapeHtml(s.name)}</div><div style="font-size:11px;color:#64748b">${escapeHtml(s.role || '')}</div>`);
+            markers.set(sid, m);
+          }
+          lastSeen.set(sid, ts);
+          lastPos.set(sid, { lat: latlng[0], lng: latlng[1] });
+          refreshList();
+        }
+
+        // Hydrate from latest known position per staff (last 24 h).
+        const latest = await cloudBiz.tracker.fetchLatestPerStaff();
+        latest.forEach(applyPing);
+
+        // Auto-fit bounds if we have any markers.
+        if (markers.size) {
+          const group = L.featureGroup([...markers.values()]);
+          map.fitBounds(group.getBounds().pad(0.25), { maxZoom: 16 });
+        }
+
+        // Subscribe for live updates.
+        unsubLive = await cloudBiz.tracker.subscribeLive((payload) => {
+          (payload.rows || []).forEach(applyPing);
+        });
+
+        // Re-render the list periodically so "last seen" times update
+        // and the OFFLINE chip kicks in after 5 min of silence.
+        pruneTimer = setInterval(() => {
+          // Re-paint icon if a marker has gone stale.
+          for (const [sid, ts] of lastSeen.entries()) {
+            const s = staffById.get(sid);
+            const stale = (Date.now() - ts) > 5 * 60 * 1000;
+            const m = markers.get(sid);
+            if (m && s) m.setIcon(staffIcon(s, stale));
+          }
+          refreshList();
+        }, 30 * 1000);
+
+        refreshList();
+      })();
+    }
+
+    // ============== Route replay (owner) ==============
+    async function openRouteSheet(staffId, dateIso) {
+      const s = (state.staff || []).find(x => x.id === staffId);
+      if (!s) { toast('Staff not found'); return; }
+      const day = dateIso || todayISO();
+
+      openSheet(`
+        <div class="mb-3">
+          <div class="text-lg font-bold tracking-tight">${escapeHtml(s.name)}</div>
+          <div class="text-xs text-slate-500">${escapeHtml(t('route_today'))}</div>
+        </div>
+        <div class="flex items-center gap-2 mb-3">
+          <input id="routeDate" type="date" value="${day}" class="input flex-1" />
+          <button id="routeReload" class="btn btn-secondary btn-sm">${escapeHtml(t('route_pick_date'))}</button>
+        </div>
+        <div id="routeMap" class="w-full h-[44vh] rounded-2xl overflow-hidden border border-slate-200 bg-slate-100" style="min-height:280px;"></div>
+        <div id="routeStats" class="mt-3 grid grid-cols-3 gap-2"></div>
+        <div id="routeMeta" class="mt-3 text-xs text-slate-500"></div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <button id="routeExport" class="btn btn-secondary btn-sm">${escapeHtml(t('route_export_gpx'))}</button>
+          <button id="routeClose" class="btn btn-primary btn-sm">${escapeHtml(t('close'))}</button>
+        </div>
+      `);
+
+      let map = null;
+      let layer = null;
+      let pings = [];
+
+      function metersBetween(a, b) {
+        const R = 6371000, toRad = (d) => d * Math.PI / 180;
+        const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+        const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+        const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(h));
+      }
+
+      async function load(dayStr) {
+        const fromIso = new Date(dayStr + 'T00:00:00').toISOString();
+        const toIso = new Date(dayStr + 'T23:59:59.999').toISOString();
+        pings = await cloudBiz.tracker.fetchRoute(staffId, fromIso, toIso);
+        const L = await loadLeaflet();
+        if (!map) {
+          map = L.map('routeMap', { zoomControl: true });
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, attribution: '© OpenStreetMap contributors',
+          }).addTo(map);
+        }
+        if (layer) { try { map.removeLayer(layer); } catch (_) {} layer = null; }
+        if (!pings.length) {
+          map.setView([20.5937, 78.9629], 5);
+          $('#routeStats').innerHTML = '';
+          $('#routeMeta').innerHTML = `<div class="text-center text-sm text-slate-400 py-2">${escapeHtml(t('route_no_data'))}</div>`;
+          return;
+        }
+        const latlngs = pings.map(p => [Number(p.lat), Number(p.lng)]);
+        const polyline = L.polyline(latlngs, { color: '#2b43ec', weight: 4, opacity: 0.85 });
+        const dots = L.layerGroup(latlngs.map(ll => L.circleMarker(ll, { radius: 3, color: '#2b43ec', fillColor: '#2b43ec', fillOpacity: 0.7, stroke: false })));
+        const startIcon = L.divIcon({ className: 'paybox-pin', html: '<div class="paybox-pin-dot" style="background:#059669"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
+        const endIcon   = L.divIcon({ className: 'paybox-pin', html: '<div class="paybox-pin-dot" style="background:#dc2626"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
+        const startMk = L.marker(latlngs[0], { icon: startIcon, title: t('route_start') });
+        const endMk   = L.marker(latlngs[latlngs.length - 1], { icon: endIcon, title: t('route_end') });
+        layer = L.layerGroup([polyline, dots, startMk, endMk]).addTo(map);
+        map.fitBounds(polyline.getBounds().pad(0.2), { maxZoom: 17 });
+
+        // Distance summary (haversine sum).
+        let total = 0;
+        for (let i = 1; i < pings.length; i++) {
+          const a = { lat: Number(pings[i - 1].lat), lng: Number(pings[i - 1].lng) };
+          const b = { lat: Number(pings[i].lat), lng: Number(pings[i].lng) };
+          total += metersBetween(a, b);
+        }
+        const km = (total / 1000);
+        const startTs = new Date(pings[0].ts);
+        const endTs = new Date(pings[pings.length - 1].ts);
+        const fmtT = (d) => d.toLocaleTimeString(state.settings.language === 'en' ? 'en-IN' : state.settings.language, { hour: '2-digit', minute: '2-digit' });
+
+        $('#routeStats').innerHTML = `
+          <div class="card p-2.5 text-center">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">${escapeHtml(t('route_distance'))}</div>
+            <div class="font-bold text-sm">${km < 1 ? Math.round(total) + ' m' : km.toFixed(2) + ' km'}</div>
+          </div>
+          <div class="card p-2.5 text-center">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">${escapeHtml(t('route_points'))}</div>
+            <div class="font-bold text-sm">${pings.length}</div>
+          </div>
+          <div class="card p-2.5 text-center">
+            <div class="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">${escapeHtml(t('route_start'))}–${escapeHtml(t('route_end'))}</div>
+            <div class="font-bold text-xs">${fmtT(startTs)}–${fmtT(endTs)}</div>
+          </div>`;
+        $('#routeMeta').textContent = '';
+      }
+
+      $('#routeClose').addEventListener('click', () => closeSheet());
+      $('#routeReload').addEventListener('click', () => {
+        const v = $('#routeDate').value || day;
+        load(v);
+      });
+      $('#routeExport').addEventListener('click', () => {
+        if (!pings.length) { toast(t('route_no_data')); return; }
+        const gpx =
+`<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="PayBox" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk><name>${escapeHtml(s.name)} ${day}</name><trkseg>
+${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts).toISOString()}</time></trkpt>`).join('\n')}
+  </trkseg></trk>
+</gpx>`;
+        const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${(s.name || 'route').replace(/\s+/g, '_')}_${day}.gpx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      load(day);
     }
 
     function openAttendanceFilterSheet(mode) {
@@ -5011,6 +5941,10 @@
         e.stopPropagation();
         openStaffInviteSheet(b.dataset.staffInvite);
       }));
+      $$('[data-staff-route]').forEach(b => b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openRouteSheet(b.dataset.staffRoute, todayISO());
+      }));
     }
 
     function salaryLabel(s) {
@@ -5022,6 +5956,7 @@
       const sal = salaryLabel(s);
       const outstandingLoan = loanOutstandingFor(s.id);
       const canInvite = !!(cloudBiz.isOwner && cloudBiz.isOwner());
+      const showRoute = !!(canInvite && state.settings?.locTracking?.enabled);
       const isEx = s.active === false;
       return `
         <div class="${isEx ? 'bg-slate-50 border border-slate-200 opacity-80' : 'bg-white border border-slate-100'} rounded-2xl shadow-soft overflow-hidden">
@@ -5043,10 +5978,13 @@
               </div>
             </div>
           </button>
-          ${canInvite && !isEx ? `
+          ${(canInvite && !isEx) || showRoute ? `
           <div class="border-t border-slate-100 px-3 py-2 flex items-center justify-between gap-2 bg-slate-50/60">
             <div class="text-[11px] text-slate-500 truncate">${escapeHtml(t('staff_invite_hint'))}</div>
-            <button data-staff-invite="${s.id}" class="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white active:scale-95 transition flex-shrink-0">${escapeHtml(t('staff_invite_btn'))}</button>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              ${showRoute && !isEx ? `<button data-staff-route="${s.id}" class="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 border border-brand-200 active:scale-95 transition">${escapeHtml(t('route_view'))}</button>` : ''}
+              ${canInvite && !isEx ? `<button data-staff-invite="${s.id}" class="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white active:scale-95 transition">${escapeHtml(t('staff_invite_btn'))}</button>` : ''}
+            </div>
           </div>` : ''}
         </div>`;
     }
@@ -6055,6 +6993,83 @@
       });
     }
 
+    async function openWorkerLocSheet(w) {
+      const cfg = state.settings.locTracking || {};
+      const consent = w.locConsent;
+      const today = todayISO();
+      const punched = state.punches[today]?.[w.id];
+      const inShift = !!(punched?.in && !punched?.out);
+
+      openSheet(`
+        <div class="mb-3">
+          <div class="text-lg font-bold">${escapeHtml(t('worker_loc_title'))}</div>
+          <div class="text-xs text-slate-500">${escapeHtml(t('worker_loc_hint'))}</div>
+        </div>
+        <div class="card p-3 mb-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="text-sm font-semibold text-slate-700">${escapeHtml(t('worker_loc_status'))}</div>
+            <span id="wLocStatusChip" class="chip ${inShift && consent?.agreed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'} text-[11px] font-semibold">${escapeHtml(inShift && consent?.agreed ? t('loc_banner_on') : (consent?.agreed === false ? t('loc_banner_paused') : t('loc_banner_off')))}</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">${escapeHtml(t('worker_loc_status_hint'))}</div>
+        </div>
+        <div class="card p-3 mb-3">
+          <div class="grid grid-cols-2 gap-3 text-center">
+            <div>
+              <div class="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">${escapeHtml(t('worker_loc_today_pings'))}</div>
+              <div id="wLocCount" class="text-xl font-extrabold mt-1">—</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">${escapeHtml(t('worker_loc_last_seen'))}</div>
+              <div id="wLocLast" class="text-xl font-extrabold mt-1">—</div>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-2 text-center">${escapeHtml(t('worker_loc_today_hint'))}</div>
+        </div>
+        <div class="card p-3 mb-3">
+          <div class="text-sm font-semibold text-slate-700 mb-1">${escapeHtml(t('worker_loc_consent_title'))}</div>
+          <div class="text-[11px] text-slate-500">
+            ${consent ? `${escapeHtml(t(consent.agreed ? 'worker_loc_consent_yes' : 'worker_loc_consent_no'))} · ${new Date(consent.agreedAt || consent.at || Date.now()).toLocaleString()}` : escapeHtml(t('worker_loc_consent_pending'))}
+          </div>
+          <div class="flex gap-2 mt-3">
+            ${cfg.required ? '' : `<button id="wLocPause" class="flex-1 py-2 rounded-lg border border-slate-200 text-slate-700 text-xs font-semibold">${escapeHtml(consent?.agreed ? t('worker_loc_pause') : t('worker_loc_resume'))}</button>`}
+            <button id="wLocReview" class="flex-1 py-2 rounded-lg bg-brand-600 text-white text-xs font-semibold">${escapeHtml(t('worker_loc_review'))}</button>
+          </div>
+        </div>
+        <button id="wLocClose" class="w-full py-3 rounded-lg bg-slate-100 font-semibold text-sm">${escapeHtml(t('close'))}</button>
+      `);
+
+      $('#wLocClose').addEventListener('click', closeSheet);
+
+      $('#wLocReview')?.addEventListener('click', () => {
+        closeSheet();
+        openLocConsentModal(w, cfg, () => {});
+      });
+
+      $('#wLocPause')?.addEventListener('click', async () => {
+        const idx = state.staff.findIndex(s => s.id === w.id);
+        if (idx === -1) return;
+        const newAgreed = !w.locConsent?.agreed;
+        const payload = { locConsent: { agreed: newAgreed, agreedAt: new Date().toISOString(), version: 1 } };
+        state.staff[idx] = { ...state.staff[idx], ...payload };
+        if (cloudBiz.active()) {
+          try { await cloudBiz.emit('staff_update', w.id, payload); } catch {}
+        } else { save(); }
+        if (!newAgreed) cloudBiz.tracker.stop('worker_paused');
+        else if (inShift) ensureLocConsentAndStart(state.staff[idx]);
+        toast(newAgreed ? t('worker_loc_resumed') : t('worker_loc_paused'));
+        closeSheet();
+        render();
+      });
+
+      try {
+        const c = await cloudBiz.tracker.fetchMyDailyCount(today);
+        $('#wLocCount').textContent = String(c.count || 0);
+        $('#wLocLast').textContent = c.lastTs ? new Date(c.lastTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+      } catch {
+        $('#wLocCount').textContent = '0';
+      }
+    }
+
     function renderWorkerHome(root, w) {
       const ym = monthKey();
       const calc = salaryForMonth(w, ym);
@@ -6082,6 +7097,33 @@
 
         ${w.active === false ? `
         <div class="rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm p-3 mb-4 text-center font-semibold">${escapeHtml(t('ex_employee_banner'))}${w.exitDate ? ` · ${w.exitDate}` : ''}</div>` : ''}
+
+        ${(() => {
+          const cfg = state.settings.locTracking || {};
+          if (!cfg.enabled || w.active === false) return '';
+          const punched = state.punches[today]?.[w.id];
+          const inShift = !!(punched?.in && !punched?.out);
+          const consent = w.locConsent;
+          if (!inShift && !cfg.required) return '';
+          let label, color, icon;
+          if (consent && consent.agreed && inShift) {
+            label = t('loc_banner_on');
+            color = 'bg-emerald-50 border-emerald-200 text-emerald-700';
+            icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-7-8-13a8 8 0 1 1 16 0c0 6-8 13-8 13z"/><circle cx="12" cy="9" r="2.5"/></svg>';
+          } else if (consent && consent.agreed === false) {
+            label = t('loc_banner_paused');
+            color = 'bg-slate-50 border-slate-200 text-slate-600';
+            icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+          } else {
+            label = t('loc_banner_consent_pending');
+            color = 'bg-amber-50 border-amber-200 text-amber-700';
+            icon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+          }
+          return `
+            <button id="workerLocBanner" class="w-full rounded-xl border ${color} text-xs p-2.5 mb-4 flex items-center justify-center gap-2 font-semibold active:scale-[.99] transition">
+              ${icon}<span>${escapeHtml(label)}</span>
+            </button>`;
+        })()}
 
         <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white p-5 shadow-card mb-4">
           <div class="text-xs text-brand-100 uppercase tracking-wider font-semibold">${escapeHtml(t('worker_this_month'))}</div>
@@ -6144,6 +7186,7 @@
 
       $('#workerAnnBell')?.addEventListener('click', openAnnouncements);
       $('#workerProfileBtn')?.addEventListener('click', () => openWorkerProfileSheet(w));
+      $('#workerLocBanner')?.addEventListener('click', () => openWorkerLocSheet(w));
 
       $('#workerPunch')?.addEventListener('click', async (e) => {
         const action = e.currentTarget.dataset.action;
@@ -6180,6 +7223,10 @@
             cloudBiz.emit('punch_out', w.id, { date: today, time: p.out, at: p.outAt, ...locFields }).catch(() => {});
             if (selfie) cloudBiz.emit('selfie', w.id, { date: today, dataUrl: selfie }).catch(() => {});
           }
+          // Start / stop the live tracker. Honors locTracking.enabled +
+          // worker consent (tracker.start handles the gate internally).
+          if (action === 'in') ensureLocConsentAndStart(w);
+          else cloudBiz.tracker.maybeStopFromPunch();
         }
       });
     }
@@ -6485,6 +7532,42 @@
                 <span class="track"></span><span class="thumb"></span>
               </label>
             </div>
+          </div>
+
+          <div class="card p-3 space-y-3">
+            <div class="section-title">${escapeHtml(t('loc_tracking_title'))}</div>
+            <div class="text-[11px] text-slate-400 -mt-1">${escapeHtml(t('loc_tracking_hint'))}</div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-sm font-semibold text-slate-700">${escapeHtml(t('loc_tracking_enabled'))}</div>
+                <div class="text-[11px] text-slate-400">${escapeHtml(t('loc_tracking_enabled_hint'))}</div>
+              </div>
+              <label class="toggle flex-shrink-0">
+                <input type="checkbox" name="locTrackingEnabled" ${state.settings.locTracking?.enabled ? 'checked' : ''}>
+                <span class="track"></span><span class="thumb"></span>
+              </label>
+            </div>
+            <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+              <div class="min-w-0">
+                <div class="text-sm font-semibold text-slate-700">${escapeHtml(t('loc_tracking_required'))}</div>
+                <div class="text-[11px] text-slate-400">${escapeHtml(t('loc_tracking_required_hint'))}</div>
+              </div>
+              <label class="toggle flex-shrink-0">
+                <input type="checkbox" name="locTrackingRequired" ${state.settings.locTracking?.required ? 'checked' : ''}>
+                <span class="track"></span><span class="thumb"></span>
+              </label>
+            </div>
+            <div class="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+              <div>
+                <label class="label">${escapeHtml(t('loc_tracking_interval'))}</label>
+                <input name="locInterval" type="number" min="15" max="600" value="${state.settings.locTracking?.intervalSec || 60}" class="input">
+              </div>
+              <div>
+                <label class="label">${escapeHtml(t('loc_tracking_minmove'))}</label>
+                <input name="locMinMove" type="number" min="5" max="500" value="${state.settings.locTracking?.minMoveMeters || 30}" class="input">
+              </div>
+            </div>
+            <button type="button" id="locPruneBtn" class="btn btn-secondary btn-sm w-full">${escapeHtml(t('loc_tracking_prune'))}</button>
           </div>` : ''}
 
           <div>
@@ -6556,6 +7639,14 @@
 
       $('#logoutBtn')?.addEventListener('click', () => doLogout());
 
+      $('#locPruneBtn')?.addEventListener('click', async () => {
+        if (!confirm(t('loc_tracking_prune') + '?')) return;
+        try {
+          const n = await cloudBiz.tracker.pruneOlderThan(30);
+          toast(t('loc_tracking_pruned', { n }));
+        } catch (e) { toast(e.message || String(e)); }
+      });
+
       $('#settingsForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const f = new FormData(e.target);
@@ -6565,6 +7656,11 @@
           state.settings.workingDaysPerMonth = Math.max(1, Math.min(31, Number(f.get('wdpm') || 26)));
           state.settings.punchSelfie = !!f.get('punchSelfie');
           state.settings.punchGps = !!f.get('punchGps');
+          state.settings.locTracking = state.settings.locTracking || { enabled: false, required: false, intervalSec: 60, minMoveMeters: 30, stationaryHeartbeatSec: 180 };
+          state.settings.locTracking.enabled = !!f.get('locTrackingEnabled');
+          state.settings.locTracking.required = !!f.get('locTrackingRequired');
+          state.settings.locTracking.intervalSec = Math.max(15, Math.min(600, Number(f.get('locInterval') || 60)));
+          state.settings.locTracking.minMoveMeters = Math.max(5, Math.min(500, Number(f.get('locMinMove') || 30)));
         }
         state.settings.language = f.get('language') || 'en';
         save(); closeSheet(); toast(t('saved')); render();
@@ -7832,6 +8928,10 @@
       // channel without delaying the first paint.
       cloudSync.boot();
       cloudBiz.boot();
+      // If the worker is already punched in (page reload mid-shift),
+      // resume the tracker. Owners and never-consented workers no-op
+      // inside tracker.start().
+      maybeResumeLocTracking();
 
       // Push notification setup — owners only, native shells only.
       // Requests permission, registers with FCM/APNs, and upserts the

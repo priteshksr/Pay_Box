@@ -311,6 +311,26 @@ a freshly-installed app.
 - [ ] Tapping a staff photo opens the camera picker with a proper
       permission prompt (iOS: "PayBox would like to access the Camera").
 
+### Live location tracking (optional, Phase 6)
+
+If the owner has enabled "Live location tracking" in Settings:
+
+- [ ] Worker punches in for the first time → consent modal appears.
+- [ ] Tapping **Share my location** triggers the native location prompt
+      (iOS: "Allow PayBox to use your location? — While Using the App"
+      then a follow-up **Always** prompt; Android: foreground prompt
+      followed by an **Allow all the time** prompt).
+- [ ] On Android 13+ a notification permission prompt is shown so the
+      sticky **"PayBox · Sharing your work location until you punch
+      out"** notification can render.
+- [ ] After punch-in, sticky notification is visible and disappears
+      automatically when the worker punches out.
+- [ ] Owner's Live Map sheet shows the worker's marker move within
+      ~30 s while the app is foregrounded, ~3 min while backgrounded
+      (matches the configured min interval).
+- [ ] Punch out → tracking stops, notification disappears, no further
+      pings appear in `location_pings`.
+
 ### Cloud sync (optional)
 
 - [ ] Settings → Cloud sync → enter Supabase URL + anon key → **Create

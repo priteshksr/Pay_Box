@@ -47,6 +47,15 @@ const config: CapacitorConfig = {
     Camera: {
       saveToGallery: false,
     },
+    // @capacitor-community/background-geolocation — declares the
+    // foreground notification copy shown on Android while a worker is
+    // clocked in. Plugin params used at runtime (distanceFilter,
+    // requestPermissions, etc.) are passed via BG.addWatcher() in the
+    // tracker module — these are just the defaults the OS surfaces.
+    BackgroundGeolocation: {
+      backgroundTitle: 'PayBox',
+      backgroundMessage: 'Sharing your work location until you punch out',
+    },
   },
 };
 
