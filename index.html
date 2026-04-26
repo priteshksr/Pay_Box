@@ -56,7 +56,7 @@
   </script>
   <style>
     html, body { font-family: 'Inter','Noto Sans Devanagari','Noto Sans Tamil','Noto Sans Telugu', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background: #f7f8fb; }
+    body { background: #f4f6fb; }
     /* Safe-area insets so the notch / Dynamic Island / gesture bar don't
        overlap real UI. Used inside Capacitor and browsers that honour
        viewport-fit=cover (Safari 11+, modern Chrome). */
@@ -75,35 +75,172 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .fade-in { animation: fade 200ms ease-out; }
     @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Bottom nav ───────────────────────────────────────────────── */
+    .nav-btn { transition: background-color 160ms ease, color 160ms ease; }
+    .nav-btn .nav-icon-wrap {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; height: 28px; border-radius: 14px;
+      transition: background-color 180ms ease;
+    }
     .tab-active { color: #2b43ec; }
     .tab-active svg { stroke: #2b43ec; }
+    .tab-active .nav-icon-wrap { background-color: #eef4ff; }
+
     .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+
+    /* ── Sheet ────────────────────────────────────────────────────── */
     .sheet { animation: sheetUp 220ms cubic-bezier(.2,.8,.2,1); }
     @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .backdrop-fade { animation: bg 180ms ease-out; }
     @keyframes bg { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ── Inputs ───────────────────────────────────────────────────── */
     input, select, textarea, button { font-family: inherit; }
     input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 3px rgba(63,96,247,.15); border-color: #3f60f7 !important; }
+    .input {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.625rem;
+      font-size: 0.875rem;
+      background: #fff;
+      transition: border-color 150ms, box-shadow 150ms;
+      min-height: 2.625rem;
+    }
+    .input::placeholder { color: #94a3b8; }
+    .label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 0.375rem;
+    }
+
+    /* ── Buttons ──────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.375rem;
+      font-weight: 600;
+      border-radius: 0.625rem;
+      padding: 0.625rem 1rem;
+      font-size: 0.875rem;
+      transition: transform 100ms, background-color 150ms, box-shadow 150ms;
+      min-height: 2.625rem;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #2b43ec; color: #fff; box-shadow: 0 1px 2px rgba(43,67,236,.18); }
+    .btn-primary:hover { background: #2434d0; }
+    .btn-secondary { background: #fff; color: #334155; border: 1px solid #e2e8f0; }
+    .btn-secondary:hover { background: #f8fafc; }
+    .btn-ghost { background: transparent; color: #475569; }
+    .btn-ghost:hover { background: #f1f5f9; }
+    .btn-danger-outline { background: #fff; color: #e11d48; border: 1px solid #fecdd3; }
+    .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.75rem; min-height: 2rem; }
+    .btn-lg { padding: 0.875rem 1.25rem; font-size: 0.9375rem; min-height: 3rem; }
+
+    /* ── Cards & sections ─────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid #f1f5f9;
+      border-radius: 1rem;
+      box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+    }
+    .section-title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Stat tile (overview cards) ───────────────────────────────── */
+    .stat-tile {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 0.625rem 0.5rem;
+      border-radius: 0.75rem;
+      text-align: center;
+      transition: transform 100ms, box-shadow 150ms;
+      min-height: 64px;
+      justify-content: center;
+    }
+    .stat-tile:active { transform: scale(0.97); }
+    .stat-tile .stat-value {
+      font-size: 1.125rem; font-weight: 800; line-height: 1.1;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .stat-tile .stat-label {
+      font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; opacity: 0.85;
+    }
+
+    /* ── Settings row buttons ─────────────────────────────────────── */
+    .settings-tile {
+      display: flex; align-items: center; gap: 0.625rem;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      background: #fff;
+      text-align: left;
+      transition: border-color 150ms, background-color 150ms;
+      min-height: 3.25rem;
+    }
+    .settings-tile:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .settings-tile .icon-bg {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .settings-tile .label-wrap { flex: 1; min-width: 0; }
+    .settings-tile .label-wrap .ttl { font-size: 0.8125rem; font-weight: 600; color: #1e293b; }
+    .settings-tile .label-wrap .sub { font-size: 0.6875rem; color: #94a3b8; margin-top: 1px; }
+
+    /* ── Toggle (accessible iOS-style) ───────────────────────────── */
+    .toggle {
+      position: relative; display: inline-flex; align-items: center; cursor: pointer;
+      width: 38px; height: 22px;
+    }
+    .toggle input { position: absolute; opacity: 0; pointer-events: none; }
+    .toggle .track {
+      position: absolute; inset: 0;
+      background: #cbd5e1; border-radius: 999px;
+      transition: background-color 180ms ease;
+    }
+    .toggle .thumb {
+      position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px;
+      background: #fff; border-radius: 999px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.18);
+      transition: transform 180ms ease;
+    }
+    .toggle input:checked ~ .track { background: #2b43ec; }
+    .toggle input:checked ~ .thumb { transform: translateX(16px); }
+
     [dir="rtl"] svg.chevron-right { transform: scaleX(-1); }
+
+    /* Hide default details/summary marker on Safari + Chrome */
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::marker { display: none; }
   </style>
 </head>
 <body class="min-h-screen text-slate-900">
 
-  <div class="mx-auto max-w-md min-h-screen bg-white shadow-soft relative pb-24">
+  <div class="mx-auto max-w-md min-h-screen bg-white shadow-soft relative pb-28">
 
-    <header class="safe-top sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-100">
+    <header class="safe-top sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-100">
       <div class="flex items-center justify-between px-4 py-3">
-        <div class="flex items-center gap-2">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold shadow-card">M</div>
-          <div>
-            <div class="text-[15px] font-bold leading-tight">PayBox</div>
-            <div class="text-[11px] text-slate-500 leading-tight" id="businessName">My Business</div>
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-extrabold text-base shadow-card flex-shrink-0" aria-hidden="true">P</div>
+          <div class="min-w-0">
+            <div class="text-[15px] font-bold leading-tight tracking-tight">PayBox</div>
+            <div class="text-[11px] text-slate-500 leading-tight truncate" id="businessName">My Business</div>
           </div>
         </div>
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1.5 flex-shrink-0">
           <button id="roleChip" class="hidden px-2.5 py-1 rounded-full text-[11px] font-semibold"></button>
-          <button id="settingsBtn" class="p-2 rounded-lg hover:bg-slate-100" aria-label="Settings">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <button id="settingsBtn" class="w-9 h-9 rounded-lg hover:bg-slate-100 active:bg-slate-200 flex items-center justify-center transition-colors" aria-label="Settings">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </button>
         </div>
       </div>
@@ -111,32 +248,37 @@
 
     <main id="viewRoot" class="px-4 py-4"></main>
 
-    <nav id="bottomNav" class="safe-bottom fixed bottom-0 inset-x-0 mx-auto max-w-md bg-white border-t border-slate-100 z-30"></nav>
+    <nav id="bottomNav" class="safe-bottom fixed bottom-0 inset-x-0 mx-auto max-w-md bg-white/95 backdrop-blur border-t border-slate-100 z-30" style="box-shadow: 0 -1px 8px rgba(15,23,42,.04);"></nav>
 
-    <button id="fab" class="hidden fixed bottom-20 right-[calc(50%-14rem+16px)] w-14 h-14 rounded-full bg-brand-600 text-white shadow-card flex items-center justify-center active:scale-95 transition z-40">
+    <button id="fab" class="hidden fixed bottom-24 right-[calc(50%-14rem+16px)] w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lg flex items-center justify-center active:scale-95 transition z-40 hover:shadow-xl" style="box-shadow: 0 6px 16px rgba(43,67,236,.32);">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
     </button>
 
     <div id="sheetBackdrop" class="hidden fixed inset-0 bg-black/40 z-40 backdrop-fade"></div>
     <div id="sheet" class="safe-bottom hidden fixed inset-x-0 bottom-0 mx-auto max-w-md bg-white rounded-t-2xl z-50 sheet max-h-[92vh] overflow-y-auto">
-      <div class="sticky top-0 bg-white z-10 flex items-center justify-between pt-2 pb-1 px-4 border-b border-slate-100">
-        <div class="w-10 h-1.5 bg-slate-200 rounded-full"></div>
-        <button id="sheetCloseBtn" type="button" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center" aria-label="Close">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      <div class="sticky top-0 bg-white z-10 px-4 pt-2 pb-2 border-b border-slate-100">
+        <div class="flex items-center justify-center mb-1">
+          <div class="w-10 h-1.5 bg-slate-200 rounded-full"></div>
+        </div>
+        <button id="sheetCloseBtn" type="button" class="absolute top-2 right-3 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 transition flex items-center justify-center" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
       <div id="sheetBody" class="p-4"></div>
     </div>
 
-    <div id="toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm px-4 py-2 rounded-full shadow-card z-[60]"></div>
+    <div id="toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg z-[60]" style="box-shadow: 0 4px 16px rgba(15,23,42,.25);"></div>
 
-    <div id="installPrompt" class="hidden fixed bottom-24 left-4 right-4 mx-auto max-w-md bg-slate-900 text-white rounded-xl p-3 z-[55] flex items-center gap-3 shadow-card">
-      <div class="flex-1 text-sm">
-        <div class="font-semibold" data-i18n="install_title">Install PayBox</div>
-        <div class="text-xs text-slate-300" data-i18n="install_hint">Add to home screen for offline use</div>
+    <div id="installPrompt" class="hidden fixed bottom-24 left-4 right-4 mx-auto max-w-md bg-slate-900 text-white rounded-2xl p-3.5 z-[55] flex items-center gap-3 shadow-lg">
+      <div class="w-9 h-9 rounded-xl bg-brand-500/20 flex items-center justify-center flex-shrink-0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93b1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </div>
-      <button id="installBtn" class="bg-brand-500 px-3 py-1.5 rounded-lg text-xs font-semibold" data-i18n="install">Install</button>
-      <button id="installDismiss" class="text-slate-400 px-2" aria-label="Dismiss">✕</button>
+      <div class="flex-1 text-sm min-w-0">
+        <div class="font-semibold" data-i18n="install_title">Install PayBox</div>
+        <div class="text-xs text-slate-300 truncate" data-i18n="install_hint">Add to home screen for offline use</div>
+      </div>
+      <button id="installBtn" class="bg-brand-500 hover:bg-brand-400 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0" data-i18n="install">Install</button>
+      <button id="installDismiss" class="text-slate-400 hover:text-white px-2 flex-shrink-0" aria-label="Dismiss">✕</button>
     </div>
 
   </div>
@@ -230,6 +372,10 @@
         dob: 'Date of birth', join_date: 'Joining date', emp_code: 'Employee code',
         address: 'Address', emergency_contact: 'Emergency contact', emg_name: 'Contact name', emg_phone: 'Contact phone', emg_relation: 'Relation',
         id_proofs: 'ID proofs', aadhaar: 'Aadhaar number', pan: 'PAN number',
+        id_photos: 'ID document photos', add_id_photo: 'Add photo',
+        id_photos_hint: 'Aadhaar, PAN, Driving License, etc.',
+        no_id_photos: 'No ID photos yet',
+        id_photo_label_prompt: 'Label for this ID (e.g. Aadhaar, PAN, DL):',
         bank_details: 'Bank details', bank_account: 'Account number', bank_ifsc: 'IFSC', bank_holder: 'Account holder',
         upi_id: 'UPI ID', personal_info: 'Personal info', work_info: 'Work info',
         weekly_offs: 'Weekly offs', shift_label: 'Shift', active_status: 'Active',
@@ -540,6 +686,10 @@
         dob: 'जन्म तिथि', join_date: 'ज्वाइनिंग तिथि', emp_code: 'कर्मचारी कोड',
         address: 'पता', emergency_contact: 'आपातकालीन संपर्क', emg_name: 'संपर्क का नाम', emg_phone: 'संपर्क फोन', emg_relation: 'रिश्ता',
         id_proofs: 'ID प्रमाण', aadhaar: 'आधार नंबर', pan: 'PAN नंबर',
+        id_photos: 'ID दस्तावेज़ फोटो', add_id_photo: 'फोटो जोड़ें',
+        id_photos_hint: 'आधार, PAN, ड्राइविंग लाइसेंस आदि',
+        no_id_photos: 'अभी कोई ID फोटो नहीं',
+        id_photo_label_prompt: 'इस ID का नाम (जैसे आधार, PAN, DL):',
         bank_details: 'बैंक विवरण', bank_account: 'खाता नंबर', bank_ifsc: 'IFSC', bank_holder: 'खाता धारक',
         upi_id: 'UPI ID', personal_info: 'निजी जानकारी', work_info: 'काम की जानकारी',
         weekly_offs: 'साप्ताहिक अवकाश', shift_label: 'शिफ्ट', active_status: 'सक्रिय',
@@ -848,6 +998,10 @@
         dob: 'जन्मतारीख', join_date: 'जॉइनिंग तारीख', emp_code: 'कर्मचारी कोड',
         address: 'पत्ता', emergency_contact: 'आपत्कालीन संपर्क', emg_name: 'संपर्काचे नाव', emg_phone: 'संपर्क फोन', emg_relation: 'नाते',
         id_proofs: 'ओळख पत्रे', aadhaar: 'आधार क्रमांक', pan: 'PAN क्रमांक',
+        id_photos: 'ID कागदपत्रांचे फोटो', add_id_photo: 'फोटो जोडा',
+        id_photos_hint: 'आधार, PAN, ड्रायव्हिंग लायसन्स इ.',
+        no_id_photos: 'अद्याप ID फोटो नाहीत',
+        id_photo_label_prompt: 'या ID चे नाव (उदा. आधार, PAN, DL):',
         bank_details: 'बँक तपशील', bank_account: 'खाते क्रमांक', bank_ifsc: 'IFSC', bank_holder: 'खातेधारक',
         upi_id: 'UPI ID', personal_info: 'वैयक्तिक माहिती', work_info: 'कामाची माहिती',
         weekly_offs: 'साप्ताहिक सुटी', shift_label: 'शिफ्ट', active_status: 'सक्रिय',
@@ -1156,6 +1310,10 @@
         dob: 'பிறந்த தேதி', join_date: 'சேர்ந்த தேதி', emp_code: 'ஊழியர் குறியீடு',
         address: 'முகவரி', emergency_contact: 'அவசர தொடர்பு', emg_name: 'பெயர்', emg_phone: 'ஃபோன்', emg_relation: 'உறவு',
         id_proofs: 'ID ஆதாரங்கள்', aadhaar: 'ஆதார் எண்', pan: 'PAN எண்',
+        id_photos: 'ID ஆவண புகைப்படங்கள்', add_id_photo: 'புகைப்படம் சேர்',
+        id_photos_hint: 'ஆதார், PAN, ஓட்டுநர் உரிமம் போன்றவை',
+        no_id_photos: 'இன்னும் ID புகைப்படங்கள் இல்லை',
+        id_photo_label_prompt: 'இந்த ID இன் பெயர் (உதா: ஆதார், PAN, DL):',
         bank_details: 'வங்கி விவரம்', bank_account: 'கணக்கு எண்', bank_ifsc: 'IFSC', bank_holder: 'கணக்கு வைத்திருப்பவர்',
         upi_id: 'UPI ID', personal_info: 'தனிப்பட்ட தகவல்', work_info: 'வேலை தகவல்',
         weekly_offs: 'வாராந்திர விடுமுறை', shift_label: 'ஷிப்ட்', active_status: 'செயலில்',
@@ -1464,6 +1622,10 @@
         dob: 'పుట్టిన తేదీ', join_date: 'చేరిన తేదీ', emp_code: 'ఉద్యోగి కోడ్',
         address: 'చిరునామా', emergency_contact: 'అత్యవసర సంపర్కం', emg_name: 'పేరు', emg_phone: 'ఫోన్', emg_relation: 'బంధం',
         id_proofs: 'ID రుజువులు', aadhaar: 'ఆధార్ నంబర్', pan: 'PAN నంబర్',
+        id_photos: 'ID పత్రాల ఫోటోలు', add_id_photo: 'ఫోటో జోడించు',
+        id_photos_hint: 'ఆధార్, PAN, డ్రైవింగ్ లైసెన్స్ మొదలైనవి',
+        no_id_photos: 'ఇంకా ID ఫోటోలు లేవు',
+        id_photo_label_prompt: 'ఈ ID పేరు (ఉదా: ఆధార్, PAN, DL):',
         bank_details: 'బ్యాంకు వివరాలు', bank_account: 'ఖాతా సంఖ్య', bank_ifsc: 'IFSC', bank_holder: 'ఖాతాదారు',
         upi_id: 'UPI ID', personal_info: 'వ్యక్తిగత సమాచారం', work_info: 'పని వివరాలు',
         weekly_offs: 'వారాంత్య సెలవులు', shift_label: 'షిఫ్ట్', active_status: 'సక్రియ',
@@ -1847,35 +2009,35 @@
       if (diff <= 0) return null;
       return { h: Math.floor(diff / 60), m: diff % 60 };
     }
-    async function compressDataUrl(dataUrl) {
+    async function compressDataUrl(dataUrl, maxSize = 320, quality = 0.78) {
       try {
         const img = new Image();
         await new Promise((r, rj) => { img.onload = r; img.onerror = rj; img.src = dataUrl; });
-        const MAX = 320;
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
         const w = Math.max(1, Math.round(img.width * scale));
         const h = Math.max(1, Math.round(img.height * scale));
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
-        return canvas.toDataURL('image/jpeg', 0.78);
+        return canvas.toDataURL('image/jpeg', quality);
       } catch (_) { return dataUrl; }
     }
-    async function pickAndCompressImage() {
+    async function pickAndCompressImage(opts = {}) {
+      const { maxSize = 320, quality = 0.72, capture = 'user' } = opts;
       // Prefer the native camera bridge when running inside a Capacitor
       // shell — it yields a proper permission prompt and sidesteps the
       // invisible <input type="file"> trick (which doesn't always work
       // inside WKWebView).
       if (Native.on) {
         const raw = await Native.pickPhoto();
-        if (raw) return await compressDataUrl(raw);
+        if (raw) return await compressDataUrl(raw, maxSize, quality);
       }
       return new Promise((resolve) => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        input.capture = 'user';
+        if (capture) input.capture = capture;
         input.style.display = 'none';
         document.body.appendChild(input);
         input.onchange = async () => {
@@ -1889,16 +2051,7 @@
               fr.onerror = rj;
               fr.readAsDataURL(file);
             });
-            const img = new Image();
-            await new Promise((r, rj) => { img.onload = r; img.onerror = rj; img.src = dataUrl; });
-            const MAX = 320;
-            const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-            const w = Math.max(1, Math.round(img.width * scale));
-            const h = Math.max(1, Math.round(img.height * scale));
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', 0.72));
+            resolve(await compressDataUrl(dataUrl, maxSize, quality));
           } catch { resolve(null); }
         };
         input.oncancel = () => { input.remove(); resolve(null); };
@@ -2146,6 +2299,10 @@
       s.taskLog = s.taskLog || {};
       if (!Array.isArray(s.taskCategories) || !s.taskCategories.length) {
         s.taskCategories = ['COD', 'Prepaid', 'CR Card', 'Open RVP', 'Close RVP'];
+      }
+      // Backfill ID-proof photo array for staff records that pre-date the feature.
+      if (Array.isArray(s.staff)) {
+        for (const st of s.staff) { if (!Array.isArray(st.idPhotos)) st.idPhotos = []; }
       }
       s.auditLog = s.auditLog || [];
       s.business.address = s.business.address || '';
@@ -3359,6 +3516,30 @@
       clearTimeout(window.__toastT);
       window.__toastT = setTimeout(() => el.classList.add('hidden'), 1800);
     }
+    /** Standalone fullscreen lightbox for an ID-proof photo. Uses its own
+     *  overlay (not the sheet) so opening it from inside the staff form
+     *  doesn't blow away unsaved edits. Tap anywhere or press Escape to
+     *  dismiss. */
+    function openIdPhotoViewer(p) {
+      if (!p?.dataUrl) return;
+      const old = document.getElementById('idPhotoLightbox');
+      if (old) old.remove();
+      const div = document.createElement('div');
+      div.id = 'idPhotoLightbox';
+      div.className = 'fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-4';
+      div.innerHTML = `
+        <button type="button" id="idPhotoLightboxClose" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 text-white text-xl font-bold flex items-center justify-center" aria-label="Close">×</button>
+        <div class="text-white text-sm font-semibold mb-3">${escapeHtml(p.label || 'ID')}</div>
+        <img src="${p.dataUrl}" class="max-w-full max-h-[80vh] object-contain rounded-lg" alt="${escapeHtml(p.label || 'ID')}">
+      `;
+      const close = () => { div.remove(); document.removeEventListener('keydown', onKey, true); };
+      const onKey = (e) => { if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); close(); } };
+      div.addEventListener('click', (e) => { if (e.target === div || e.target.id === 'idPhotoLightboxClose') close(); });
+      // Capture-phase so we run *before* the page-wide sheet Escape handler
+      // and can stop it — closing only the lightbox, not the underlying sheet.
+      document.addEventListener('keydown', onKey, true);
+      document.body.appendChild(div);
+    }
     function openSheet(html) {
       $('#sheetBody').innerHTML = html;
       $('#sheet').classList.remove('hidden');
@@ -3476,40 +3657,40 @@
     function renderWelcome(root) {
       const cloudReady = !!(state.cloud?.url && state.cloud?.anonKey);
       const header = `
-        <div class="pt-2 pb-6 text-center">
-          <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white text-2xl font-bold flex items-center justify-center shadow-card">M</div>
+        <div class="pt-4 pb-6 text-center">
+          <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white text-2xl font-extrabold flex items-center justify-center shadow-card">P</div>
           <div class="mt-4 text-2xl font-extrabold tracking-tight">${escapeHtml(t('welcome_title'))}</div>
-          <div class="text-sm text-slate-500 mt-0.5">${escapeHtml(t('welcome_sub'))}</div>
+          <div class="text-sm text-slate-500 mt-1">${escapeHtml(t('welcome_sub'))}</div>
         </div>`;
 
       if (welcomeUI.step === 'pick') {
         root.innerHTML = `
           ${header}
           <div class="space-y-3">
-            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${escapeHtml(t('welcome_pick_role'))}</div>
-            <button id="pickOwner" class="w-full flex items-center gap-3 text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-soft active:scale-[.99] transition">
-              <div class="w-11 h-11 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center flex-shrink-0">
+            <div class="section-title">${escapeHtml(t('welcome_pick_role'))}</div>
+            <button id="pickOwner" class="w-full flex items-center gap-3 text-left card p-4 active:scale-[.99] hover:border-brand-200 transition">
+              <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center flex-shrink-0">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>
               </div>
               <div class="flex-1 min-w-0">
                 <div class="font-semibold text-sm">${escapeHtml(t('welcome_owner_card'))}</div>
                 <div class="text-xs text-slate-500 mt-0.5">${escapeHtml(t('welcome_owner_desc'))}</div>
               </div>
-              <svg class="chevron-right" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+              <svg class="chevron-right" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </button>
-            <button id="pickWorker" class="w-full flex items-center gap-3 text-left bg-white border border-slate-200 rounded-2xl p-4 shadow-soft active:scale-[.99] transition">
-              <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
+            <button id="pickWorker" class="w-full flex items-center gap-3 text-left card p-4 active:scale-[.99] hover:border-emerald-200 transition">
+              <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
               </div>
               <div class="flex-1 min-w-0">
                 <div class="font-semibold text-sm">${escapeHtml(t('welcome_worker_card'))}</div>
                 <div class="text-xs text-slate-500 mt-0.5">${escapeHtml(t('welcome_worker_desc'))}</div>
               </div>
-              <svg class="chevron-right" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+              <svg class="chevron-right" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </button>
           </div>
           <div class="mt-6 text-center">
-            <select id="welcomeLang" class="text-xs text-slate-500 bg-transparent border border-slate-200 rounded-md px-2 py-1">
+            <select id="welcomeLang" class="text-xs text-slate-500 bg-white border border-slate-200 rounded-md px-2 py-1.5 hover:border-slate-300 transition">
               <option value="en" ${state.settings.language === 'en' ? 'selected' : ''}>English</option>
               <option value="hi" ${state.settings.language === 'hi' ? 'selected' : ''}>हिंदी</option>
               <option value="mr" ${state.settings.language === 'mr' ? 'selected' : ''}>मराठी</option>
@@ -3584,28 +3765,28 @@
       const wHasCode = welcomeUI.workerHasCode;
       const inviteSection = wHasCode ? `
           <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_invite_code_label'))}</label>
+            <label class="label">${escapeHtml(t('welcome_invite_code_label'))}</label>
             <input name="joinCode" required maxlength="10" autocomplete="one-time-code"
-                   class="w-full mt-1 px-3 py-3 border border-slate-200 rounded-lg text-lg font-mono uppercase tracking-[0.35em] text-center">
+                   class="input text-lg font-mono uppercase tracking-[0.35em] text-center" style="min-height:3rem;">
             <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(t('welcome_invite_code_hint'))}</div>
           </div>` : '';
       const workerToggle = wHasCode
-        ? `<button type="button" id="workerToggleCode" class="w-full text-xs font-semibold text-emerald-700">${escapeHtml(t('welcome_worker_returning'))}</button>`
-        : `<button type="button" id="workerToggleCode" class="w-full text-xs font-semibold text-emerald-700">${escapeHtml(t('welcome_worker_first_time'))}</button>`;
+        ? `<button type="button" id="workerToggleCode" class="w-full text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition py-1">${escapeHtml(t('welcome_worker_returning'))}</button>`
+        : `<button type="button" id="workerToggleCode" class="w-full text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition py-1">${escapeHtml(t('welcome_worker_first_time'))}</button>`;
       const workerCta = wHasCode ? t('welcome_worker_continue') : t('welcome_worker_continue_signin');
       const workerForm = `
         <form id="welcomeAuthForm" class="space-y-4" data-flow="worker" data-has-code="${wHasCode ? '1' : '0'}">
           ${supabaseInputs}
           <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_phone_label'))}</label>
+            <label class="label">${escapeHtml(t('welcome_phone_label'))}</label>
             <input name="phone" type="tel" required inputmode="tel" autocomplete="tel"
                    value="${escapeHtml(state.cloud?.phone || '+91')}"
                    placeholder="${escapeHtml(t('welcome_phone_placeholder'))}"
-                   class="w-full mt-1 px-3 py-3 border border-slate-200 rounded-lg text-base">
+                   class="input text-base" style="min-height:3rem;">
             <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(t('welcome_phone_hint'))}</div>
           </div>
           ${inviteSection}
-          <button type="submit" class="w-full py-3 rounded-lg bg-emerald-600 text-white font-semibold text-sm">${escapeHtml(workerCta)}</button>
+          <button type="submit" class="btn btn-lg w-full" style="background:#059669;color:#fff;box-shadow:0 1px 2px rgba(5,150,105,.18);">${escapeHtml(workerCta)}</button>
           <div id="welcomeMsg" class="text-xs text-slate-500 min-h-[1em]"></div>
           ${workerToggle}
         </form>`;
@@ -3616,27 +3797,27 @@
       const ownerIsSignup = welcomeUI.mode === 'signup';
       const ownerExtra = !ownerIsSignup ? '' :
         `<div>
-           <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_owner_name_label'))}</label>
-           <input name="ownerName" required class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+           <label class="label">${escapeHtml(t('welcome_owner_name_label'))}</label>
+           <input name="ownerName" required class="input">
          </div>
          <div>
-           <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('welcome_biz_name_label'))}</label>
-           <input name="bizName" required class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+           <label class="label">${escapeHtml(t('welcome_biz_name_label'))}</label>
+           <input name="bizName" required class="input">
          </div>`;
       const ownerForm = `
         <form id="welcomeAuthForm" class="space-y-3" data-flow="owner">
           <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('email'))}</label>
-            <input name="email" type="email" required value="${escapeHtml(state.cloud?.email || '')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+            <label class="label">${escapeHtml(t('email'))}</label>
+            <input name="email" type="email" required value="${escapeHtml(state.cloud?.email || '')}" class="input">
           </div>
           <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('password'))}</label>
-            <input name="password" type="password" required minlength="6" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="••••••••">
+            <label class="label">${escapeHtml(t('password'))}</label>
+            <input name="password" type="password" required minlength="6" class="input" placeholder="••••••••">
           </div>
           ${ownerExtra}
-          <button type="submit" class="w-full py-3 rounded-lg bg-brand-600 text-white font-semibold text-sm">${escapeHtml(ownerCtaLabel)}</button>
+          <button type="submit" class="btn btn-primary btn-lg w-full">${escapeHtml(ownerCtaLabel)}</button>
           <div id="welcomeMsg" class="text-xs text-slate-500 min-h-[1em]"></div>
-          <button type="button" id="welcomeToggleMode" class="w-full text-xs font-semibold text-brand-600">${escapeHtml(ownerToggleLabel)}</button>
+          <button type="button" id="welcomeToggleMode" class="w-full text-xs font-semibold text-brand-600 hover:text-brand-700 py-1 transition">${escapeHtml(ownerToggleLabel)}</button>
         </form>`;
 
       root.innerHTML = `
@@ -3975,11 +4156,11 @@
         ];
 
       $('#bottomNav').innerHTML = `
-        <div class="grid" style="grid-template-columns: repeat(${tabs.length}, minmax(0,1fr));">
+        <div class="grid pt-1.5" style="grid-template-columns: repeat(${tabs.length}, minmax(0,1fr));">
           ${tabs.map(tab => `
-            <button data-tab="${tab.id}" class="nav-btn flex flex-col items-center gap-1 py-3 text-slate-500 text-[11px] font-medium ${state.currentTab === tab.id ? 'tab-active' : ''}">
-              ${tab.icon}
-              ${escapeHtml(tab.label)}
+            <button data-tab="${tab.id}" class="nav-btn flex flex-col items-center gap-0.5 pt-1.5 pb-2 text-slate-500 text-[10.5px] font-semibold ${state.currentTab === tab.id ? 'tab-active' : ''}">
+              <span class="nav-icon-wrap">${tab.icon}</span>
+              <span>${escapeHtml(tab.label)}</span>
             </button>`).join('')}
         </div>`;
 
@@ -3991,8 +4172,8 @@
     function renderRoleChip() {
       const chip = $('#roleChip');
       if (state.settings.role === 'worker') {
-        chip.textContent = t('worker');
-        chip.className = 'px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200';
+        chip.innerHTML = `<span class="inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>${escapeHtml(t('worker'))}</span>`;
+        chip.className = 'px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition';
         chip.classList.remove('hidden');
       } else {
         chip.classList.add('hidden');
@@ -4011,11 +4192,11 @@
     }
 
     // ============== Icons ==============
-    const iconHome = () => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1V9.5z"/></svg>`;
-    const iconCalendar = () => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>`;
-    const iconUsers = () => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M17 3.13a4 4 0 0 1 0 7.75"/></svg>`;
-    const iconWallet = () => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>`;
-    const iconTasks = () => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
+    const iconHome = () => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1V9.5z"/></svg>`;
+    const iconCalendar = () => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>`;
+    const iconUsers = () => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M17 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+    const iconWallet = () => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const iconTasks = () => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
 
     // ============== Owner: Home ==============
     function renderHome(root) {
@@ -4121,23 +4302,23 @@
           <svg class="chevron-right" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         </button>` : ''}
 
-        <div class="bg-white border border-slate-100 rounded-2xl shadow-soft p-4 mb-4">
-          <div class="flex items-center justify-between mb-2">
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
             <div class="font-semibold text-sm">${escapeHtml(t('overview'))}</div>
             <span class="text-xs text-slate-500">${escapeHtml(t('avg_attendance'))}: <span class="font-semibold text-slate-700">${avgPct}%</span></span>
           </div>
-          <div class="grid grid-cols-3 gap-2 mb-3">
-            <button id="showPresentList" class="bg-emerald-50 rounded-lg p-2 text-center active:scale-[.97] transition">
-              <div class="text-lg font-extrabold text-emerald-700">${presentToday}</div>
-              <div class="text-[10px] text-emerald-700/80 font-semibold uppercase">${escapeHtml(t('status_P'))}</div>
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <button id="showPresentList" class="stat-tile bg-emerald-50 text-emerald-700">
+              <div class="stat-value">${presentToday}</div>
+              <div class="stat-label">${escapeHtml(t('status_P'))}</div>
             </button>
-            <button id="showAbsentList" class="bg-rose-50 rounded-lg p-2 text-center active:scale-[.97] transition">
-              <div class="text-lg font-extrabold text-rose-700">${Math.max(0, absentToday)}</div>
-              <div class="text-[10px] text-rose-700/80 font-semibold uppercase">${escapeHtml(t('status_A'))}</div>
+            <button id="showAbsentList" class="stat-tile bg-rose-50 text-rose-700">
+              <div class="stat-value">${Math.max(0, absentToday)}</div>
+              <div class="stat-label">${escapeHtml(t('status_A'))}</div>
             </button>
-            <div class="bg-amber-50 rounded-lg p-2 text-center">
-              <div class="text-lg font-extrabold text-amber-700">${fmtINR(loanTotal).replace('₹', '₹')}</div>
-              <div class="text-[10px] text-amber-700/80 font-semibold uppercase">${escapeHtml(t('loan_outstanding_total'))}</div>
+            <div class="stat-tile bg-amber-50 text-amber-700" title="${fmtINR(loanTotal)}">
+              <div class="stat-value text-[15px]">${fmtINR(loanTotal)}</div>
+              <div class="stat-label">${escapeHtml(t('loan_outstanding_total'))}</div>
             </div>
           </div>
           <div class="text-xs text-slate-500 mb-1">${escapeHtml(t('attendance_7d'))}</div>
@@ -4164,8 +4345,8 @@
           ${tile('attendance', 'emerald', t('mark_attendance'), t('todays_staff'), `<path d="M20 6L9 17l-5-5"/>`)}
           ${tile('staff', 'brand', t('add_staff'), t('new_employee'), `<path d="M12 5v14M5 12h14"/>`)}
           ${tile('payroll', 'amber', t('view_payroll'), t('this_month'), `<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/>`)}
-          <button id="exportBtn" class="bg-white border border-slate-100 rounded-2xl p-4 text-left shadow-soft active:scale-[.98] transition">
-            <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center mb-2">
+          <button id="exportBtn" class="card p-4 text-left active:scale-[.98] transition">
+            <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-2.5">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </div>
             <div class="font-semibold text-sm">${escapeHtml(t('export_data'))}</div>
@@ -4173,10 +4354,10 @@
           </button>
         </div>
 
-        <div class="bg-white border border-slate-100 rounded-2xl shadow-soft overflow-hidden">
+        <div class="card overflow-hidden">
           <div class="flex items-center justify-between px-4 pt-4 pb-2">
-            <div class="font-semibold">${escapeHtml(t('your_staff'))}</div>
-            <button data-go="staff" class="text-xs text-brand-600 font-semibold">${escapeHtml(t('see_all'))}</button>
+            <div class="font-semibold text-sm">${escapeHtml(t('your_staff'))}</div>
+            <button data-go="staff" class="text-xs text-brand-600 font-semibold">${escapeHtml(t('see_all'))} →</button>
           </div>
           <div>
             ${state.staff.filter(s => s.active !== false).length === 0
@@ -4350,11 +4531,11 @@
     }
 
     function tile(target, color, title, sub, svgPath) {
-      const bg = { emerald: 'bg-emerald-50 stroke-emerald-600', brand: 'bg-brand-50 stroke-brand-600', amber: 'bg-amber-50 stroke-amber-600' }[color];
+      const bg = { emerald: 'bg-emerald-50', brand: 'bg-brand-50', amber: 'bg-amber-50' }[color];
       const stroke = { emerald: '#059669', brand: '#2b43ec', amber: '#d97706' }[color];
       return `
-        <button data-go="${target}" class="bg-white border border-slate-100 rounded-2xl p-4 text-left shadow-soft active:scale-[.98] transition">
-          <div class="w-9 h-9 rounded-lg ${bg.split(' ')[0]} flex items-center justify-center mb-2">
+        <button data-go="${target}" class="card p-4 text-left active:scale-[.98] transition">
+          <div class="w-10 h-10 rounded-xl ${bg} flex items-center justify-center mb-2.5">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${svgPath}</svg>
           </div>
           <div class="font-semibold text-sm">${escapeHtml(title)}</div>
@@ -4369,13 +4550,13 @@
 
     function staffRow(s) {
       return `
-        <div class="flex items-center gap-3 px-4 py-3 border-t border-slate-100" data-staff-open="${s.id}">
-          ${avatarHTML(s)}
+        <div class="flex items-center gap-3 px-4 py-3 border-t border-slate-100 active:bg-slate-50 transition cursor-pointer" data-staff-open="${s.id}">
+          ${avatarHTML(s, 'w-10 h-10')}
           <div class="flex-1 min-w-0">
-            <div class="font-medium text-sm truncate">${escapeHtml(s.name)}${s.active === false ? ` <span class="chip bg-slate-100 text-slate-500">${escapeHtml(t('inactive'))}</span>` : ''}</div>
+            <div class="font-semibold text-sm truncate flex items-center gap-1.5">${escapeHtml(s.name)}${s.active === false ? `<span class="chip bg-slate-100 text-slate-500">${escapeHtml(t('inactive'))}</span>` : ''}</div>
             <div class="text-xs text-slate-500 truncate">${escapeHtml(s.role || '—')} · ${salaryLabel(s)}</div>
           </div>
-          <svg class="chevron-right" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          <svg class="chevron-right flex-shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         </div>`;
     }
 
@@ -4388,33 +4569,36 @@
 
       root.innerHTML = `
         <div class="mb-4">
-          <h1 class="text-xl font-extrabold tracking-tight">${escapeHtml(t('attendance'))}</h1>
+          <h1 class="text-2xl font-extrabold tracking-tight">${escapeHtml(t('attendance'))}</h1>
           <p class="text-sm text-slate-500">${escapeHtml(t('mark_each_status'))}</p>
         </div>
 
-        <div class="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-3 py-2 shadow-soft mb-4">
-          <button id="prevDay" class="p-1.5 rounded-lg hover:bg-slate-100">
+        <div class="flex items-center justify-between card px-2 py-1.5 mb-4">
+          <button id="prevDay" class="w-8 h-8 rounded-lg hover:bg-slate-100 active:scale-95 transition flex items-center justify-center" aria-label="Previous day">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <input type="date" id="attDate" value="${date}" class="text-sm font-semibold bg-transparent border-0 text-center focus:ring-0" />
-          <button id="nextDay" class="p-1.5 rounded-lg hover:bg-slate-100">
+          <input type="date" id="attDate" value="${date}" class="text-sm font-semibold bg-transparent border-0 text-center focus:ring-0 flex-1 mx-2" />
+          <button id="nextDay" class="w-8 h-8 rounded-lg hover:bg-slate-100 active:scale-95 transition flex items-center justify-center" aria-label="Next day">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
           </button>
         </div>
 
         ${state.staff.length === 0 ? `
-          <div class="bg-white border border-slate-100 rounded-2xl p-6 text-center shadow-soft">
-            <div class="text-slate-500 text-sm">${escapeHtml(t('add_staff_first'))}</div>
-            <button data-go="staff" class="mt-3 px-4 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg">${escapeHtml(t('add_staff'))}</button>
+          <div class="card p-8 text-center">
+            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+            </div>
+            <div class="text-slate-700 font-semibold text-sm">${escapeHtml(t('add_staff_first'))}</div>
+            <button data-go="staff" class="btn btn-primary btn-sm mt-3">${escapeHtml(t('add_staff'))}</button>
           </div>` : `
           <div class="space-y-2">
             ${state.staff.map(s => attendanceRow(s, marks[s.id], otMarks[s.id], pMarks[s.id])).join('')}
           </div>
           <div class="mt-4 grid grid-cols-4 gap-2">
-            <button data-mark-all="P" class="text-xs font-semibold py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">${escapeHtml(t('all_present'))}</button>
-            <button data-mark-all="A" class="text-xs font-semibold py-2 rounded-lg bg-rose-50 text-rose-700 border border-rose-200">${escapeHtml(t('all_absent'))}</button>
-            <button data-mark-all="H" class="text-xs font-semibold py-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">${escapeHtml(t('all_half'))}</button>
-            <button data-mark-all="L" class="text-xs font-semibold py-2 rounded-lg bg-sky-50 text-sky-700 border border-sky-200">${escapeHtml(t('all_leave'))}</button>
+            <button data-mark-all="P" class="text-xs font-semibold py-2.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 active:scale-95 transition">${escapeHtml(t('all_present'))}</button>
+            <button data-mark-all="A" class="text-xs font-semibold py-2.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 active:scale-95 transition">${escapeHtml(t('all_absent'))}</button>
+            <button data-mark-all="H" class="text-xs font-semibold py-2.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 active:scale-95 transition">${escapeHtml(t('all_half'))}</button>
+            <button data-mark-all="L" class="text-xs font-semibold py-2.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 active:scale-95 transition">${escapeHtml(t('all_leave'))}</button>
           </div>
         `}
       `;
@@ -4776,36 +4960,40 @@
       const pool = showEx ? exStaff : activeStaff;
       const filtered = q ? pool.filter(s => (s.name || '').toLowerCase().includes(q) || (s.phone || '').includes(q) || (s.role || '').toLowerCase().includes(q) || (s.empCode || '').toLowerCase().includes(q)) : pool;
       root.innerHTML = `
-        <div class="mb-4 flex items-end justify-between">
-          <div>
-            <h1 class="text-xl font-extrabold tracking-tight">${escapeHtml(t('staff'))}</h1>
-            <p class="text-sm text-slate-500">${activeStaff.length} ${escapeHtml(t('employees'))}${exStaff.length ? ` · ${exStaff.length} ${escapeHtml(t('ex_employees'))}` : ''}</p>
+        <div class="mb-4 flex items-end justify-between gap-3">
+          <div class="min-w-0">
+            <h1 class="text-2xl font-extrabold tracking-tight">${escapeHtml(t('staff'))}</h1>
+            <p class="text-sm text-slate-500 truncate">${activeStaff.length} ${escapeHtml(t('employees'))}${exStaff.length ? ` · ${exStaff.length} ${escapeHtml(t('ex_employees'))}` : ''}</p>
           </div>
-          <button id="addStaffBtn" class="text-xs font-semibold bg-brand-600 text-white px-3 py-2 rounded-lg">${escapeHtml(t('add'))}</button>
+          <button id="addStaffBtn" class="btn btn-primary btn-sm flex-shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            ${escapeHtml(t('add'))}
+          </button>
         </div>
         ${exStaff.length ? `
-        <div class="flex mb-3 bg-slate-100 rounded-xl p-0.5">
+        <div class="flex mb-3 bg-slate-100 rounded-xl p-1">
           <button id="tabActive" class="flex-1 py-2 text-xs font-semibold rounded-lg transition ${!showEx ? 'bg-white shadow-sm text-brand-700' : 'text-slate-500'}">${escapeHtml(t('active_employees'))} (${activeStaff.length})</button>
           <button id="tabEx" class="flex-1 py-2 text-xs font-semibold rounded-lg transition ${showEx ? 'bg-white shadow-sm text-rose-700' : 'text-slate-500'}">${escapeHtml(t('ex_employees'))} (${exStaff.length})</button>
         </div>` : ''}
         ${pool.length > 3 ? `
-        <div class="mb-3">
+        <div class="mb-3 relative">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           <input id="staffSearch" type="search" placeholder="${escapeHtml(t('search_employee'))}" value="${escapeHtml(state._staffSearch || '')}"
-                 class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-200">
+                 class="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-200">
         </div>` : ''}
 
         ${pool.length === 0 ? (showEx ? `
-          <div class="text-center text-sm text-slate-400 py-8">${escapeHtml(t('no_ex_employees'))}</div>` : `
-          <div class="bg-white border border-dashed border-slate-200 rounded-2xl p-8 text-center">
-            <div class="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2b43ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <div class="text-center text-sm text-slate-400 py-12">${escapeHtml(t('no_ex_employees'))}</div>` : `
+          <div class="card border-dashed p-8 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-3">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2b43ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
             </div>
-            <div class="font-semibold">${escapeHtml(t('no_staff_title'))}</div>
+            <div class="font-semibold text-base">${escapeHtml(t('no_staff_title'))}</div>
             <div class="text-sm text-slate-500 mt-1">${escapeHtml(t('no_staff_sub'))}</div>
-            <button id="addStaffBtn2" class="mt-4 px-4 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg">${escapeHtml(t('add_staff'))}</button>
+            <button id="addStaffBtn2" class="btn btn-primary mt-4">${escapeHtml(t('add_staff'))}</button>
           </div>`) : filtered.length === 0 ? `
-          <div class="text-center text-sm text-slate-400 py-8">${escapeHtml(t('no_results'))}</div>` : `
-          <div class="space-y-2">${filtered.map(staffCard).join('')}</div>
+          <div class="text-center text-sm text-slate-400 py-12">${escapeHtml(t('no_results'))}</div>` : `
+          <div class="space-y-2.5">${filtered.map(staffCard).join('')}</div>
         `}
       `;
       $('#tabActive')?.addEventListener('click', () => { state._showExEmployees = false; state._staffSearch = ''; renderStaff(root); });
@@ -4837,25 +5025,28 @@
       const isEx = s.active === false;
       return `
         <div class="${isEx ? 'bg-slate-50 border border-slate-200 opacity-80' : 'bg-white border border-slate-100'} rounded-2xl shadow-soft overflow-hidden">
-          <button data-staff-edit="${s.id}" class="w-full text-left p-3 active:scale-[.99] transition">
+          <button data-staff-edit="${s.id}" class="w-full text-left p-3 active:bg-slate-50 transition">
             <div class="flex items-center gap-3">
-              ${avatarHTML(s, 'w-10 h-10' + (isEx ? ' grayscale' : ''))}
+              ${avatarHTML(s, 'w-11 h-11' + (isEx ? ' grayscale' : ''))}
               <div class="flex-1 min-w-0">
-                <div class="font-semibold text-sm truncate">${escapeHtml(s.name)}${isEx ? ` <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-500">${escapeHtml(t('ex_employees'))}</span>` : ''}</div>
-                <div class="text-xs text-slate-500 truncate">${escapeHtml(s.role || '—')} · ${escapeHtml(s.phone || t('no_phone'))}</div>
+                <div class="font-semibold text-sm truncate flex items-center gap-1.5">
+                  <span class="truncate">${escapeHtml(s.name)}</span>
+                  ${isEx ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-500 flex-shrink-0">${escapeHtml(t('ex_employees'))}</span>` : ''}
+                </div>
+                <div class="text-xs text-slate-500 truncate">${escapeHtml(s.role || '—')}${s.phone ? ` · ${escapeHtml(s.phone)}` : ''}</div>
                 ${isEx && s.exitDate ? `<div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(t('exit_date'))}: ${s.exitDate}</div>` : ''}
-                ${outstandingLoan > 0 ? `<div class="text-[11px] text-amber-700 mt-0.5">${escapeHtml(t('loan'))}: ${fmtINR(outstandingLoan)}</div>` : ''}
+                ${outstandingLoan > 0 ? `<div class="text-[11px] text-amber-700 mt-0.5 font-semibold">${escapeHtml(t('loan'))}: ${fmtINR(outstandingLoan)}</div>` : ''}
               </div>
-              <div class="text-right">
-                <div class="text-sm font-semibold">${sal}</div>
-                <div class="text-[11px] text-slate-400">${escapeHtml(t('tap_to_edit'))}</div>
+              <div class="text-right flex-shrink-0">
+                <div class="text-sm font-bold text-slate-800">${sal}</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(t('tap_to_edit'))}</div>
               </div>
             </div>
           </button>
           ${canInvite && !isEx ? `
-          <div class="border-t border-slate-100 px-3 py-2 flex items-center justify-between gap-2 bg-slate-50">
-            <div class="text-[11px] text-slate-500">${escapeHtml(t('staff_invite_hint'))}</div>
-            <button data-staff-invite="${s.id}" class="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-emerald-600 text-white">${escapeHtml(t('staff_invite_btn'))}</button>
+          <div class="border-t border-slate-100 px-3 py-2 flex items-center justify-between gap-2 bg-slate-50/60">
+            <div class="text-[11px] text-slate-500 truncate">${escapeHtml(t('staff_invite_hint'))}</div>
+            <button data-staff-invite="${s.id}" class="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white active:scale-95 transition flex-shrink-0">${escapeHtml(t('staff_invite_btn'))}</button>
           </div>` : ''}
         </div>`;
     }
@@ -4866,163 +5057,181 @@
       const curOffs = editing?.weeklyOffs || [];
 
       openSheet(`
-        <div class="mb-3">
-          <div class="text-lg font-bold">${escapeHtml(editing ? t('save_changes') : t('add_staff'))}</div>
+        <div class="mb-4">
+          <div class="text-lg font-bold tracking-tight">${escapeHtml(editing ? t('save_changes') : t('add_staff'))}</div>
           <div class="text-xs text-slate-500">${escapeHtml(t('new_employee'))}</div>
         </div>
-        <form id="staffForm" class="space-y-3">
+        <form id="staffForm" class="space-y-4">
           <div class="flex items-center gap-3">
-            <div id="staffPhotoPreview" class="w-16 h-16 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 text-xs">
+            <div id="staffPhotoPreview" class="w-16 h-16 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 text-[10px] font-semibold flex-shrink-0">
               ${editing?.photo ? `<img src="${editing.photo}" class="w-full h-full object-cover" alt="">` : escapeHtml(t('photo'))}
             </div>
-            <div class="flex gap-2">
-              <button type="button" id="staffPhotoBtn" class="text-xs font-semibold px-3 py-2 rounded-lg bg-slate-100">${escapeHtml(editing?.photo ? t('tap_to_change') : t('take_selfie'))}</button>
-              ${editing?.photo ? `<button type="button" id="staffPhotoRm" class="text-xs font-semibold px-3 py-2 rounded-lg border border-rose-200 text-rose-600">${escapeHtml(t('remove_photo'))}</button>` : ''}
+            <div class="flex flex-wrap gap-2">
+              <button type="button" id="staffPhotoBtn" class="btn btn-secondary btn-sm">${escapeHtml(editing?.photo ? t('tap_to_change') : t('take_selfie'))}</button>
+              ${editing?.photo ? `<button type="button" id="staffPhotoRm" class="btn btn-danger-outline btn-sm">${escapeHtml(t('remove_photo'))}</button>` : ''}
             </div>
           </div>
 
           <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('full_name'))} *</label>
-            <input name="name" required value="${escapeHtml(editing?.name || '')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+            <label class="label">${escapeHtml(t('full_name'))} *</label>
+            <input name="name" required value="${escapeHtml(editing?.name || '')}" class="input">
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('designation'))}</label>
-              <input name="role" value="${escapeHtml(editing?.role || '')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <label class="label">${escapeHtml(t('designation'))}</label>
+              <input name="role" value="${escapeHtml(editing?.role || '')}" class="input">
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('phone'))}</label>
-              <input name="phone" type="tel" inputmode="tel" value="${escapeHtml(editing?.phone || '+91')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <label class="label">${escapeHtml(t('phone'))}</label>
+              <input name="phone" type="tel" inputmode="tel" value="${escapeHtml(editing?.phone || '+91')}" class="input">
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('emp_code'))}</label>
-              <input name="empCode" value="${escapeHtml(editing?.empCode || '')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <label class="label">${escapeHtml(t('emp_code'))}</label>
+              <input name="empCode" value="${escapeHtml(editing?.empCode || '')}" class="input">
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('join_date'))}</label>
-              <input name="joinDate" type="date" value="${editing?.joinDate || editing?.joinedAt || ''}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <label class="label">${escapeHtml(t('join_date'))}</label>
+              <input name="joinDate" type="date" value="${editing?.joinDate || editing?.joinedAt || ''}" class="input">
             </div>
           </div>
 
           <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('salary_type'))} *</label>
-            <div class="grid grid-cols-3 gap-2 mt-1">
+            <label class="label">${escapeHtml(t('salary_type'))} *</label>
+            <div class="grid grid-cols-3 gap-2">
               <label class="cursor-pointer">
                 <input type="radio" name="salaryType" value="monthly" class="peer sr-only" ${(!editing || editing.salaryType === 'monthly') ? 'checked' : ''}>
-                <div class="border border-slate-200 rounded-lg px-3 py-2 text-sm text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium">${escapeHtml(t('monthly'))}</div>
+                <div class="border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium transition">${escapeHtml(t('monthly'))}</div>
               </label>
               <label class="cursor-pointer">
                 <input type="radio" name="salaryType" value="daily" class="peer sr-only" ${editing?.salaryType === 'daily' ? 'checked' : ''}>
-                <div class="border border-slate-200 rounded-lg px-3 py-2 text-sm text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium">${escapeHtml(t('daily_wage'))}</div>
+                <div class="border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium transition">${escapeHtml(t('daily_wage'))}</div>
               </label>
               <label class="cursor-pointer">
                 <input type="radio" name="salaryType" value="piece" class="peer sr-only" ${editing?.salaryType === 'piece' ? 'checked' : ''}>
-                <div class="border border-slate-200 rounded-lg px-3 py-2 text-sm text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium">${escapeHtml(t('piece_wage'))}</div>
+                <div class="border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium transition">${escapeHtml(t('piece_wage'))}</div>
               </label>
             </div>
           </div>
           <div id="amountOtRow" class="grid grid-cols-2 gap-3 ${editing?.salaryType === 'piece' ? 'hidden' : ''}">
             <div>
-              <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('amount'))} *</label>
-              <input name="amount" type="number" min="0" step="1" value="${editing?.amount || ''}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <label class="label">${escapeHtml(t('amount'))} *</label>
+              <input name="amount" type="number" min="0" step="1" value="${editing?.amount || ''}" class="input">
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('ot_rate_label'))}</label>
-              <input name="otRate" type="number" min="0" step="1" value="${editing?.otRate || ''}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <label class="label">${escapeHtml(t('ot_rate_label'))}</label>
+              <input name="otRate" type="number" min="0" step="1" value="${editing?.otRate || ''}" class="input">
             </div>
           </div>
           <div id="pieceRateRow" class="${editing?.salaryType === 'piece' ? '' : 'hidden'}">
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('piece_rate'))} (₹/${escapeHtml(t('per_piece'))}) *</label>
-            <input name="pieceRate" type="number" min="0" step="0.5" value="${editing?.pieceRate || ''}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm" placeholder="e.g. 5">
+            <label class="label">${escapeHtml(t('piece_rate'))} (₹/${escapeHtml(t('per_piece'))}) *</label>
+            <input name="pieceRate" type="number" min="0" step="0.5" value="${editing?.pieceRate || ''}" class="input" placeholder="e.g. 5">
           </div>
 
-          <details class="bg-slate-50 border border-slate-100 rounded-lg p-3">
-            <summary class="text-xs font-semibold text-slate-700 cursor-pointer">${escapeHtml(t('work_info'))}</summary>
+          <details class="bg-slate-50 border border-slate-100 rounded-xl p-3 group">
+            <summary class="text-xs font-bold text-slate-700 cursor-pointer flex items-center justify-between list-none">
+              <span class="uppercase tracking-wider">${escapeHtml(t('work_info'))}</span>
+              <svg class="text-slate-400 group-open:rotate-180 transition-transform" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
             <div class="space-y-3 mt-3">
               <div>
-                <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('shift_label'))}</label>
-                <select name="shiftId" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-white">
-                  <option value="">— ${escapeHtml(t('no_shift_assigned'))} —</option>
-                  ${state.shifts.map(sh => `<option value="${sh.id}" ${editing?.shiftId === sh.id ? 'selected' : ''}>${escapeHtml(sh.name)} (${sh.startTime}–${sh.endTime})</option>`).join('')}
-                </select>
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('weekly_offs'))}</label>
-                <div class="grid grid-cols-7 gap-1 mt-1">
+                <label class="label">${escapeHtml(t('weekly_offs'))}</label>
+                <div class="grid grid-cols-7 gap-1">
                   ${dowKeys.map((k, i) => `
                     <label class="cursor-pointer">
                       <input type="checkbox" name="wo_${i}" class="peer sr-only" ${curOffs.includes(i) ? 'checked' : ''}>
-                      <div class="border border-slate-200 rounded-lg py-2 text-[11px] text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium">${escapeHtml(t(k))}</div>
+                      <div class="border border-slate-200 rounded-lg py-2 text-[11px] text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium transition bg-white">${escapeHtml(t(k))}</div>
                     </label>`).join('')}
                 </div>
               </div>
-              <div>
-                <label class="cursor-pointer flex items-center gap-2">
-                  <input type="checkbox" name="active" ${(editing?.active ?? true) ? 'checked' : ''} class="accent-brand-600">
-                  <span class="text-xs font-semibold text-slate-700">${escapeHtml(t('active_status'))}</span>
-                </label>
-              </div>
+              <label class="cursor-pointer flex items-center gap-2">
+                <input type="checkbox" name="active" ${(editing?.active ?? true) ? 'checked' : ''} class="accent-brand-600 w-4 h-4">
+                <span class="text-sm font-semibold text-slate-700">${escapeHtml(t('active_status'))}</span>
+              </label>
             </div>
           </details>
 
-          <details class="bg-slate-50 border border-slate-100 rounded-lg p-3">
-            <summary class="text-xs font-semibold text-slate-700 cursor-pointer">${escapeHtml(t('personal_info'))}</summary>
+          <details class="bg-slate-50 border border-slate-100 rounded-xl p-3 group">
+            <summary class="text-xs font-bold text-slate-700 cursor-pointer flex items-center justify-between list-none">
+              <span class="uppercase tracking-wider">${escapeHtml(t('personal_info'))}</span>
+              <svg class="text-slate-400 group-open:rotate-180 transition-transform" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
             <div class="space-y-3 mt-3">
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('dob'))}</label>
-                  <input name="dob" type="date" value="${editing?.dob || ''}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+                  <label class="label">${escapeHtml(t('dob'))}</label>
+                  <input name="dob" type="date" value="${editing?.dob || ''}" class="input">
                 </div>
                 <div>
-                  <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('exit_date'))}</label>
-                  <input name="exitDate" type="date" value="${editing?.exitDate || ''}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+                  <label class="label">${escapeHtml(t('exit_date'))}</label>
+                  <input name="exitDate" type="date" value="${editing?.exitDate || ''}" class="input">
                 </div>
               </div>
               <div>
-                <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('address'))}</label>
-                <textarea name="address" rows="2" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">${escapeHtml(editing?.address || '')}</textarea>
+                <label class="label">${escapeHtml(t('address'))}</label>
+                <textarea name="address" rows="2" class="input" style="min-height:auto;">${escapeHtml(editing?.address || '')}</textarea>
               </div>
-              <div class="text-xs font-semibold text-slate-600 mt-1">${escapeHtml(t('emergency_contact'))}</div>
-              <div class="grid grid-cols-2 gap-3">
-                <input name="emgName" placeholder="${escapeHtml(t('emg_name'))}" value="${escapeHtml(editing?.emergency?.name || '')}" class="px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
-                <input name="emgPhone" placeholder="${escapeHtml(t('emg_phone'))}" value="${escapeHtml(editing?.emergency?.phone || '')}" class="px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <div class="pt-1">
+                <div class="label">${escapeHtml(t('emergency_contact'))}</div>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                  <input name="emgName" placeholder="${escapeHtml(t('emg_name'))}" value="${escapeHtml(editing?.emergency?.name || '')}" class="input">
+                  <input name="emgPhone" placeholder="${escapeHtml(t('emg_phone'))}" value="${escapeHtml(editing?.emergency?.phone || '')}" class="input">
+                </div>
+                <input name="emgRelation" placeholder="${escapeHtml(t('emg_relation'))}" value="${escapeHtml(editing?.emergency?.relation || '')}" class="input">
               </div>
-              <input name="emgRelation" placeholder="${escapeHtml(t('emg_relation'))}" value="${escapeHtml(editing?.emergency?.relation || '')}" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
-              <div class="text-xs font-semibold text-slate-600 mt-1">${escapeHtml(t('id_proofs'))}</div>
-              <div class="grid grid-cols-2 gap-3">
-                <input name="aadhaar" placeholder="${escapeHtml(t('aadhaar'))}" value="${escapeHtml(editing?.aadhaar || '')}" class="px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
-                <input name="pan" placeholder="${escapeHtml(t('pan'))}" value="${escapeHtml(editing?.pan || '')}" class="px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <div class="pt-1">
+                <div class="label">${escapeHtml(t('id_proofs'))}</div>
+                <div class="grid grid-cols-2 gap-3">
+                  <input name="aadhaar" placeholder="${escapeHtml(t('aadhaar'))}" value="${escapeHtml(editing?.aadhaar || '')}" class="input">
+                  <input name="pan" placeholder="${escapeHtml(t('pan'))}" value="${escapeHtml(editing?.pan || '')}" class="input">
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="label mb-0">${escapeHtml(t('id_photos'))}</div>
+                  <button type="button" id="addIdPhotoBtn" class="btn btn-sm" style="background:#eef4ff;color:#2434d0;border:1px solid #bfd1ff;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                    ${escapeHtml(t('add_id_photo'))}
+                  </button>
+                </div>
+                <div id="idPhotosList" class="grid grid-cols-3 gap-2"></div>
+                <div class="text-[11px] text-slate-400 mt-1.5">${escapeHtml(t('id_photos_hint'))}</div>
               </div>
             </div>
           </details>
 
-          <details class="bg-slate-50 border border-slate-100 rounded-lg p-3">
-            <summary class="text-xs font-semibold text-slate-700 cursor-pointer">${escapeHtml(t('bank_details'))}</summary>
+          <details class="bg-slate-50 border border-slate-100 rounded-xl p-3 group">
+            <summary class="text-xs font-bold text-slate-700 cursor-pointer flex items-center justify-between list-none">
+              <span class="uppercase tracking-wider">${escapeHtml(t('bank_details'))}</span>
+              <svg class="text-slate-400 group-open:rotate-180 transition-transform" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
             <div class="space-y-3 mt-3">
-              <input name="bankHolder" placeholder="${escapeHtml(t('bank_holder'))}" value="${escapeHtml(editing?.bank?.holder || '')}" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <input name="bankHolder" placeholder="${escapeHtml(t('bank_holder'))}" value="${escapeHtml(editing?.bank?.holder || '')}" class="input">
               <div class="grid grid-cols-2 gap-3">
-                <input name="bankAcc" placeholder="${escapeHtml(t('bank_account'))}" value="${escapeHtml(editing?.bank?.account || '')}" class="px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
-                <input name="bankIfsc" placeholder="${escapeHtml(t('bank_ifsc'))}" value="${escapeHtml(editing?.bank?.ifsc || '')}" class="px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+                <input name="bankAcc" placeholder="${escapeHtml(t('bank_account'))}" value="${escapeHtml(editing?.bank?.account || '')}" class="input">
+                <input name="bankIfsc" placeholder="${escapeHtml(t('bank_ifsc'))}" value="${escapeHtml(editing?.bank?.ifsc || '')}" class="input">
               </div>
-              <input name="upiId" placeholder="${escapeHtml(t('upi_id'))} (eg: name@upi)" value="${escapeHtml(editing?.upiId || '')}" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+              <input name="upiId" placeholder="${escapeHtml(t('upi_id'))} (e.g. name@upi)" value="${escapeHtml(editing?.upiId || '')}" class="input">
             </div>
           </details>
 
-          ${editing ? `<details class="bg-slate-50 border border-slate-100 rounded-lg p-3">
-            <summary class="text-xs font-semibold text-slate-700 cursor-pointer">${escapeHtml(t('loans'))} <span class="ml-1 text-slate-400">(${state.loans.filter(l => l.staffId === editing.id && !l.closed).length})</span></summary>
+          ${editing ? `<details class="bg-slate-50 border border-slate-100 rounded-xl p-3 group">
+            <summary class="text-xs font-bold text-slate-700 cursor-pointer flex items-center justify-between list-none">
+              <span class="uppercase tracking-wider">${escapeHtml(t('loans'))} <span class="ml-1 text-slate-400 normal-case">(${state.loans.filter(l => l.staffId === editing.id && !l.closed).length})</span></span>
+              <svg class="text-slate-400 group-open:rotate-180 transition-transform" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
             <div class="mt-3 space-y-2" id="loanList"></div>
             <button type="button" id="addLoanBtn" class="mt-3 text-xs font-semibold text-brand-600">+ ${escapeHtml(t('add_loan'))}</button>
           </details>` : ''}
 
-          <div class="pt-2 flex gap-2">
-            <button type="button" id="cancelStaffForm" class="flex-1 py-3 rounded-lg border border-slate-200 text-slate-600 text-sm font-semibold">${escapeHtml(t('cancel'))}</button>
+          <div class="pt-2 flex gap-2 sticky bottom-0 -mx-4 px-4 pb-2 bg-white/95 backdrop-blur border-t border-slate-100" style="margin-bottom:-0.5rem;">
+            <button type="button" id="cancelStaffForm" class="btn btn-secondary flex-1">${escapeHtml(t('cancel'))}</button>
             ${editing ? (editing.active === false
-              ? `<button type="button" id="delStaff" class="flex-1 py-3 rounded-lg border border-emerald-200 text-emerald-700 text-sm font-semibold">${escapeHtml(t('reactivate'))}</button>`
-              : `<button type="button" id="delStaff" class="flex-1 py-3 rounded-lg border border-rose-200 text-rose-600 text-sm font-semibold">${escapeHtml(t('remove_employee'))}</button>`
+              ? `<button type="button" id="delStaff" class="flex-1 btn" style="border:1px solid #a7f3d0;color:#047857;background:#fff;">${escapeHtml(t('reactivate'))}</button>`
+              : `<button type="button" id="delStaff" class="btn btn-danger-outline flex-1">${escapeHtml(t('remove_employee'))}</button>`
             ) : ''}
-            <button type="submit" class="flex-1 py-3 rounded-lg bg-brand-600 text-white text-sm font-semibold">${escapeHtml(editing ? t('save_changes') : t('add_staff_btn'))}</button>
+            <button type="submit" class="btn btn-primary flex-1">${escapeHtml(editing ? t('save_changes') : t('add_staff_btn'))}</button>
           </div>
         </form>
       `);
@@ -5041,6 +5250,41 @@
       $('#staffPhotoRm')?.addEventListener('click', () => {
         pendingPhoto = null; photoRemoved = true;
         $('#staffPhotoPreview').innerHTML = escapeHtml(t('photo'));
+      });
+
+      // ID proof photos: aadhaar / PAN / driving license / any other ID.
+      // Stored as an array of { label, dataUrl }. Compressed at 1200px so
+      // text on the document stays legible without bloating localStorage.
+      let pendingIdPhotos = Array.isArray(editing?.idPhotos) ? structuredClone(editing.idPhotos) : [];
+      function renderIdPhotosList() {
+        const wrap = $('#idPhotosList');
+        if (!wrap) return;
+        wrap.innerHTML = pendingIdPhotos.length
+          ? pendingIdPhotos.map((p, i) => `
+            <div class="relative aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
+              <img src="${p.dataUrl}" class="w-full h-full object-cover cursor-zoom-in" alt="${escapeHtml(p.label || 'ID')}" data-id-view="${i}">
+              <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent text-white text-[10px] font-semibold px-1.5 py-1 truncate">${escapeHtml(p.label || ('ID ' + (i + 1)))}</div>
+              <button type="button" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center" data-id-rm="${i}" aria-label="Remove">×</button>
+            </div>`).join('')
+          : `<div class="col-span-3 text-center text-xs text-slate-400 py-4 border border-dashed border-slate-200 rounded-lg">${escapeHtml(t('no_id_photos'))}</div>`;
+        $$('[data-id-rm]').forEach(b => b.addEventListener('click', (e) => {
+          const i = Number(e.currentTarget.dataset.idRm);
+          pendingIdPhotos.splice(i, 1);
+          renderIdPhotosList();
+        }));
+        $$('[data-id-view]').forEach(im => im.addEventListener('click', (e) => {
+          const i = Number(e.currentTarget.dataset.idView);
+          openIdPhotoViewer(pendingIdPhotos[i]);
+        }));
+      }
+      renderIdPhotosList();
+      $('#addIdPhotoBtn')?.addEventListener('click', async () => {
+        const label = (prompt(t('id_photo_label_prompt'), '') || '').trim();
+        if (label === null) return;
+        const img = await pickAndCompressImage({ maxSize: 1200, quality: 0.82, capture: 'environment' });
+        if (!img) return;
+        pendingIdPhotos.push({ label: label || ('ID ' + (pendingIdPhotos.length + 1)), dataUrl: img });
+        renderIdPhotosList();
       });
 
       $$('input[name="salaryType"]').forEach(r => r.addEventListener('change', e => {
@@ -5071,7 +5315,6 @@
           amount: Number(f.get('amount') || 0),
           pieceRate: Number(f.get('pieceRate') || 0) || null,
           otRate: otRateVal ? Number(otRateVal) : null,
-          shiftId: f.get('shiftId') || '',
           weeklyOffs,
           active: f.get('active') === 'on',
           emergency: {
@@ -5081,6 +5324,7 @@
           },
           aadhaar: (f.get('aadhaar') || '').trim(),
           pan: (f.get('pan') || '').trim(),
+          idPhotos: pendingIdPhotos,
           bank: {
             holder: (f.get('bankHolder') || '').trim(),
             account: (f.get('bankAcc') || '').trim(),
@@ -5088,6 +5332,9 @@
           },
           upiId: (f.get('upiId') || '').trim(),
         };
+        // The Shift dropdown was removed from the form; preserve any
+        // previously saved shiftId so editing doesn't silently clear it.
+        if (editing?.shiftId) data.shiftId = editing.shiftId;
         if (photoRemoved) data.photo = null;
         else if (pendingPhoto) data.photo = pendingPhoto;
         if (!data.name) return;
@@ -5330,23 +5577,23 @@
       const monthLabel = new Date(ym + '-01').toLocaleDateString(lang === 'en' ? 'en-IN' : lang, { month: 'long', year: 'numeric' });
 
       root.innerHTML = `
-        <div class="mb-4 flex items-end justify-between">
-          <div>
-            <h1 class="text-xl font-extrabold tracking-tight">${escapeHtml(t('payroll'))}</h1>
-            <p class="text-sm text-slate-500">${escapeHtml(t('auto_calc'))}</p>
+        <div class="mb-4 flex items-end justify-between gap-3">
+          <div class="min-w-0">
+            <h1 class="text-2xl font-extrabold tracking-tight">${escapeHtml(t('payroll'))}</h1>
+            <p class="text-sm text-slate-500 truncate">${escapeHtml(t('auto_calc'))}</p>
           </div>
-          <input type="month" id="monthPick" value="${ym}" class="text-sm font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1.5">
+          <input type="month" id="monthPick" value="${ym}" class="text-sm font-semibold bg-white border border-slate-200 rounded-lg px-2.5 py-2 flex-shrink-0">
         </div>
 
         <div class="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-700 text-white p-5 shadow-card mb-4">
           <div class="text-xs text-slate-300 uppercase tracking-wider font-semibold">${escapeHtml(monthLabel)}</div>
-          <div class="text-3xl font-extrabold mt-1">${fmtINR(total)}</div>
+          <div class="text-3xl font-extrabold mt-1 tracking-tight">${fmtINR(total)}</div>
           <div class="text-xs text-slate-300 mt-2">${escapeHtml(t('days_basis', { n: state.settings.workingDaysPerMonth }))}</div>
         </div>
 
         ${state.staff.length === 0
-          ? `<div class="bg-white border border-slate-100 rounded-2xl p-6 text-center shadow-soft text-sm text-slate-500">${escapeHtml(t('no_staff_for_payroll'))}</div>`
-          : `<div class="space-y-2">${state.staff.map(s => payrollCard(s, ym)).join('')}</div>`
+          ? `<div class="card p-8 text-center"><div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div><div class="text-sm text-slate-700 font-semibold">${escapeHtml(t('no_staff_for_payroll'))}</div></div>`
+          : `<div class="space-y-2.5">${state.staff.map(s => payrollCard(s, ym)).join('')}</div>`
         }
       `;
 
@@ -5358,20 +5605,20 @@
       const { present, half, absent, leave } = monthAttendanceForStaff(s.id, ym);
       const { net, effectiveDays } = salaryForMonth(s, ym);
       return `
-        <button data-payslip="${s.id}" class="w-full text-left bg-white border border-slate-100 rounded-2xl p-3 shadow-soft active:scale-[.99] transition">
+        <button data-payslip="${s.id}" class="w-full text-left card p-3 active:scale-[.99] transition">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 text-brand-800 flex items-center justify-center font-semibold">${escapeHtml(initialsOf(s.name))}</div>
+            ${avatarHTML(s, 'w-11 h-11')}
             <div class="flex-1 min-w-0">
               <div class="font-semibold text-sm truncate">${escapeHtml(s.name)}</div>
-              <div class="text-xs text-slate-500 mt-0.5">
+              <div class="text-xs text-slate-500 mt-1 flex flex-wrap gap-1">
                 <span class="chip bg-emerald-50 text-emerald-700">P ${present}</span>
                 <span class="chip bg-amber-50 text-amber-700">H ${half}</span>
                 <span class="chip bg-sky-50 text-sky-700">L ${leave}</span>
                 <span class="chip bg-rose-50 text-rose-700">A ${absent}</span>
               </div>
             </div>
-            <div class="text-right">
-              <div class="text-base font-extrabold">${fmtINR(net)}</div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-base font-extrabold tracking-tight">${fmtINR(net)}</div>
               <div class="text-[11px] text-slate-400">${effectiveDays.toFixed(1)} ${escapeHtml(t('day'))}</div>
             </div>
           </div>
@@ -5827,7 +6074,7 @@
               <div class="text-[11px] text-brand-600 font-semibold mt-0.5">${escapeHtml(t('worker_my_profile'))} ›</div>
             </div>
           </button>
-          <button id="workerAnnBell" class="relative w-10 h-10 rounded-full bg-white border border-slate-100 shadow-soft flex items-center justify-center flex-shrink-0" aria-label="${escapeHtml(t('announcements'))}">
+          <button id="workerAnnBell" class="relative w-10 h-10 rounded-full bg-white border border-slate-100 shadow-soft flex items-center justify-center flex-shrink-0 active:scale-95 transition" aria-label="${escapeHtml(t('announcements'))}">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
             ${unread ? `<span class="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">${unread}</span>` : ''}
           </button>
@@ -5838,8 +6085,8 @@
 
         <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white p-5 shadow-card mb-4">
           <div class="text-xs text-brand-100 uppercase tracking-wider font-semibold">${escapeHtml(t('worker_this_month'))}</div>
-          <div class="text-3xl font-extrabold mt-1">${fmtINR(calc.net)}</div>
-          <div class="flex items-center gap-3 mt-3 text-sm">
+          <div class="text-3xl font-extrabold mt-1 tracking-tight">${fmtINR(calc.net)}</div>
+          <div class="flex flex-wrap items-center gap-1.5 mt-3 text-sm">
             <span class="chip bg-white/15 text-white border border-white/10">P ${att.present}</span>
             <span class="chip bg-white/15 text-white border border-white/10">H ${att.half}</span>
             <span class="chip bg-white/15 text-white border border-white/10">L ${att.leave}</span>
@@ -5847,26 +6094,26 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-2 mb-4 text-center">
-          <div class="bg-white border border-slate-100 rounded-xl p-3 shadow-soft">
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          <div class="card p-3 text-center">
             <div class="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">${escapeHtml(t('base_pay'))}</div>
-            <div class="font-bold mt-1">${fmtINR(calc.basePay)}</div>
+            <div class="font-bold mt-1 text-sm">${fmtINR(calc.basePay)}</div>
           </div>
-          <div class="bg-white border border-slate-100 rounded-xl p-3 shadow-soft">
+          <div class="card p-3 text-center">
             <div class="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">${escapeHtml(t('ot_amount'))}</div>
-            <div class="font-bold mt-1">${fmtINR(calc.otPay)}</div>
+            <div class="font-bold mt-1 text-sm">${fmtINR(calc.otPay)}</div>
           </div>
-          <div class="bg-white border border-slate-100 rounded-xl p-3 shadow-soft">
+          <div class="card p-3 text-center">
             <div class="text-[10px] text-slate-500 uppercase font-semibold tracking-wider">${escapeHtml(t('outstanding_advance'))}</div>
-            <div class="font-bold mt-1 text-rose-600">${fmtINR(calc.advances)}</div>
+            <div class="font-bold mt-1 text-sm text-rose-600">${fmtINR(calc.advances)}</div>
           </div>
         </div>
 
-        <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-soft">
-          <div class="flex items-center justify-between mb-3">
-            <div>
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3 gap-3">
+            <div class="min-w-0">
               <div class="text-xs text-slate-500 uppercase font-semibold tracking-wider">${escapeHtml(t('date_today'))}</div>
-              <div class="mt-1 flex items-center gap-2">
+              <div class="mt-1.5 flex items-center gap-2">
                 ${todayStatus
                   ? `<span class="chip ${ATT_COLOR[todayStatus]} border">${escapeHtml(ATT_LABEL(todayStatus))}</span>`
                   : `<span class="chip bg-slate-100 text-slate-500">—</span>`}
@@ -5874,23 +6121,23 @@
             </div>
             ${(() => {
               const p = state.punches[today]?.[w.id] || {};
-              const selfie = p.selfie ? `<img src="${p.selfie}" class="w-14 h-14 rounded-xl object-cover border border-emerald-200" alt="">` : '';
+              const selfie = p.selfie ? `<img src="${p.selfie}" class="w-14 h-14 rounded-xl object-cover border border-emerald-200 flex-shrink-0" alt="">` : '';
               return selfie;
             })()}
           </div>
           <div class="text-xs text-slate-600 mb-3">${punchSummary(state.punches[today]?.[w.id])}</div>
           ${(() => {
             if (w.active === false) {
-              return `<div class="w-full py-3 rounded-xl bg-slate-100 text-slate-500 font-semibold text-sm text-center">${escapeHtml(t('ex_employee_no_punch'))}</div>`;
+              return `<div class="w-full py-3.5 rounded-xl bg-slate-100 text-slate-500 font-semibold text-sm text-center">${escapeHtml(t('ex_employee_no_punch'))}</div>`;
             }
             const p = state.punches[today]?.[w.id] || {};
             if (p.in && p.out) {
-              return `<button disabled class="w-full py-3 rounded-xl bg-slate-100 text-slate-500 font-semibold text-sm">${escapeHtml(t('worker_done_today'))}</button>`;
+              return `<button disabled class="w-full py-3.5 rounded-xl bg-slate-100 text-slate-500 font-semibold text-sm flex items-center justify-center gap-2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>${escapeHtml(t('worker_done_today'))}</button>`;
             }
             if (p.in && !p.out) {
-              return `<button id="workerPunch" data-action="out" class="w-full py-3 rounded-xl bg-rose-600 text-white font-semibold text-sm active:scale-[.99] transition">${escapeHtml(t('punch_out_btn'))}</button>`;
+              return `<button id="workerPunch" data-action="out" class="w-full py-3.5 rounded-xl bg-rose-600 text-white font-semibold text-sm active:scale-[.99] transition flex items-center justify-center gap-2 shadow-card"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>${escapeHtml(t('punch_out_btn'))}</button>`;
             }
-            return `<button id="workerPunch" data-action="in" class="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold text-sm active:scale-[.99] transition">${escapeHtml(t('punch_in_btn'))}</button>`;
+            return `<button id="workerPunch" data-action="in" class="w-full py-3.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm active:scale-[.99] transition flex items-center justify-center gap-2 shadow-card"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>${escapeHtml(t('punch_in_btn'))}</button>`;
           })()}
         </div>
       `;
@@ -6175,93 +6422,134 @@
       // button only when there's actually something to sign out from.
       const isSignedIn = !!(state.cloud?.userId || state.biz?.id);
       const accountEmail = state.cloud?.email || '';
+      const settingsTile = (sub, iconBg, iconColor, iconSvg, ttl, subtitle) => `
+        <button type="button" data-sub="${sub}" class="settings-tile">
+          <div class="icon-bg" style="background:${iconBg};">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${iconSvg}</svg>
+          </div>
+          <div class="label-wrap">
+            <div class="ttl">${escapeHtml(ttl)}</div>
+            ${subtitle ? `<div class="sub">${escapeHtml(subtitle)}</div>` : ''}
+          </div>
+          <svg class="chevron-right text-slate-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>`;
+
+      const cloudBadge = state.cloud?.enabled && state.cloud?.userId
+        ? `<span class="chip bg-emerald-50 text-emerald-700 border border-emerald-200">${escapeHtml(t('cloud_status_synced'))}</span>`
+        : state.cloud?.enabled
+          ? `<span class="chip bg-amber-50 text-amber-700 border border-amber-200">${escapeHtml(t('cloud_status_signedout'))}</span>`
+          : `<span class="chip bg-slate-100 text-slate-500 border border-slate-200">${escapeHtml(t('cloud_status_off'))}</span>`;
+
       openSheet(`
-        <div class="mb-3">
-          <div class="text-lg font-bold">${escapeHtml(t('settings'))}</div>
+        <div class="mb-4">
+          <div class="text-lg font-bold tracking-tight">${escapeHtml(t('settings'))}</div>
           <div class="text-xs text-slate-500">${escapeHtml(t('biz_prefs'))}</div>
         </div>
-        <form id="settingsForm" class="space-y-3">
+        <form id="settingsForm" class="space-y-4">
           ${state.settings.role !== 'worker' ? `
-          <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('business_name'))}</label>
-            <input name="businessName" value="${escapeHtml(state.business.name)}" placeholder="${escapeHtml(t('biz_default'))}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
+          <div class="space-y-3">
+            <div class="section-title">${escapeHtml(t('biz_default'))}</div>
+            <div>
+              <label class="label">${escapeHtml(t('business_name'))}</label>
+              <input name="businessName" value="${escapeHtml(state.business.name)}" placeholder="${escapeHtml(t('biz_default'))}" class="input">
+            </div>
+            <div>
+              <label class="label">${escapeHtml(t('owner_name'))}</label>
+              <input name="ownerName" value="${escapeHtml(state.business.ownerName || '')}" class="input">
+            </div>
+            <div>
+              <label class="label">${escapeHtml(t('working_days_pm'))}</label>
+              <input name="wdpm" type="number" min="1" max="31" value="${state.settings.workingDaysPerMonth}" class="input">
+            </div>
           </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('owner_name'))}</label>
-            <input name="ownerName" value="${escapeHtml(state.business.ownerName || '')}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('working_days_pm'))}</label>
-            <input name="wdpm" type="number" min="1" max="31" value="${state.settings.workingDaysPerMonth}" class="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm">
-          </div>
-          <div class="bg-slate-50 rounded-xl p-3 space-y-3 border border-slate-100">
-            <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">${escapeHtml(t('punch_settings_title'))}</div>
-            <div class="flex items-center justify-between">
-              <div>
+
+          <div class="card p-3 space-y-3">
+            <div class="section-title">${escapeHtml(t('punch_settings_title'))}</div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
                 <div class="text-sm font-semibold text-slate-700">${escapeHtml(t('punch_selfie_required'))}</div>
                 <div class="text-[11px] text-slate-400">${escapeHtml(t('punch_selfie_hint'))}</div>
               </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" name="punchSelfie" ${state.settings.punchSelfie ? 'checked' : ''} class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+              <label class="toggle flex-shrink-0">
+                <input type="checkbox" name="punchSelfie" ${state.settings.punchSelfie ? 'checked' : ''}>
+                <span class="track"></span><span class="thumb"></span>
               </label>
             </div>
-            <div class="flex items-center justify-between">
-              <div>
+            <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+              <div class="min-w-0">
                 <div class="text-sm font-semibold text-slate-700">${escapeHtml(t('punch_gps_required'))}</div>
                 <div class="text-[11px] text-slate-400">${escapeHtml(t('punch_gps_hint'))}</div>
               </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" name="punchGps" ${state.settings.punchGps !== false ? 'checked' : ''} class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+              <label class="toggle flex-shrink-0">
+                <input type="checkbox" name="punchGps" ${state.settings.punchGps !== false ? 'checked' : ''}>
+                <span class="track"></span><span class="thumb"></span>
               </label>
             </div>
           </div>` : ''}
+
           <div>
-            <label class="text-xs font-semibold text-slate-600">${escapeHtml(t('language'))}</label>
-            <div class="grid grid-cols-5 gap-1.5 mt-1">
+            <div class="section-title mb-2">${escapeHtml(t('language'))}</div>
+            <div class="grid grid-cols-5 gap-1.5">
               ${langs.map(l => `
                 <label class="cursor-pointer">
                   <input type="radio" name="language" value="${l.id}" class="peer sr-only" ${state.settings.language === l.id ? 'checked' : ''}>
-                  <div class="border border-slate-200 rounded-lg py-2 text-xs text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium">${escapeHtml(l.label)}</div>
+                  <div class="border border-slate-200 rounded-lg py-2 text-xs text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium transition">${escapeHtml(l.label)}</div>
                 </label>`).join('')}
             </div>
           </div>
 
           ${state.settings.role !== 'worker' ? `
-          <div class="pt-1">
-            <div class="text-xs font-semibold text-slate-600 mb-1.5">${escapeHtml(t('biz_prefs'))}</div>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" data-sub="holidays" class="py-2.5 rounded-lg border border-slate-200 text-sm font-semibold">${escapeHtml(t('holidays'))} <span class="text-slate-400">(${state.holidays.length})</span></button>
-              <button type="button" data-sub="shifts" class="py-2.5 rounded-lg border border-slate-200 text-sm font-semibold">${escapeHtml(t('shifts'))} <span class="text-slate-400">(${state.shifts.length})</span></button>
-              <button type="button" data-sub="taskCats" class="py-2.5 rounded-lg border border-slate-200 text-sm font-semibold">${escapeHtml(t('task_categories'))} <span class="text-slate-400">(${(state.taskCategories || []).length})</span></button>
-              <button type="button" data-sub="announcements" class="py-2.5 rounded-lg border border-slate-200 text-sm font-semibold">${escapeHtml(t('announcements'))} <span class="text-slate-400">(${state.announcements.length})</span></button>
-              <button type="button" data-sub="audit" class="py-2.5 rounded-lg border border-slate-200 text-sm font-semibold">${escapeHtml(t('audit_log'))}</button>
-              <button type="button" data-sub="pin" class="py-2.5 rounded-lg border border-slate-200 text-sm font-semibold">${escapeHtml(t('pin_lock'))} ${state.settings.pinEnabled ? '· ON' : ''}</button>
-              <button type="button" data-sub="csv" class="py-2.5 rounded-lg border border-slate-200 text-sm font-semibold">${escapeHtml(t('export_csv'))}</button>
-              <button type="button" data-sub="cloud" class="py-2.5 rounded-lg border border-slate-200 text-sm font-semibold col-span-2 flex items-center justify-center gap-2">
-                ${escapeHtml(t('cloud_sync'))}
-                <span class="chip ${state.cloud?.enabled && state.cloud?.userId ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : state.cloud?.enabled ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}">${escapeHtml(state.cloud?.enabled && state.cloud?.userId ? t('cloud_status_synced') : state.cloud?.enabled ? t('cloud_status_signedout') : t('cloud_status_off'))}</span>
+          <div>
+            <div class="section-title mb-2">${escapeHtml(t('biz_prefs'))}</div>
+            <div class="grid grid-cols-1 gap-2">
+              ${settingsTile('holidays', '#fef3c7', '#d97706',
+                `<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>`,
+                t('holidays'), `${state.holidays.length} ${escapeHtml(t('holidays')).toLowerCase()}`)}
+              ${settingsTile('shifts', '#dbeafe', '#2563eb',
+                `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`,
+                t('shifts'), `${state.shifts.length}`)}
+              ${settingsTile('taskCats', '#dcfce7', '#059669',
+                `<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`,
+                t('task_categories'), `${(state.taskCategories || []).length} categories`)}
+              ${settingsTile('announcements', '#ffedd5', '#ea580c',
+                `<path d="M3 11l18-8v18L3 13z"/>`,
+                t('announcements'), `${state.announcements.length}`)}
+              ${settingsTile('audit', '#e0e7ff', '#4f46e5',
+                `<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>`,
+                t('audit_log'), '')}
+              ${settingsTile('pin', '#fee2e2', '#dc2626',
+                `<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`,
+                t('pin_lock'), state.settings.pinEnabled ? 'ON' : 'OFF')}
+              ${settingsTile('csv', '#f1f5f9', '#475569',
+                `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>`,
+                t('export_csv'), '')}
+              <button type="button" data-sub="cloud" class="settings-tile">
+                <div class="icon-bg" style="background:#eef4ff;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2b43ec" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                </div>
+                <div class="label-wrap">
+                  <div class="ttl">${escapeHtml(t('cloud_sync'))}</div>
+                  <div class="sub">${cloudBadge}</div>
+                </div>
+                <svg class="chevron-right text-slate-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
               </button>
             </div>
           </div>` : ''}
 
           ${isSignedIn ? `
-          <div class="pt-2">
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="text-xs font-semibold text-slate-700">${escapeHtml(t('signed_in_as'))}</div>
-                <div class="text-xs text-slate-500 truncate">${escapeHtml(accountEmail || t('cloud_signed_in'))}</div>
-              </div>
-              <button type="button" id="logoutBtn" class="text-xs font-semibold px-3 py-2 rounded-lg bg-white border border-rose-200 text-rose-600">${escapeHtml(t('logout'))}</button>
+          <div class="card p-3 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
             </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">${escapeHtml(t('signed_in_as'))}</div>
+              <div class="text-sm text-slate-700 font-semibold truncate">${escapeHtml(accountEmail || t('cloud_signed_in'))}</div>
+            </div>
+            <button type="button" id="logoutBtn" class="btn btn-danger-outline btn-sm flex-shrink-0">${escapeHtml(t('logout'))}</button>
           </div>` : ''}
 
-          <div class="pt-2">
-            <button type="submit" class="w-full py-3 rounded-lg bg-brand-600 text-white text-sm font-semibold">${escapeHtml(t('save'))}</button>
+          <div class="pt-1">
+            <button type="submit" class="btn btn-primary btn-lg w-full">${escapeHtml(t('save'))}</button>
           </div>
         </form>
       `);
