@@ -439,6 +439,8 @@
         worker_loc_diag_state_flush_error: 'Last upload error: {v}',
         worker_loc_diag_state_geo_error: 'Last GPS error: {v}',
         worker_loc_diag_state_session: 'Signed-in user id: {v}',
+        worker_loc_diag_state_staff: 'Sending as staff id: {v}',
+        worker_loc_diag_state_biz: 'Business id: {v}',
         worker_loc_diag_yes: 'yes', worker_loc_diag_no: 'no', worker_loc_diag_none: 'none',
         worker_loc_diag_never: 'never',
         worker_loc_diag_help_title: 'Things to try',
@@ -448,6 +450,15 @@
         worker_loc_diag_help_install: 'Browser tabs stop GPS when minimised. Install PayBox to your home screen for steady tracking.',
         worker_loc_diag_help_indoor: 'Step near a window or outside \u2014 indoor GPS fixes are filtered out as too inaccurate.',
         worker_loc_diag_help_battery: 'Battery saver / low-power mode can suppress GPS. Disable it for the browser/app.',
+        worker_loc_force_flush: 'Force upload now',
+        worker_loc_force_flush_running: 'Uploading\u2026',
+        worker_loc_force_flush_ok: 'Uploaded {n} ping(s).',
+        worker_loc_force_flush_none: 'Nothing to upload.',
+        worker_loc_force_flush_fail: 'Upload failed: {reason}',
+        worker_loc_reason_offline: 'phone is offline',
+        worker_loc_reason_no_session: 'not signed in (session expired) \u2014 sign out and back in',
+        worker_loc_reason_cloud_inactive: 'cloud sync is paused for this business',
+        worker_loc_reason_insert_failed: 'database rejected the rows ({msg})',
         live_map: 'Live map', live_map_sub: 'See active staff on a map',
         live_map_empty: 'No active staff on the map yet',
         live_map_offline: 'Offline', live_map_active: 'Active',
@@ -3747,17 +3758,30 @@
         }
 
         async function flush() {
-          if (!active()) return;
-          if (!navigator.onLine) return;
+          if (!active()) {
+            lastFlushError = { msg: 'cloud_inactive', at: Date.now() };
+            return { ok: false, reason: 'cloud_inactive' };
+          }
+          if (!navigator.onLine) {
+            lastFlushError = { msg: 'offline', at: Date.now() };
+            return { ok: false, reason: 'offline' };
+          }
           let buf = loadBuffer();
-          if (!buf.length) return;
+          if (!buf.length) return { ok: true, uploaded: 0 };
           try {
             const c = await client();
-            const { data: sess } = await c.auth.getSession();
-            if (!sess?.session) return;
+            const { data: sess, error: sessErr } = await c.auth.getSession();
+            if (sessErr || !sess?.session) {
+              // Most common cause of a stuck buffer: the worker's auth
+              // refresh failed and we have no JWT to send. RLS would
+              // reject anyway, but bailing here gives a cleaner reason.
+              const msg = sessErr?.message ? `session: ${sessErr.message}` : 'no_session';
+              lastFlushError = { msg: String(msg).slice(0, 200), at: Date.now() };
+              return { ok: false, reason: 'no_session' };
+            }
             // Drop rows from past businesses (safety after biz switch).
             buf = buf.filter(r => r.business_id === state.biz.id);
-            if (!buf.length) { saveBuffer([]); return; }
+            if (!buf.length) { saveBuffer([]); return { ok: true, uploaded: 0 }; }
             const head = buf.slice(0, MAX_BATCH);
             const rest = buf.slice(MAX_BATCH);
             const rows = head.map(r => ({
@@ -3779,6 +3803,7 @@
             broadcastBatch(rows).catch(() => {});
             // Recurse if more remain so a backlog drains in one online window.
             if (rest.length) flush().catch(() => {});
+            return { ok: true, uploaded: rows.length, remaining: rest.length };
           } catch (e) {
             // Capture the failure so diagnose() can surface it. Common
             // culprits: RLS (insert blocked because author_id !=
@@ -3786,6 +3811,7 @@
             // or 5xx from Supabase. The buffer is left in place for retry.
             const msg = (e && (e.message || e.error_description || e.code)) || 'flush_failed';
             lastFlushError = { msg: String(msg).slice(0, 200), at: Date.now() };
+            return { ok: false, reason: 'insert_failed', msg: lastFlushError.msg };
           }
         }
 
@@ -7403,8 +7429,12 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
 
         <div class="card p-3 mb-3">
           <div class="text-sm font-semibold text-slate-700 mb-1">${escapeHtml(t('worker_loc_diag_title'))}</div>
-          <button id="wLocSelfTest" class="w-full py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold mt-2">${escapeHtml(t('worker_loc_diag_run'))}</button>
+          <div class="flex gap-2 mt-2">
+            <button id="wLocSelfTest" class="flex-1 py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold">${escapeHtml(t('worker_loc_diag_run'))}</button>
+            <button id="wLocForceFlush" class="flex-1 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold">${escapeHtml(t('worker_loc_force_flush'))}</button>
+          </div>
           <div id="wLocSelfTestOut" class="text-[11px] text-slate-600 mt-2 hidden"></div>
+          <div id="wLocFlushOut" class="text-[11px] text-slate-600 mt-2 hidden"></div>
           <div id="wLocDiag" class="text-[11px] text-slate-600 mt-3 space-y-1"></div>
           <details class="mt-3 text-[11px] text-slate-600">
             <summary class="cursor-pointer font-semibold">${escapeHtml(t('worker_loc_diag_help_title'))}</summary>
@@ -7479,6 +7509,8 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
           [t('worker_loc_diag_state_flush_error'), d.lastFlushError ? `${d.lastFlushError.msg} · ${ts(d.lastFlushError.at)}` : none],
           [t('worker_loc_diag_state_geo_error'),  d.lastGeoError ? `${d.lastGeoError.msg} · ${ts(d.lastGeoError.at)}` : none],
           [t('worker_loc_diag_state_session'),    d.sessionUid ? d.sessionUid.slice(0, 8) + '…' : none],
+          [t('worker_loc_diag_state_staff'),      d.staffId || none],
+          [t('worker_loc_diag_state_biz'),        d.businessId ? d.businessId.slice(0, 8) + '…' : none],
         ];
         const el = $('#wLocDiag');
         if (!el) return;
@@ -7506,6 +7538,40 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
           const reasonKey = 'worker_loc_diag_reason_' + (res.error || 'unknown');
           const friendly = I18N.en[reasonKey] ? t(reasonKey) : (res.error || t('worker_loc_diag_reason_unknown'));
           out.textContent = t('worker_loc_diag_fail', { reason: friendly });
+        }
+        btn.disabled = false;
+        renderDiag();
+      });
+
+      $('#wLocForceFlush')?.addEventListener('click', async () => {
+        const out = $('#wLocFlushOut');
+        const btn = $('#wLocForceFlush');
+        if (!out || !btn) return;
+        btn.disabled = true;
+        out.classList.remove('hidden');
+        out.className = 'text-[11px] text-slate-600 mt-2';
+        out.textContent = t('worker_loc_force_flush_running');
+        const res = await cloudBiz.tracker.flush();
+        if (res?.ok) {
+          if ((res.uploaded || 0) === 0) {
+            out.className = 'text-[11px] text-slate-600 mt-2 font-semibold';
+            out.textContent = t('worker_loc_force_flush_none');
+          } else {
+            out.className = 'text-[11px] text-emerald-700 mt-2 font-semibold';
+            out.textContent = t('worker_loc_force_flush_ok', { n: res.uploaded });
+            // Refresh today's count too — a successful flush should have
+            // bumped it.
+            try {
+              const c = await cloudBiz.tracker.fetchMyDailyCount(today);
+              $('#wLocCount').textContent = String(c?.count || 0);
+              $('#wLocLast').textContent = c?.lastTs ? new Date(c.lastTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+            } catch {}
+          }
+        } else {
+          out.className = 'text-[11px] text-rose-600 mt-2 font-semibold';
+          const reasonKey = 'worker_loc_reason_' + (res?.reason || 'insert_failed');
+          const reason = I18N.en[reasonKey] ? t(reasonKey, { msg: res?.msg || '' }) : (res?.msg || res?.reason || 'unknown');
+          out.textContent = t('worker_loc_force_flush_fail', { reason });
         }
         btn.disabled = false;
         renderDiag();
