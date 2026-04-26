@@ -417,6 +417,37 @@
         worker_loc_consent_yes: 'Sharing accepted', worker_loc_consent_no: 'Sharing declined', worker_loc_consent_pending: 'Not decided yet — you will be asked at next punch-in.',
         worker_loc_pause: 'Pause sharing', worker_loc_resume: 'Resume sharing', worker_loc_review: 'Review consent',
         worker_loc_paused: 'Location sharing paused', worker_loc_resumed: 'Location sharing resumed',
+        worker_loc_diag_title: 'Why aren\u2019t my pings showing?',
+        worker_loc_diag_run: 'Test my GPS',
+        worker_loc_diag_running: 'Asking your phone for a GPS fix\u2026',
+        worker_loc_diag_ok: 'GPS works \u2014 got a fix accurate to ~{acc}m. If pings are still 0, try the steps below.',
+        worker_loc_diag_fail: 'GPS test failed: {reason}.',
+        worker_loc_diag_reason_permission_denied: 'Location permission was denied for this app',
+        worker_loc_diag_reason_position_unavailable: 'Your phone could not get a fix (no GPS / indoors)',
+        worker_loc_diag_reason_timeout: 'GPS took too long to respond',
+        worker_loc_diag_reason_geolocation_unavailable: 'This browser has no GPS support',
+        worker_loc_diag_reason_unknown: 'Unknown error',
+        worker_loc_diag_state_started: 'Tracker started: {v}',
+        worker_loc_diag_state_watching: 'Watching GPS: {v}',
+        worker_loc_diag_state_consent: 'Consent on record: {v}',
+        worker_loc_diag_state_settings: 'Tracking enabled by employer: {v}',
+        worker_loc_diag_state_online: 'Online: {v}',
+        worker_loc_diag_state_buffer: 'Pings waiting to upload: {v}',
+        worker_loc_diag_state_last_fix: 'Last GPS fix: {v}',
+        worker_loc_diag_state_last_drop: 'Last fix filtered out: {v}',
+        worker_loc_diag_state_last_flush: 'Last successful upload: {v}',
+        worker_loc_diag_state_flush_error: 'Last upload error: {v}',
+        worker_loc_diag_state_geo_error: 'Last GPS error: {v}',
+        worker_loc_diag_state_session: 'Signed-in user id: {v}',
+        worker_loc_diag_yes: 'yes', worker_loc_diag_no: 'no', worker_loc_diag_none: 'none',
+        worker_loc_diag_never: 'never',
+        worker_loc_diag_help_title: 'Things to try',
+        worker_loc_diag_help_permission: 'Open phone Settings \u2192 Apps \u2192 your browser \u2192 Permissions \u2192 Location \u2192 Allow.',
+        worker_loc_diag_help_punch: 'You must be punched in. Sharing only runs between punch-in and punch-out.',
+        worker_loc_diag_help_consent: 'Tap the location banner on Home and accept the consent prompt.',
+        worker_loc_diag_help_install: 'Browser tabs stop GPS when minimised. Install PayBox to your home screen for steady tracking.',
+        worker_loc_diag_help_indoor: 'Step near a window or outside \u2014 indoor GPS fixes are filtered out as too inaccurate.',
+        worker_loc_diag_help_battery: 'Battery saver / low-power mode can suppress GPS. Disable it for the browser/app.',
         live_map: 'Live map', live_map_sub: 'See active staff on a map',
         live_map_empty: 'No active staff on the map yet',
         live_map_offline: 'Offline', live_map_active: 'Active',
@@ -3615,8 +3646,32 @@
         let started = false;
         let activeStaffId = null;
         let activeReason = null;         // why we started — used to log when we stop
+        // Diagnostic state — every silent failure path is captured here
+        // so the worker (and owner self-test) can see *why* nothing is
+        // landing in the DB. Without this, RLS rejects, denied-location
+        // prompts, and stalled batches all look identical from the UI.
+        let lastFlushError = null;       // { msg, at }
+        let lastFlushOkAt = null;        // last successful insert timestamp
+        let lastFlushedCount = 0;        // rows accepted by Supabase in the last flush
+        let lastGeoError = null;         // { code, msg, at } — from watchPosition
+        let lastNativeError = null;      // { msg, at } — from BG plugin watcher
+        let lastFixAt = null;            // last time the OS gave us *any* fix
+        let lastFixDroppedReason = null; // why the most-recent fix was filtered out
 
         function tracking() { return started; }
+        function pipelineFingerprint() {
+          // Cheap snapshot used by the diagnose() exposed below; everything
+          // here is read-only state already kept inside the closure.
+          return {
+            started, activeStaffId, activeReason,
+            watching: watchId != null,
+            bgWatchId: tracker?._bgWatchId || null,
+            bufferLength: loadBuffer().length,
+            lastFlushError, lastFlushOkAt, lastFlushedCount,
+            lastGeoError, lastNativeError,
+            lastFixAt, lastFixDroppedReason,
+          };
+        }
 
         function loadBuffer() {
           try { return JSON.parse(localStorage.getItem(BUFFER_KEY) || '[]') || []; }
@@ -3718,11 +3773,19 @@
             const { error } = await c.from('location_pings').insert(rows);
             if (error) throw error;
             saveBuffer(rest);
+            lastFlushError = null;
+            lastFlushOkAt = Date.now();
+            lastFlushedCount = rows.length;
             broadcastBatch(rows).catch(() => {});
             // Recurse if more remain so a backlog drains in one online window.
             if (rest.length) flush().catch(() => {});
-          } catch (_) {
-            // Leave the buffer in place; next online tick will retry.
+          } catch (e) {
+            // Capture the failure so diagnose() can surface it. Common
+            // culprits: RLS (insert blocked because author_id !=
+            // auth.uid() or business_id mismatch), 401 expired session,
+            // or 5xx from Supabase. The buffer is left in place for retry.
+            const msg = (e && (e.message || e.error_description || e.code)) || 'flush_failed';
+            lastFlushError = { msg: String(msg).slice(0, 200), at: Date.now() };
           }
         }
 
@@ -3735,12 +3798,21 @@
         }
 
         async function record(coords, src) {
-          if (!started || !active() || !activeStaffId) return;
+          lastFixAt = Date.now();
+          if (!started || !active() || !activeStaffId) {
+            lastFixDroppedReason = !started ? 'tracker_not_started'
+              : !active() ? 'cloud_inactive'
+              : 'no_active_staff_id';
+            return;
+          }
           const cfg = settings();
           const ts = Date.now();
           // Drop garbage fixes — anything > 200 m accuracy is mostly cell
           // tower triangulation in disguise and pollutes the route line.
-          if (coords.acc != null && coords.acc > 200) return;
+          if (coords.acc != null && coords.acc > 200) {
+            lastFixDroppedReason = 'low_accuracy_' + Math.round(coords.acc) + 'm';
+            return;
+          }
           const point = {
             business_id: state.biz.id,
             staff_id: activeStaffId,
@@ -3793,13 +3865,20 @@
           if (lastAccepted) {
             const elapsed = ts - lastAccepted.ts;
             // Time gate (regime-aware)
-            if (elapsed < intervalMs) return;
+            if (elapsed < intervalMs) {
+              lastFixDroppedReason = 'time_gate_' + Math.round((intervalMs - elapsed) / 1000) + 's_left';
+              return;
+            }
             // Distance gate when we're not stationary — a tiny jitter
             // shouldn't push a row.
-            if (regime !== 'STILL' && movedSinceLast < minMove && elapsed < stillEvery) return;
+            if (regime !== 'STILL' && movedSinceLast < minMove && elapsed < stillEvery) {
+              lastFixDroppedReason = 'distance_gate_' + Math.round(movedSinceLast) + 'm';
+              return;
+            }
           }
 
           lastAccepted = point;
+          lastFixDroppedReason = null;
           const buf = loadBuffer();
           buf.push(point);
           saveBuffer(buf);
@@ -3819,17 +3898,37 @@
             }, 'web');
           });
         }
-        function onWebError() { /* permission denied or timeout — silently keep watching */ }
+        function onWebError(err) {
+          // Captured (was previously silent). The most common payload is
+          // PERMISSION_DENIED (1) — meaning the browser auto-blocked or
+          // the user said "Block" on the OS prompt — followed by
+          // POSITION_UNAVAILABLE (2) and TIMEOUT (3).
+          const code = err?.code ?? null;
+          const map = { 1: 'permission_denied', 2: 'position_unavailable', 3: 'timeout' };
+          lastGeoError = {
+            code,
+            msg: map[code] || (err?.message || 'unknown'),
+            at: Date.now(),
+          };
+        }
 
         function startWebWatch() {
-          if (watchId != null || !navigator.geolocation) return;
+          if (watchId != null) return;
+          if (!navigator.geolocation) {
+            lastGeoError = { code: null, msg: 'geolocation_unavailable', at: Date.now() };
+            return;
+          }
           try {
             watchId = navigator.geolocation.watchPosition(onWebPosition, onWebError, {
               enableHighAccuracy: true,
               maximumAge: 30000,
               timeout: 30000,
             });
-          } catch (_) { watchId = null; }
+            lastGeoError = null;
+          } catch (e) {
+            watchId = null;
+            lastGeoError = { code: null, msg: (e?.message || 'watch_create_failed'), at: Date.now() };
+          }
         }
         function stopWebWatch() {
           if (watchId != null && navigator.geolocation) {
@@ -3852,16 +3951,21 @@
 
         async function start(staffId, reason) {
           if (started) return;
-          if (!active() || !staffId) return;
-          if (!settings().enabled) return;
+          if (!active()) { lastFixDroppedReason = 'cloud_inactive_at_start'; return; }
+          if (!staffId)  { lastFixDroppedReason = 'no_staff_id_at_start'; return; }
+          if (!settings().enabled) { lastFixDroppedReason = 'tracking_disabled_at_start'; return; }
           // Worker consent gate. Owners doing a self-test still flow
           // through here and are auto-consented.
           const me = (state.staff || []).find(s => s.id === staffId);
           if (!isOwner()) {
             const consented = !!(me?.locConsent?.agreed);
-            if (!consented) return;
+            if (!consented) {
+              lastFixDroppedReason = me ? 'consent_not_agreed_at_start' : 'staff_record_missing_at_start';
+              return;
+            }
           }
           started = true;
+          lastFixDroppedReason = null;
           activeStaffId = staffId;
           activeReason = reason || 'punch_in';
           ensureLiveChannel();
@@ -3885,8 +3989,15 @@
                     distanceFilter: Math.max(5, settings().minMoveMeters || 30),
                   },
                   (location, err) => {
-                    if (err) return;
+                    if (err) {
+                      lastNativeError = {
+                        msg: String(err.message || err.code || 'bg_plugin_error').slice(0, 200),
+                        at: Date.now(),
+                      };
+                      return;
+                    }
                     if (!location) return;
+                    lastNativeError = null;
                     pushExternal({
                       lat: location.latitude, lng: location.longitude,
                       acc: location.accuracy,
@@ -3899,7 +4010,10 @@
                 );
                 return;
               }
-            } catch (_) { /* fall through to web watcher */ }
+            } catch (e) {
+              lastNativeError = { msg: String(e?.message || 'bg_plugin_init_failed').slice(0, 200), at: Date.now() };
+              // Fall through to web watcher
+            }
           }
           startWebWatch();
         }
@@ -4000,22 +4114,117 @@
         }
 
         // Worker-side: count today's pings (for the privacy banner /
-        // profile insight).
+        // profile insight). Returns {count, lastTs, error?} — callers
+        // use `.count` + `.lastTs`. (Earlier versions returned just a
+        // number which broke the worker sheet; do not regress.)
         async function fetchMyDailyCount(dateIso) {
-          if (!state.biz?.id) return 0;
+          const out = { count: 0, lastTs: null, error: null };
+          if (!state.biz?.id) { out.error = 'no_business'; return out; }
           const sid = state.biz?.staffId || state.settings.workerId;
-          if (!sid) return 0;
+          if (!sid) { out.error = 'no_staff_id'; return out; }
           try {
             const c = await client();
             const start = new Date(dateIso + 'T00:00:00').toISOString();
             const end   = new Date(dateIso + 'T23:59:59.999').toISOString();
-            const { count } = await c.from('location_pings')
+            const { count, error: cErr } = await c.from('location_pings')
               .select('id', { count: 'exact', head: true })
               .eq('business_id', state.biz.id)
               .eq('staff_id', sid)
               .gte('ts', start).lte('ts', end);
-            return Number(count || 0);
-          } catch { return 0; }
+            if (cErr) { out.error = String(cErr.message || cErr).slice(0, 200); return out; }
+            out.count = Number(count || 0);
+            if (out.count > 0) {
+              const { data: last } = await c.from('location_pings')
+                .select('ts')
+                .eq('business_id', state.biz.id)
+                .eq('staff_id', sid)
+                .gte('ts', start).lte('ts', end)
+                .order('ts', { ascending: false })
+                .limit(1);
+              out.lastTs = last?.[0]?.ts || null;
+            }
+            return out;
+          } catch (e) {
+            out.error = String(e?.message || e || 'fetch_failed').slice(0, 200);
+            return out;
+          }
+        }
+
+        // Full pipeline snapshot — used by the worker location sheet
+        // and the owner self-test to surface *why* nothing is landing
+        // in the DB. Returns plain JSON-able data so it's safe to
+        // render directly.
+        async function diagnose() {
+          const cfg = settings();
+          const sid = isOwner() ? null : (state.biz?.staffId || state.settings.workerId);
+          const me = sid ? (state.staff || []).find(s => s.id === sid) : null;
+          const fp = pipelineFingerprint();
+          let sessionUid = null;
+          let sessionError = null;
+          try {
+            const c = await client();
+            const { data: sess, error } = await c.auth.getSession();
+            if (error) sessionError = String(error.message || error).slice(0, 200);
+            sessionUid = sess?.session?.user?.id || null;
+          } catch (e) { sessionError = String(e?.message || 'session_unavailable'); }
+          return {
+            ...fp,
+            online: navigator.onLine,
+            visibility: document.visibilityState,
+            permissions: typeof navigator !== 'undefined' && navigator.permissions ? 'available' : 'unavailable',
+            cloudActive: active(),
+            isOwner: isOwner(),
+            staffId: sid,
+            staffFound: !!me,
+            consentAgreed: !!(me?.locConsent?.agreed),
+            settings: { ...cfg },
+            businessId: state.biz?.id || null,
+            sessionUid, sessionError,
+            nativePlatform: Native.on ? Native.platform : null,
+          };
+        }
+
+        // One-shot getCurrentPosition — lets the worker prove the
+        // OS-level GPS works independently of the watcher / RLS / etc.
+        // Returns { ok, lat, lng, acc, error } so callers can render a
+        // friendly message.
+        async function runSelfTest(timeoutMs) {
+          return new Promise((resolve) => {
+            if (!navigator.geolocation) {
+              resolve({ ok: false, error: 'geolocation_unavailable' });
+              return;
+            }
+            let done = false;
+            const t = setTimeout(() => {
+              if (done) return; done = true;
+              resolve({ ok: false, error: 'timeout' });
+            }, Math.max(5000, timeoutMs || 20000));
+            try {
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  if (done) return; done = true;
+                  clearTimeout(t);
+                  resolve({
+                    ok: true,
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    acc: pos.coords.accuracy,
+                  });
+                },
+                (err) => {
+                  if (done) return; done = true;
+                  clearTimeout(t);
+                  const map = { 1: 'permission_denied', 2: 'position_unavailable', 3: 'timeout' };
+                  resolve({ ok: false, error: map[err?.code] || err?.message || 'unknown', code: err?.code || null });
+                },
+                { enableHighAccuracy: true, maximumAge: 0, timeout: Math.max(5000, timeoutMs || 20000) }
+              );
+            } catch (e) {
+              if (done) return; done = true;
+              clearTimeout(t);
+              resolve({ ok: false, error: String(e?.message || 'self_test_failed') });
+            }
+          });
         }
 
         // Owner-only: prune rows older than `days` to control DB size.
@@ -4034,6 +4243,7 @@
           flush, pushExternal,
           subscribeLive, fetchLatestPerStaff, fetchRoute, fetchMyDailyCount,
           pruneOlderThan,
+          diagnose, runSelfTest,
         };
       })();
 
@@ -7190,6 +7400,25 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
             <button id="wLocReview" class="flex-1 py-2 rounded-lg bg-brand-600 text-white text-xs font-semibold">${escapeHtml(t('worker_loc_review'))}</button>
           </div>
         </div>
+
+        <div class="card p-3 mb-3">
+          <div class="text-sm font-semibold text-slate-700 mb-1">${escapeHtml(t('worker_loc_diag_title'))}</div>
+          <button id="wLocSelfTest" class="w-full py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold mt-2">${escapeHtml(t('worker_loc_diag_run'))}</button>
+          <div id="wLocSelfTestOut" class="text-[11px] text-slate-600 mt-2 hidden"></div>
+          <div id="wLocDiag" class="text-[11px] text-slate-600 mt-3 space-y-1"></div>
+          <details class="mt-3 text-[11px] text-slate-600">
+            <summary class="cursor-pointer font-semibold">${escapeHtml(t('worker_loc_diag_help_title'))}</summary>
+            <ul class="list-disc pl-4 mt-1 space-y-1">
+              <li>${escapeHtml(t('worker_loc_diag_help_permission'))}</li>
+              <li>${escapeHtml(t('worker_loc_diag_help_punch'))}</li>
+              <li>${escapeHtml(t('worker_loc_diag_help_consent'))}</li>
+              <li>${escapeHtml(t('worker_loc_diag_help_install'))}</li>
+              <li>${escapeHtml(t('worker_loc_diag_help_indoor'))}</li>
+              <li>${escapeHtml(t('worker_loc_diag_help_battery'))}</li>
+            </ul>
+          </details>
+        </div>
+
         <button id="wLocClose" class="w-full py-3 rounded-lg bg-slate-100 font-semibold text-sm">${escapeHtml(t('close'))}</button>
       `);
 
@@ -7216,13 +7445,71 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
         render();
       });
 
+      // ----- Today's count + last seen -----
       try {
         const c = await cloudBiz.tracker.fetchMyDailyCount(today);
-        $('#wLocCount').textContent = String(c.count || 0);
-        $('#wLocLast').textContent = c.lastTs ? new Date(c.lastTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+        $('#wLocCount').textContent = String(c?.count || 0);
+        $('#wLocLast').textContent = c?.lastTs ? new Date(c.lastTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+        if (c?.error && c.count === 0) {
+          // RLS/network errors usually show up here as "permission denied
+          // for table location_pings" or similar; surfacing makes the
+          // root cause obvious instead of "0".
+          const last = $('#wLocLast');
+          if (last) last.textContent = '—';
+        }
       } catch {
         $('#wLocCount').textContent = '0';
       }
+
+      // ----- Render diagnostic snapshot -----
+      const renderDiag = async () => {
+        const d = await cloudBiz.tracker.diagnose();
+        const yes = t('worker_loc_diag_yes'), no = t('worker_loc_diag_no'), none = t('worker_loc_diag_none'), never = t('worker_loc_diag_never');
+        const ts = (v) => v ? new Date(v).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : never;
+        const rows = [
+          [t('worker_loc_diag_state_started'),  d.started ? yes : no],
+          [t('worker_loc_diag_state_watching'), d.watching ? yes : (d.bgWatchId ? 'native' : no)],
+          [t('worker_loc_diag_state_settings'), d.settings?.enabled ? yes : no],
+          [t('worker_loc_diag_state_consent'),  d.consentAgreed ? yes : no],
+          [t('worker_loc_diag_state_online'),   d.online ? yes : no],
+          [t('worker_loc_diag_state_buffer'),   String(d.bufferLength || 0)],
+          [t('worker_loc_diag_state_last_fix'), ts(d.lastFixAt)],
+          [t('worker_loc_diag_state_last_drop'), d.lastFixDroppedReason || none],
+          [t('worker_loc_diag_state_last_flush'), ts(d.lastFlushOkAt)],
+          [t('worker_loc_diag_state_flush_error'), d.lastFlushError ? `${d.lastFlushError.msg} · ${ts(d.lastFlushError.at)}` : none],
+          [t('worker_loc_diag_state_geo_error'),  d.lastGeoError ? `${d.lastGeoError.msg} · ${ts(d.lastGeoError.at)}` : none],
+          [t('worker_loc_diag_state_session'),    d.sessionUid ? d.sessionUid.slice(0, 8) + '…' : none],
+        ];
+        const el = $('#wLocDiag');
+        if (!el) return;
+        el.innerHTML = rows.map(([k, v]) => {
+          const tone = (typeof v === 'string' && (v.includes('error') || v.includes('denied'))) ? 'text-rose-600 font-semibold' : '';
+          return `<div class="flex justify-between gap-2"><span class="text-slate-500">${escapeHtml(k.replace(/\{v\}.*$/, '').trim())}</span><span class="${tone} text-right break-all">${escapeHtml(String(v))}</span></div>`;
+        }).join('');
+      };
+      renderDiag();
+
+      $('#wLocSelfTest')?.addEventListener('click', async () => {
+        const out = $('#wLocSelfTestOut');
+        const btn = $('#wLocSelfTest');
+        if (!out || !btn) return;
+        btn.disabled = true;
+        out.classList.remove('hidden');
+        out.className = 'text-[11px] text-slate-600 mt-2';
+        out.textContent = t('worker_loc_diag_running');
+        const res = await cloudBiz.tracker.runSelfTest(20000);
+        if (res.ok) {
+          out.className = 'text-[11px] text-emerald-700 mt-2 font-semibold';
+          out.textContent = t('worker_loc_diag_ok', { acc: Math.round(res.acc || 0) });
+        } else {
+          out.className = 'text-[11px] text-rose-600 mt-2 font-semibold';
+          const reasonKey = 'worker_loc_diag_reason_' + (res.error || 'unknown');
+          const friendly = I18N.en[reasonKey] ? t(reasonKey) : (res.error || t('worker_loc_diag_reason_unknown'));
+          out.textContent = t('worker_loc_diag_fail', { reason: friendly });
+        }
+        btn.disabled = false;
+        renderDiag();
+      });
     }
 
     function renderWorkerHome(root, w) {
