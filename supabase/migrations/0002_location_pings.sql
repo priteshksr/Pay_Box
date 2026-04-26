@@ -25,13 +25,17 @@ create table if not exists public.location_pings (
 );
 
 -- Hot path index: live map (most-recent-per-staff) and route replay
--- both query "(business, staff, time desc)".
+-- both query "(business, staff, time desc)". A range scan on `ts` over
+-- this composite is what serves both the daily-count and route
+-- queries, so we don't need a separate day-bucket index.
+-- (We avoid expression indexes on date_trunc(timestamptz) because
+-- that function is STABLE — Postgres rejects it inside an index.)
 create index if not exists location_pings_biz_staff_ts_idx
   on public.location_pings(business_id, staff_id, ts desc);
 
--- Day-bucket index for fast route queries when a date filter is used.
-create index if not exists location_pings_biz_day_idx
-  on public.location_pings(business_id, (date_trunc('day', ts)));
+-- Drop the deprecated day-bucket index if a previous attempt left it
+-- behind. Safe no-op when it doesn't exist.
+drop index if exists public.location_pings_biz_day_idx;
 
 -- 2) Row-Level Security
 alter table public.location_pings enable row level security;
