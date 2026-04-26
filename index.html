@@ -459,6 +459,7 @@
         worker_loc_reason_no_session: 'not signed in (session expired) \u2014 sign out and back in',
         worker_loc_reason_cloud_inactive: 'cloud sync is paused for this business',
         worker_loc_reason_insert_failed: 'database rejected the rows ({msg})',
+        worker_loc_reason_schema_missing: 'location_pings table is missing on the server. Owner: open Supabase \u2192 SQL Editor and run supabase/migrations/0002_location_pings.sql.',
         live_map: 'Live map', live_map_sub: 'See active staff on a map',
         live_map_empty: 'No active staff on the map yet',
         live_map_offline: 'Offline', live_map_active: 'Active',
@@ -472,6 +473,8 @@
         live_map_hint_no_pings_yet: 'Workers are clocked in and have agreed — first ping can take up to a minute to arrive.',
         live_map_hint_pwa_limitation: 'Browser tabs stop sharing GPS when minimised. Install the PayBox app for non-stop tracking.',
         live_map_refreshed: 'Map refreshed',
+        live_map_schema_missing_title: 'Live tracking is not set up on the server',
+        live_map_schema_missing_body: 'Open Supabase \u2192 SQL Editor and run the contents of supabase/migrations/0002_location_pings.sql. After that, refresh this map.',
         live_map_test: 'Test pipeline', live_map_test_running: 'Streaming your location… (60 s)',
         live_map_test_marker: 'You (test)', live_map_test_marker_hint: 'This is a local preview — workers appear here for real while clocked in.',
         live_map_test_denied: 'Location permission denied', live_map_test_failed: 'Could not get your location', live_map_test_unsupported: 'Geolocation not supported on this device',
@@ -3808,10 +3811,18 @@
             // Capture the failure so diagnose() can surface it. Common
             // culprits: RLS (insert blocked because author_id !=
             // auth.uid() or business_id mismatch), 401 expired session,
+            // schema_missing (location_pings migration not applied),
             // or 5xx from Supabase. The buffer is left in place for retry.
-            const msg = (e && (e.message || e.error_description || e.code)) || 'flush_failed';
-            lastFlushError = { msg: String(msg).slice(0, 200), at: Date.now() };
-            return { ok: false, reason: 'insert_failed', msg: lastFlushError.msg };
+            const code = e?.code || '';
+            const raw = (e && (e.message || e.error_description || e.code)) || 'flush_failed';
+            // PGRST205 = "Could not find the table … in the schema cache"
+            // → the owner forgot to run the 0002_location_pings.sql migration.
+            const isSchemaMissing = String(code) === 'PGRST205'
+              || /schema cache/i.test(String(raw))
+              || /location_pings.*does not exist/i.test(String(raw));
+            const reason = isSchemaMissing ? 'schema_missing' : 'insert_failed';
+            lastFlushError = { msg: String(raw).slice(0, 200), at: Date.now(), code, reason };
+            return { ok: false, reason, msg: lastFlushError.msg };
           }
         }
 
@@ -4101,24 +4112,36 @@
 
         // Owner-side hydration: latest known position per active staff.
         // Used when the Live Map first opens so the markers don't all
-        // sit at "no data" until someone moves.
+        // sit at "no data" until someone moves. Returns an array on
+        // success, or { error } if the table is missing / blocked so
+        // the caller can show a banner instead of "no pings".
         async function fetchLatestPerStaff() {
           if (!state.biz?.id) return [];
           try {
             const c = await client();
             const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-            const { data } = await c.from('location_pings')
+            const { data, error } = await c.from('location_pings')
               .select('staff_id, ts, lat, lng, acc, speed, heading')
               .eq('business_id', state.biz.id)
               .gte('ts', since)
               .order('ts', { ascending: false })
               .limit(2000);
+            if (error) {
+              const code = error.code || '';
+              const msg = error.message || '';
+              const schemaMissing = String(code) === 'PGRST205' || /schema cache/i.test(msg) || /location_pings.*does not exist/i.test(msg);
+              const out = []; out.error = schemaMissing ? 'schema_missing' : 'fetch_failed'; out.errorMsg = msg;
+              return out;
+            }
             if (!data?.length) return [];
             // Reduce to most-recent-per-staff in one pass.
             const seen = new Map();
             for (const r of data) { if (!seen.has(r.staff_id)) seen.set(r.staff_id, r); }
             return [...seen.values()];
-          } catch { return []; }
+          } catch (e) {
+            const out = []; out.error = 'fetch_failed'; out.errorMsg = String(e?.message || e || '');
+            return out;
+          }
         }
 
         // Fetch all pings for a staff between [fromIso, toIso].
@@ -5473,7 +5496,21 @@
 
         // Hydrate from latest known position per staff (last 24 h).
         const latest = await cloudBiz.tracker.fetchLatestPerStaff();
-        latest.forEach(applyPing);
+        if (latest && latest.error === 'schema_missing') {
+          // The owner hasn't applied 0002_location_pings.sql yet —
+          // every other read returns "no pings" silently. Make it
+          // unmistakable.
+          const banner = document.createElement('div');
+          banner.className = 'card p-3 mb-3 bg-rose-50 border-rose-200 text-rose-700 text-[12px] leading-relaxed';
+          banner.innerHTML = `
+            <div class="font-bold mb-1">${escapeHtml(t('live_map_schema_missing_title'))}</div>
+            <div>${escapeHtml(t('live_map_schema_missing_body'))}</div>
+            <div class="mt-2 text-[11px] opacity-80 break-all">${escapeHtml(latest.errorMsg || '')}</div>`;
+          const list = $('#liveMapList');
+          list?.parentNode?.insertBefore(banner, list);
+        } else if (Array.isArray(latest)) {
+          latest.forEach(applyPing);
+        }
 
         // Auto-fit bounds if we have any markers.
         if (markers.size) {
