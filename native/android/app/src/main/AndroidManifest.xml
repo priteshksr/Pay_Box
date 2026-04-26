@@ -44,15 +44,11 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- Background location foreground service. Required by
-             @capacitor-community/background-geolocation on Android 8+.
-             The service runs only while the worker is clocked in and
-             a sticky notification is shown so the user is always aware
-             that their location is being shared (Play Store policy). -->
-        <service
-            android:name="com.equimaps.capacitor_background_geolocation.BackgroundGeolocationService"
-            android:foregroundServiceType="location"
-            android:exported="false" />
+        <!-- Note: @capacitor-community/background-geolocation declares
+             its own foreground service in its library AndroidManifest,
+             so we don't redeclare it here — doing so triggers a manifest
+             merger conflict on `android:exported`. The required runtime
+             permissions are listed below. -->
     </application>
 
     <!-- Permissions -->
