@@ -349,8 +349,11 @@
         search_employee: 'Search employee…', no_results: 'No matching employees found.', exit_date: 'Exit date',
         full_name: 'Full name', role: 'Role', phone: 'Phone',
         salary_type: 'Salary type', monthly: 'Monthly', daily_wage: 'Daily wage',
-        amount: 'Amount (₹)', ot_rate_label: 'Overtime rate (₹/hour, optional)',
+        amount: 'Amount (₹)', monthly_salary: 'Monthly salary (₹)',
+        ot_rate_label: 'Overtime rate (₹/hour, optional)',
+        ot_rate_placeholder: 'e.g. 100',
         ot_rate_hint: 'If blank, auto = 1.5× hourly rate (8h/day)',
+        add_photo: 'Add photo',
         save_changes: 'Save changes', delete: 'Delete', add_staff_btn: 'Add staff',
         confirm_delete: 'Move this employee to Ex-Employees? All their data will be kept.',
         reactivate: 'Re-activate', reactivate_confirm: 'Re-activate this employee?',
@@ -490,6 +493,9 @@
         live_map_offline: 'Offline', live_map_active: 'Active',
         live_map_last_seen: 'Last seen {when}',
         live_map_loading: 'Loading map…',
+        map_load_failed: 'Map failed to load',
+        map_load_failed_hint: 'Check your network and tap retry. If you just installed the app, the map library is fetched from the internet on first open.',
+        retry: 'Retry',
         live_map_meta_empty: 'Waiting for the first ping',
         live_map_on_map: 'on map',
         live_map_diag_in_shift: 'Clocked in', live_map_diag_consented: 'Consented', live_map_diag_on_map: 'On map',
@@ -775,7 +781,10 @@
         search_employee: 'कर्मचारी खोजें…', no_results: 'कोई कर्मचारी नहीं मिला।', exit_date: 'निकास तिथि',
         full_name: 'पूरा नाम', role: 'भूमिका', phone: 'फ़ोन',
         salary_type: 'वेतन प्रकार', monthly: 'मासिक', daily_wage: 'दैनिक वेतन',
-        amount: 'राशि (₹)', ot_rate_label: 'ओवरटाइम दर (₹/घंटा, वैकल्पिक)',
+        amount: 'राशि (₹)', monthly_salary: 'मासिक वेतन (₹)',
+        ot_rate_label: 'ओवरटाइम दर (₹/घंटा, वैकल्पिक)',
+        ot_rate_placeholder: 'जैसे 100',
+        add_photo: 'फोटो जोड़ें',
         ot_rate_hint: 'यदि खाली है तो = 1.5× प्रति घंटा (8 घंटे/दिन)',
         save_changes: 'सहेजें', delete: 'हटाएँ', add_staff_btn: 'स्टाफ़ जोड़ें',
         confirm_delete: 'इस कर्मचारी को पूर्व-कर्मचारी में ले जाएं? सारा डेटा सुरक्षित रहेगा।',
@@ -1101,7 +1110,10 @@
         search_employee: 'कर्मचारी शोधा…', no_results: 'कोणताही कर्मचारी सापडला नाही.', exit_date: 'निर्गमन तारीख',
         full_name: 'पूर्ण नाव', role: 'भूमिका', phone: 'फोन',
         salary_type: 'पगार प्रकार', monthly: 'मासिक', daily_wage: 'दैनिक',
-        amount: 'रक्कम (₹)', ot_rate_label: 'ओव्हरटाइम दर (₹/तास, पर्यायी)',
+        amount: 'रक्कम (₹)', monthly_salary: 'मासिक पगार (₹)',
+        ot_rate_label: 'ओव्हरटाइम दर (₹/तास, पर्यायी)',
+        ot_rate_placeholder: 'उदा. 100',
+        add_photo: 'फोटो जोडा',
         ot_rate_hint: 'रिक्त असल्यास = 1.5× प्रति तास (8 तास/दिवस)',
         save_changes: 'जतन करा', delete: 'हटवा', add_staff_btn: 'कर्मचारी जोडा',
         confirm_delete: 'हा कर्मचारी माजी-कर्मचारी मध्ये हलवायचा? सर्व डेटा सुरक्षित राहील.',
@@ -1413,7 +1425,10 @@
         search_employee: 'ஊழியரைத் தேடு…', no_results: 'ஊழியர் கிடைக்கவில்லை.', exit_date: 'வெளியேறிய தேதி',
         full_name: 'முழு பெயர்', role: 'பங்கு', phone: 'தொலைபேசி',
         salary_type: 'சம்பள வகை', monthly: 'மாதாந்திர', daily_wage: 'தினசரி',
-        amount: 'தொகை (₹)', ot_rate_label: 'OT விகிதம் (₹/மணி, விருப்பம்)',
+        amount: 'தொகை (₹)', monthly_salary: 'மாத சம்பளம் (₹)',
+        ot_rate_label: 'OT விகிதம் (₹/மணி, விருப்பம்)',
+        ot_rate_placeholder: 'உதா. 100',
+        add_photo: 'புகைப்படம் சேர்',
         ot_rate_hint: 'காலியாக இருந்தால் = 1.5× மணிக்கான (8 மணி/நாள்)',
         save_changes: 'சேமி', delete: 'நீக்கு', add_staff_btn: 'ஊழியர் சேர்',
         confirm_delete: 'இந்த ஊழியரை முன்னாள் ஊழியர் பட்டியலுக்கு நகர்த்தவா? அனைத்து தரவும் பாதுகாக்கப்படும்.',
@@ -1725,7 +1740,10 @@
         search_employee: 'ఉద్యోగిని వెతకండి…', no_results: 'ఉద్యోగి కనుగొనబడలేదు.', exit_date: 'నిష్క్రమణ తేదీ',
         full_name: 'పూర్తి పేరు', role: 'పాత్ర', phone: 'ఫోన్',
         salary_type: 'వేతన రకం', monthly: 'నెలవారీ', daily_wage: 'రోజువారీ',
-        amount: 'మొత్తం (₹)', ot_rate_label: 'OT రేటు (₹/గంట, ఐచ్ఛిక)',
+        amount: 'మొత్తం (₹)', monthly_salary: 'నెల జీతం (₹)',
+        ot_rate_label: 'OT రేటు (₹/గంట, ఐచ్ఛిక)',
+        ot_rate_placeholder: 'ఉదా. 100',
+        add_photo: 'ఫోటో జోడించు',
         ot_rate_hint: 'ఖాళీగా ఉంటే = 1.5× గంటకు (8 గం/రోజు)',
         save_changes: 'సేవ్', delete: 'తొలగించు', add_staff_btn: 'సిబ్బంది జోడించు',
         confirm_delete: 'ఈ ఉద్యోగిని మాజీ ఉద్యోగులకు తరలించాలా? మొత్తం డేటా భద్రంగా ఉంటుంది.',
@@ -2189,7 +2207,12 @@
       } catch (_) { return dataUrl; }
     }
     async function pickAndCompressImage(opts = {}) {
-      const { maxSize = 320, quality = 0.72, capture = 'user' } = opts;
+      // capture default is now `null` so the OS picker lets the user
+      // choose between gallery and camera. Callers that *must* force
+      // the front camera (e.g. punch-in selfie for anti-fraud) should
+      // pass `capture: 'user'` explicitly. Pass `capture: 'environment'`
+      // for back-camera-only flows like document scanning.
+      const { maxSize = 320, quality = 0.72, capture = null } = opts;
       // Prefer the native camera bridge when running inside a Capacitor
       // shell — it yields a proper permission prompt and sidesteps the
       // invisible <input type="file"> trick (which doesn't always work
@@ -5478,13 +5501,13 @@
     }
 
     function setupFab() {
+      // We used to show a floating "+" FAB on the Staff tab, but the
+      // Staff page already has a top-right "+ Add" button — having both
+      // visible at once was redundant and hid the bottom of the list.
+      // The FAB element is kept in the DOM (so legacy CSS / IDs don't
+      // break) but is hidden on every tab.
       const fab = $('#fab');
-      if (state.settings.role === 'owner' && state.currentTab === 'staff') {
-        fab.classList.remove('hidden');
-        fab.onclick = () => openStaffForm();
-      } else {
-        fab.classList.add('hidden');
-      }
+      if (fab) fab.classList.add('hidden');
     }
 
     // ============== Icons ==============
@@ -5791,25 +5814,71 @@
     // Leaflet is only pulled in when the owner actually opens the Live
     // Map or a Today's Route view. Cached by the service worker after
     // the first load so subsequent opens are instant + offline-friendly.
+    //
+    // The first-open flow used to fail intermittently with
+    // "Map failed to load. Check your network." when an old SW build
+    // had pre-cached Leaflet as an opaque (`no-cors`) response. The
+    // page injects a `<script crossorigin="" integrity="...">` tag,
+    // and the browser refuses opaque responses for both SRI and CORS,
+    // so script.onerror would fire even though the user had a
+    // perfectly working network.
+    //
+    // Defenses (any one of these is enough; we layer all three):
+    //   1. The new SW (v23+) no longer pre-caches Leaflet at install.
+    //   2. On script.onerror we retry once with a cache-busting query
+    //      param. The SW's fetch handler treats it as a fresh URL and
+    //      goes to the network, sidestepping any poisoned cache entry.
+    //   3. If the second attempt also fails we drop SRI on the retry —
+    //      genuinely bad networks will still fail, but a corrupted
+    //      cache won't keep us locked out.
     let _leafletPromise = null;
     function loadLeaflet() {
       if (window.L) return Promise.resolve(window.L);
       if (_leafletPromise) return _leafletPromise;
-      _leafletPromise = new Promise((resolve, reject) => {
+      const BASE = 'https://unpkg.com/leaflet@1.9.4/dist';
+      const SRI = {
+        css: 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=',
+        js:  'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=',
+      };
+      const injectCss = (suffix, withSri) => {
         const css = document.createElement('link');
         css.rel = 'stylesheet';
-        css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-        css.crossOrigin = '';
+        css.href = `${BASE}/leaflet.css${suffix}`;
+        if (withSri) { css.integrity = SRI.css; css.crossOrigin = ''; }
         document.head.appendChild(css);
-
+      };
+      const injectJs = (suffix, withSri) => new Promise((res, rej) => {
         const js = document.createElement('script');
-        js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        js.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-        js.crossOrigin = '';
-        js.onload = () => resolve(window.L);
-        js.onerror = (e) => { _leafletPromise = null; reject(new Error('leaflet_failed')); };
+        js.src = `${BASE}/leaflet.js${suffix}`;
+        if (withSri) { js.integrity = SRI.js; js.crossOrigin = ''; }
+        js.onload = () => window.L ? res(window.L) : rej(new Error('leaflet_no_global'));
+        js.onerror = () => rej(new Error('leaflet_load_error'));
         document.head.appendChild(js);
+      });
+      _leafletPromise = (async () => {
+        try {
+          injectCss('', true);
+          return await injectJs('', true);
+        } catch (_) {
+          // Retry once with a cache-buster — defeats any opaque-cached
+          // response sitting in the SW from a previous build.
+          try {
+            const bust = `?v=${Date.now()}`;
+            injectCss(bust, true);
+            return await injectJs(bust, true);
+          } catch (_) {
+            // Last-ditch: drop SRI on the second retry. A truly broken
+            // network will still fail here (genuine offline → reject)
+            // but at least a cache integrity mismatch won't keep us
+            // permanently locked out.
+            const bust2 = `?v=${Date.now()}_2`;
+            injectCss(bust2, false);
+            return await injectJs(bust2, false);
+          }
+        }
+      })().catch((err) => {
+        _leafletPromise = null;
+        throw err;
       });
       return _leafletPromise;
     }
@@ -5864,10 +5933,26 @@
       });
       if (sheet) obs.observe(sheet, { attributes: true, attributeFilter: ['class'] });
 
-      (async () => {
+      const renderMapError = () => {
+        const host = $('#liveMap');
+        if (!host) return;
+        host.innerHTML = `
+          <div class="h-full w-full flex items-center justify-center p-6 text-center">
+            <div>
+              <div class="text-sm text-rose-600 font-semibold mb-2">${escapeHtml(t('map_load_failed'))}</div>
+              <div class="text-xs text-slate-500 mb-3">${escapeHtml(t('map_load_failed_hint'))}</div>
+              <button id="liveMapRetry" class="btn btn-primary btn-sm">${escapeHtml(t('retry') || 'Retry')}</button>
+            </div>
+          </div>`;
+        $('#liveMapRetry')?.addEventListener('click', () => {
+          host.innerHTML = `<div class="h-full w-full flex items-center justify-center text-xs text-slate-400">${escapeHtml(t('live_map_loading'))}</div>`;
+          loadAndStart();
+        });
+      };
+      const loadAndStart = () => (async () => {
         let L;
         try { L = await loadLeaflet(); }
-        catch { $('#liveMap').innerHTML = `<div class="p-6 text-center text-sm text-rose-600">Map failed to load. Check your network.</div>`; return; }
+        catch { renderMapError(); return; }
 
         const map = L.map('liveMap', { zoomControl: true, attributionControl: true })
           .setView([20.5937, 78.9629], 5); // Center of India by default
@@ -6116,6 +6201,7 @@
 
         refreshList();
       })();
+      loadAndStart();
     }
 
     // ============== Route replay (owner) ==============
@@ -6158,7 +6244,23 @@
         const fromIso = new Date(dayStr + 'T00:00:00').toISOString();
         const toIso = new Date(dayStr + 'T23:59:59.999').toISOString();
         pings = await cloudBiz.tracker.fetchRoute(staffId, fromIso, toIso);
-        const L = await loadLeaflet();
+        let L;
+        try { L = await loadLeaflet(); }
+        catch {
+          const host = $('#routeMap');
+          if (host) {
+            host.innerHTML = `
+              <div class="h-full w-full flex items-center justify-center p-6 text-center">
+                <div>
+                  <div class="text-sm text-rose-600 font-semibold mb-2">${escapeHtml(t('map_load_failed'))}</div>
+                  <div class="text-xs text-slate-500 mb-3">${escapeHtml(t('map_load_failed_hint'))}</div>
+                  <button id="routeMapRetry" class="btn btn-primary btn-sm">${escapeHtml(t('retry') || 'Retry')}</button>
+                </div>
+              </div>`;
+            $('#routeMapRetry')?.addEventListener('click', () => load(dayStr));
+          }
+          return;
+        }
         if (!map) {
           map = L.map('routeMap', { zoomControl: true });
           L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -6932,7 +7034,7 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
               ${editing?.photo ? `<img src="${editing.photo}" class="w-full h-full object-cover" alt="">` : escapeHtml(t('photo'))}
             </div>
             <div class="flex flex-wrap gap-2">
-              <button type="button" id="staffPhotoBtn" class="btn btn-secondary btn-sm">${escapeHtml(editing?.photo ? t('tap_to_change') : t('take_selfie'))}</button>
+              <button type="button" id="staffPhotoBtn" class="btn btn-secondary btn-sm">${escapeHtml(editing?.photo ? t('tap_to_change') : t('add_photo'))}</button>
               ${editing?.photo ? `<button type="button" id="staffPhotoRm" class="btn btn-danger-outline btn-sm">${escapeHtml(t('remove_photo'))}</button>` : ''}
             </div>
           </div>
@@ -6964,14 +7066,10 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
 
           <div>
             <label class="label">${escapeHtml(t('salary_type'))} *</label>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-2 gap-2">
               <label class="cursor-pointer">
-                <input type="radio" name="salaryType" value="monthly" class="peer sr-only" ${(!editing || editing.salaryType === 'monthly') ? 'checked' : ''}>
+                <input type="radio" name="salaryType" value="monthly" class="peer sr-only" ${(!editing || editing.salaryType !== 'piece') ? 'checked' : ''}>
                 <div class="border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium transition">${escapeHtml(t('monthly'))}</div>
-              </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="salaryType" value="daily" class="peer sr-only" ${editing?.salaryType === 'daily' ? 'checked' : ''}>
-                <div class="border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 font-medium transition">${escapeHtml(t('daily_wage'))}</div>
               </label>
               <label class="cursor-pointer">
                 <input type="radio" name="salaryType" value="piece" class="peer sr-only" ${editing?.salaryType === 'piece' ? 'checked' : ''}>
@@ -6979,14 +7077,14 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
               </label>
             </div>
           </div>
-          <div id="amountOtRow" class="grid grid-cols-2 gap-3 ${editing?.salaryType === 'piece' ? 'hidden' : ''}">
+          <div id="amountOtRow" class="space-y-3 ${editing?.salaryType === 'piece' ? 'hidden' : ''}">
             <div>
-              <label class="label">${escapeHtml(t('amount'))} *</label>
-              <input name="amount" type="number" min="0" step="1" value="${editing?.amount || ''}" class="input">
+              <label class="label">${escapeHtml(t('monthly_salary'))} *</label>
+              <input name="amount" type="number" min="0" step="1" value="${editing?.amount || ''}" class="input" placeholder="e.g. 25000">
             </div>
             <div>
               <label class="label">${escapeHtml(t('ot_rate_label'))}</label>
-              <input name="otRate" type="number" min="0" step="1" value="${editing?.otRate || ''}" class="input">
+              <input name="otRate" type="number" min="0" step="1" value="${editing?.otRate || ''}" class="input" placeholder="${escapeHtml(t('ot_rate_placeholder'))}">
             </div>
           </div>
           <div id="pieceRateRow" class="${editing?.salaryType === 'piece' ? '' : 'hidden'}">
@@ -7144,11 +7242,17 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
       }
       renderIdPhotosList();
       $('#addIdPhotoBtn')?.addEventListener('click', async () => {
-        const label = (prompt(t('id_photo_label_prompt'), '') || '').trim();
-        if (label === null) return;
-        const img = await pickAndCompressImage({ maxSize: 1200, quality: 0.82, capture: 'environment' });
+        // Open the gallery / OS picker directly (no `capture` attr) so
+        // the owner can pick an existing photo of the document. They
+        // can still hit the camera tile from the picker itself if they
+        // want to take a fresh shot. Auto-label as "ID 1", "ID 2"…
+        // (a future enhancement could let the owner rename inline).
+        const img = await pickAndCompressImage({ maxSize: 1200, quality: 0.82 });
         if (!img) return;
-        pendingIdPhotos.push({ label: label || ('ID ' + (pendingIdPhotos.length + 1)), dataUrl: img });
+        pendingIdPhotos.push({
+          label: 'ID ' + (pendingIdPhotos.length + 1),
+          dataUrl: img,
+        });
         renderIdPhotosList();
       });
 
@@ -8270,7 +8374,10 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
         const btn = e.currentTarget;
         btn.disabled = true; btn.style.opacity = '0.6';
         const [selfie, loc] = await Promise.all([
-          state.settings.punchSelfie ? pickAndCompressImage() : Promise.resolve(null),
+          // Force front camera here — it's an anti-fraud check that the
+          // worker is physically present, so gallery uploads would
+          // defeat the purpose.
+          state.settings.punchSelfie ? pickAndCompressImage({ capture: 'user' }) : Promise.resolve(null),
           state.settings.punchGps !== false ? getPunchLocation() : Promise.resolve(null)
         ]);
         state.punches[today] = state.punches[today] || {};

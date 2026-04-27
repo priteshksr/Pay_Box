@@ -1,20 +1,19 @@
 name: iOS build
 
-# Builds an unsigned simulator .app on every push + PR (no secrets
-# required — useful as a smoke test that the iOS project still compiles).
+# Manual-only. Builds an unsigned simulator .app (always, no secrets
+# required) and, if the APPLE_* signing secrets are set, a signed .ipa
+# ready for TestFlight / App Store Connect.
 #
-# If the APPLE_* signing secrets are set, ALSO builds a signed .ipa you
-# can upload to TestFlight / App Store Connect.
+# Auto-on-push was deliberately removed so we don't burn ~15 minutes
+# of macOS Actions runtime on every web-only commit. Trigger from the
+# Actions tab ("Run workflow") whenever you actually need a build, or
+# push a `v*` tag to cut a release.
 #
-# Trigger manually from the Actions tab ("Run workflow") or on push to
-# main / tag. See NATIVE_CI.md for the signing secrets setup.
+# See NATIVE_CI.md for the signing secrets setup.
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:

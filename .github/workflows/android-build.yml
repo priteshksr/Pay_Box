@@ -1,20 +1,18 @@
 name: Android build
 
-# Builds a debug APK on every push + PR (always, no secrets required).
-# If the four ANDROID_KEYSTORE_* secrets are set, ALSO builds a signed
-# release AAB you can upload straight to Play Console.
+# Manual-only. Builds a debug APK (always, no secrets required) plus a
+# signed release AAB if the four ANDROID_KEYSTORE_* secrets are set.
 #
-# Trigger manually from the Actions tab ("Run workflow") or automatically
-# when you push to main / tag a release.
+# Auto-on-push was deliberately removed so we don't burn ~5 minutes of
+# Actions runtime on every web-only commit. Trigger from the Actions
+# tab ("Run workflow") whenever you actually need a build, or push a
+# `v*` tag to cut a release.
 #
 # See NATIVE_CI.md for the one-time secrets setup.
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:

@@ -1,4 +1,4 @@
-const CACHE = 'paybox-v21';
+const CACHE = 'paybox-v23';
 const ASSETS = [
   './',
   './index.html',
@@ -8,28 +8,29 @@ const ASSETS = [
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon-180.png',
-  // Leaflet — fetched the first time an owner opens the Live Map or
-  // Today's Route sheet. Precaching them means the *second* open is
-  // instant and offline-tolerant. Pinned to the same version that
-  // index.html lazy-loads (1.9.4).
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
 ];
 
+// NOTE: We deliberately do NOT pre-cache Leaflet (or any cross-origin
+// asset) at install time. We used to fetch them with `mode: 'no-cors'`
+// to dodge install-time CORS issues, but that stored opaque responses
+// in the cache. When the page later injected
+// `<script crossorigin="" integrity="...">` for Leaflet, the SW served
+// the opaque cached response back, and the browser rejected it
+// (SRI integrity needs a readable body, and `crossorigin="anonymous"`
+// requires a real CORS response — opaque is neither). Result: the
+// very first "Open Live Map" tap after installing the SW failed with
+// "Map failed to load", and only succeeded after a refresh once the
+// runtime fetch handler had replaced the opaque entry with a proper
+// CORS one.
+//
+// Solution: let the runtime fetch handler below (which already filters
+// out opaque responses) do the work the first time the owner opens the
+// map. After that, the cache is populated correctly and offline-OK.
+
 self.addEventListener('install', (event) => {
-  // Precache same-origin assets unconditionally; treat cross-origin
-  // (Leaflet on unpkg) as best-effort so a flaky network or CSP block
-  // can't fail the whole SW install.
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    const sameOrigin = ASSETS.filter((u) => !/^https?:\/\//.test(u));
-    const crossOrigin = ASSETS.filter((u) => /^https?:\/\//.test(u));
-    await cache.addAll(sameOrigin);
-    await Promise.allSettled(crossOrigin.map((u) =>
-      fetch(u, { mode: 'no-cors' })
-        .then((res) => res && cache.put(u, res))
-        .catch(() => {})
-    ));
+    await cache.addAll(ASSETS);
     self.skipWaiting();
   })());
 });
