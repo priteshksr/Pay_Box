@@ -3282,10 +3282,32 @@
       async function pushConfig() {
         if (!isOwner()) return;
         if (!navigator.onLine) { setStatus('offline'); return; }
+        // Safety net: if for any reason we are about to push an empty
+        // config (no staff, no shifts, no business name) for a business
+        // that has already been seeded once, refuse. This prevents the
+        // accidental wipe pattern where an owner's local state gets
+        // briefly emptied (bad pullConfig, manual reset, etc.) and the
+        // next debounced push happily replaces the canonical cloud
+        // copy with that empty blob. We *do* allow the very first
+        // push (hydratedFor not yet set on this device) so brand-new
+        // businesses can seed the cloud normally.
+        const cfg = extractConfig();
+        const cfgIsEmpty =
+          (!cfg.staff || cfg.staff.length === 0)
+          && (!Array.isArray(cfg.shifts) || cfg.shifts.length === 0)
+          && (!cfg.business || !cfg.business.name);
+        if (cfgIsEmpty && state.biz.hydratedFor === state.biz.id) {
+          // Already hydrated against this business at least once and
+          // we've got nothing to send — bail loudly so we notice in
+          // logs instead of silently clobbering the cloud.
+          setStatus('error', 'refused_empty_push');
+          console.warn('[cloudBiz] refused to push empty config (would clobber cloud).');
+          return;
+        }
         try {
           const c = await client();
           const { error } = await c.from('businesses')
-            .update({ config: extractConfig(), updated_at: Date.now() })
+            .update({ config: cfg, updated_at: Date.now() })
             .eq('id', state.biz.id);
           if (error) throw error;
           setStatus(channel ? 'live' : 'synced');
@@ -3303,46 +3325,77 @@
           if (!data) return { ok: false, reason: 'no_business_row' };
           state.biz.joinCode = data.join_code || state.biz.joinCode;
           state.biz.ownerId  = data.owner_id  || state.biz.ownerId;
-          // Workers always trust the cloud — the owner is the writer.
+          // ============================================================
+          // Decision matrix: should we overwrite local state with cloud?
+          // ============================================================
+          // The earlier version fired applyConfig() any time
+          // `state.biz.hydratedFor !== state.biz.id`. On every device
+          // that pre-dated this build `hydratedFor` was undefined, so
+          // the very first boot after the upgrade compared
+          // `undefined !== <uuid>` (true) and clobbered the local staff
+          // list with whatever was in the cloud at that exact moment.
+          // If the cloud blob happened to be partial (or somebody else
+          // had pushed an empty config first), the owner watched their
+          // entire roster vanish.
           //
-          // For owners we normally *skip* applying so a fresh pullConfig
-          // can't clobber unsaved local edits (e.g. a staff add that
-          // happened in the last 1.5 s before the debounced push fires).
-          // BUT we MUST apply when:
-          //   1. caller asked for a forced re-hydration (manual
-          //      "Refresh from cloud" button — we want to overwrite
-          //      whatever's local with the canonical cloud copy), or
-          //   2. local state is empty (brand-new device sign-in — the
-          //      cloud is the only place the staff list / shifts /
-          //      rates exist; without applying, the owner sees an empty
-          //      business after signing in on phone #2), or
-          //   3. the discovered business id is different from the one
-          //      we last hydrated against (signing in as a different
-          //      owner on the same device, or moving an owner between
-          //      businesses) — otherwise stale local state from the
-          //      previous account leaks through.
-          //
-          // `hydratedFor` is set on createBusiness too, so an owner who
-          // just seeded the cloud from local edits keeps their work
-          // when they reload before the debounced push lands.
-          const localLooksEmpty =
-            (state.staff?.length || 0) === 0
-            && Object.keys(state.attendance || {}).length === 0
-            && Object.keys(state.punches || {}).length === 0;
-          const businessChanged = state.biz.hydratedFor !== state.biz.id;
+          // Hard rules now:
+          //   * Workers: always trust the cloud (they aren't the writer).
+          //   * Owners: only overwrite local when *every* concern below
+          //     gives the green light:
+          //       - explicit force flag (manual "Refresh from cloud"),
+          //         OR local genuinely has nothing AND the cloud
+          //         actually has something to give,
+          //         OR we know we just switched to a different business
+          //         (hydratedFor was set to a *different* id, not
+          //         undefined) AND the cloud has content.
+          //   * Never overwrite a non-empty local state with an empty
+          //     cloud blob — that's almost certainly a stale read or
+          //     an in-flight push that hasn't landed yet.
+          // ============================================================
+          const cfg = data.config || null;
+          const cloudHasData = !!cfg && (
+            ((cfg.staff && cfg.staff.length) || 0) > 0
+            || Object.keys(cfg.attendance || {}).length > 0
+            || Object.keys(cfg.punches || {}).length > 0
+            || Object.keys(cfg.business || {}).length > 0
+            || (Array.isArray(cfg.shifts) && cfg.shifts.length > 0)
+          );
+          const localHasData =
+            (state.staff?.length || 0) > 0
+            || Object.keys(state.attendance || {}).length > 0
+            || Object.keys(state.punches || {}).length > 0;
+          const businessChanged =
+            state.biz.hydratedFor != null
+            && state.biz.hydratedFor !== state.biz.id;
           let applied = false;
-          if (force || !isOwner() || localLooksEmpty || businessChanged) {
-            applyConfig(data.config);
+          if (!isOwner()) {
+            applyConfig(cfg);
+            applied = true;
+          } else if (force) {
+            applyConfig(cfg);
+            applied = true;
+          } else if (!localHasData && cloudHasData) {
+            applyConfig(cfg);
+            applied = true;
+          } else if (businessChanged && cloudHasData) {
+            applyConfig(cfg);
             applied = true;
           }
+          // Adopt the current business id as our hydration anchor on
+          // the very first boot of this build, even when we deliberately
+          // skipped applyConfig — otherwise every subsequent reload
+          // would re-trigger the businessChanged branch and we'd be
+          // back in the danger zone.
           state.biz.hydratedFor = state.biz.id;
           save({ silent: true });
           setStatus(channel ? 'live' : 'synced');
           return {
             ok: true,
             applied,
-            hasConfig: !!(data.config && Object.keys(data.config).length),
-            staffCount: Array.isArray(data.config?.staff) ? data.config.staff.length : 0,
+            hasConfig: !!(cfg && Object.keys(cfg).length),
+            cloudHasData,
+            localHasData,
+            staffCount: Array.isArray(cfg?.staff) ? cfg.staff.length : 0,
           };
         } catch (e) {
           setStatus('error', e.message || String(e));
