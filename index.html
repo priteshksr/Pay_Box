@@ -328,6 +328,17 @@
         excel_preparing: 'Preparing Excel…',
         your_staff: 'Your staff', see_all: 'See all',
         no_staff_hint: 'No staff yet. Tap Add staff to get started.',
+        home_refresh_title: "Cloud data hasn't loaded yet",
+        home_refresh_msg: "Looks like your staff list, shifts and rates haven't synced down from the cloud yet on this device. Tap below to pull them now.",
+        home_refresh_btn: 'Sync from cloud',
+        home_refresh_running: 'Pulling from cloud\u2026',
+        home_refresh_ok: 'Synced {staff} staff and {events} events from cloud.',
+        home_refresh_ok_no_events: 'Synced {staff} staff from cloud.',
+        home_refresh_cloud_empty: "Sign-in succeeded but the cloud has no data for this account. Make sure you're using the EXACT same email and password as the device that has your data.",
+        home_refresh_no_session: 'Not signed in to the cloud. Open Settings \u2192 Cloud to sign in.',
+        home_refresh_no_business: "You aren't connected to a business yet. Sign out and sign back in.",
+        home_refresh_offline: "You're offline. Connect to the internet and try again.",
+        home_refresh_failed: 'Sync failed: {msg}',
         attendance: 'Attendance', mark_each_status: "Mark each staff's status for the day",
         add_staff_first: 'Add staff first to mark attendance.',
         all_present: 'All present', all_absent: 'All absent', all_half: 'All half', all_leave: 'All leave',
@@ -743,6 +754,17 @@
         excel_preparing: 'Excel तैयार हो रहा है…',
         your_staff: 'आपके कर्मचारी', see_all: 'सभी देखें',
         no_staff_hint: 'अभी कोई स्टाफ़ नहीं। शुरू करने के लिए "स्टाफ़ जोड़ें" दबाएँ।',
+        home_refresh_title: 'क्लाउड डेटा अभी लोड नहीं हुआ',
+        home_refresh_msg: 'आपके स्टाफ़, शिफ़्ट और रेट इस फ़ोन पर अभी क्लाउड से नहीं आए हैं। नीचे दबाकर अभी डाउनलोड करें।',
+        home_refresh_btn: 'क्लाउड से सिंक करें',
+        home_refresh_running: 'क्लाउड से ले रहे हैं\u2026',
+        home_refresh_ok: 'क्लाउड से {staff} स्टाफ़ और {events} इवेंट सिंक हो गए।',
+        home_refresh_ok_no_events: 'क्लाउड से {staff} स्टाफ़ सिंक हो गए।',
+        home_refresh_cloud_empty: 'साइन-इन हो गया लेकिन क्लाउड में इस अकाउंट का कोई डेटा नहीं है। पक्का करें कि आपने पुराने फ़ोन वाला बिल्कुल वही ईमेल और पासवर्ड डाला है।',
+        home_refresh_no_session: 'क्लाउड में साइन-इन नहीं हैं। सेटिंग्स \u2192 क्लाउड में जाकर लॉग-इन करें।',
+        home_refresh_no_business: 'अभी किसी बिज़नेस से जुड़े नहीं हैं। लॉग-आउट करके फिर लॉग-इन करें।',
+        home_refresh_offline: 'इंटरनेट नहीं है। कनेक्ट होने पर दोबारा कोशिश करें।',
+        home_refresh_failed: 'सिंक फेल हो गया: {msg}',
         attendance: 'हाज़िरी', mark_each_status: 'हर कर्मचारी की आज की स्थिति दर्ज करें',
         add_staff_first: 'हाज़िरी दर्ज करने के लिए पहले स्टाफ़ जोड़ें।',
         all_present: 'सभी उपस्थित', all_absent: 'सभी अनुपस्थित', all_half: 'सभी आधा दिन', all_leave: 'सभी छुट्टी',
@@ -3270,14 +3292,15 @@
         } catch (e) { setStatus('error', e.message || String(e)); }
       }
 
-      async function pullConfig() {
+      async function pullConfig(opts = {}) {
+        const { force = false } = opts;
         try {
           const c = await client();
           const { data, error } = await c.from('businesses')
             .select('config, join_code, owner_id, updated_at')
             .eq('id', state.biz.id).maybeSingle();
           if (error) throw error;
-          if (!data) return;
+          if (!data) return { ok: false, reason: 'no_business_row' };
           state.biz.joinCode = data.join_code || state.biz.joinCode;
           state.biz.ownerId  = data.owner_id  || state.biz.ownerId;
           // Workers always trust the cloud — the owner is the writer.
@@ -3286,11 +3309,14 @@
           // can't clobber unsaved local edits (e.g. a staff add that
           // happened in the last 1.5 s before the debounced push fires).
           // BUT we MUST apply when:
-          //   1. local state is empty (brand-new device sign-in — the
+          //   1. caller asked for a forced re-hydration (manual
+          //      "Refresh from cloud" button — we want to overwrite
+          //      whatever's local with the canonical cloud copy), or
+          //   2. local state is empty (brand-new device sign-in — the
           //      cloud is the only place the staff list / shifts /
           //      rates exist; without applying, the owner sees an empty
           //      business after signing in on phone #2), or
-          //   2. the discovered business id is different from the one
+          //   3. the discovered business id is different from the one
           //      we last hydrated against (signing in as a different
           //      owner on the same device, or moving an owner between
           //      businesses) — otherwise stale local state from the
@@ -3304,13 +3330,24 @@
             && Object.keys(state.attendance || {}).length === 0
             && Object.keys(state.punches || {}).length === 0;
           const businessChanged = state.biz.hydratedFor !== state.biz.id;
-          if (!isOwner() || localLooksEmpty || businessChanged) {
+          let applied = false;
+          if (force || !isOwner() || localLooksEmpty || businessChanged) {
             applyConfig(data.config);
+            applied = true;
           }
           state.biz.hydratedFor = state.biz.id;
           save({ silent: true });
           setStatus(channel ? 'live' : 'synced');
-        } catch (e) { setStatus('error', e.message || String(e)); }
+          return {
+            ok: true,
+            applied,
+            hasConfig: !!(data.config && Object.keys(data.config).length),
+            staffCount: Array.isArray(data.config?.staff) ? data.config.staff.length : 0,
+          };
+        } catch (e) {
+          setStatus('error', e.message || String(e));
+          return { ok: false, reason: 'error', msg: String(e?.message || e) };
+        }
       }
 
       async function pullEventsSince(id) {
@@ -3341,7 +3378,48 @@
             if (data.length < PAGE_SIZE) break; // last page
           }
           if (totalApplied) save({ silent: true });
-        } catch (_) { /* offline-safe */ }
+          return { ok: true, count: totalApplied };
+        } catch (e) {
+          return { ok: false, reason: 'error', msg: String(e?.message || e) };
+        }
+      }
+
+      /** Manual "Refresh from cloud" path. Used by the home-screen banner
+       *  (and the cloud sheet) when an owner suspects their local state
+       *  is missing data that exists in the cloud — typically right
+       *  after signing in on a fresh device. Always applies the cloud
+       *  config (force = true) and re-pulls every event since id 0,
+       *  then returns a structured result the caller can show in a
+       *  toast so the user knows what actually happened (no more
+       *  silent "did nothing" buttons). */
+      async function refreshNow() {
+        if (!state.cloud?.enabled || !cloudSync.isConfigured()) {
+          return { ok: false, reason: 'cloud_inactive' };
+        }
+        try {
+          const c = await client();
+          const { data: sess } = await c.auth.getSession();
+          if (!sess?.session) return { ok: false, reason: 'no_session' };
+          if (!state.biz?.id) return { ok: false, reason: 'no_business' };
+          if (!navigator.onLine) return { ok: false, reason: 'offline' };
+          // Reset the lastEventId so pullEventsSince walks the full
+          // history. We don't lose anything — applyEvent is idempotent.
+          state.biz.lastEventId = 0;
+          const cfg = await pullConfig({ force: true });
+          if (!cfg.ok) return { ok: false, reason: cfg.reason || 'config_failed', msg: cfg.msg };
+          const ev = await pullEventsSince(0);
+          await flushQueue();
+          render();
+          return {
+            ok: true,
+            staffCount: (state.staff || []).length,
+            eventsCount: ev.count || 0,
+            hasCloudConfig: cfg.hasConfig,
+            cloudStaffCount: cfg.staffCount,
+          };
+        } catch (e) {
+          return { ok: false, reason: 'error', msg: String(e?.message || e) };
+        }
       }
 
       async function subscribe() {
@@ -4422,7 +4500,7 @@
         leaveBusiness, listPendingMembers, listAllMembers, discoverMembership,
         createStaffInvite, revokeStaffInvite, claimStaffInvite, reconnectWorkerByPhone, listStaffInvites,
         emit, scheduleConfigPush, pushConfig, pullConfig, pullEventsSince,
-        applyEvent, extractConfig, flushQueue,
+        applyEvent, extractConfig, flushQueue, refreshNow,
         onStatus, currentStatus, active, isOwner,
         refreshMembership, checkMembership,
         tracker,
@@ -5430,6 +5508,25 @@
 
       const ownerNameStr = state.business.ownerName || (state.cloud?.email ? state.cloud.email.split('@')[0] : '');
       const greeting = ownerNameStr ? t('worker_hi', { name: ownerNameStr.split(' ')[0] }) : t('hi_there');
+
+      // Recovery banner: when an owner is signed in to a business but the
+      // local state hasn't actually been hydrated from the cloud yet
+      // (typically right after signing in on a fresh device, or if a
+      // pullConfig() failed silently for any reason), the home screen
+      // would otherwise look identical to "this is a brand-new empty
+      // business" and the user has no idea their data is just one
+      // network round-trip away. We show a one-tap "Sync from cloud"
+      // button that explicitly re-runs pullConfig + pullEventsSince,
+      // and surfaces the result as a toast so the user knows whether
+      // the cloud actually had data.
+      const showCloudRefreshBanner = !!(
+        state.biz?.id
+        && state.biz?.role === 'owner'
+        && state.cloud?.enabled
+        && (state.staff?.length || 0) === 0
+        && Object.keys(state.attendance || {}).length === 0
+        && Object.keys(state.punches || {}).length === 0
+      );
       root.innerHTML = `
         <div class="mb-5 flex items-start justify-between gap-3">
           <div class="min-w-0">
@@ -5442,6 +5539,23 @@
             ${state.announcements.length ? `<span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"></span>` : ''}
           </button>
         </div>
+
+        ${showCloudRefreshBanner ? `
+        <div id="homeCloudRefreshBanner" class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-soft">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 4 21 10 15 10"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm text-amber-900">${escapeHtml(t('home_refresh_title'))}</div>
+              <div class="text-xs text-amber-800 mt-0.5">${escapeHtml(t('home_refresh_msg'))}</div>
+              <button id="homeCloudRefreshBtn" class="mt-3 w-full py-2.5 rounded-lg bg-amber-600 text-white text-sm font-semibold active:scale-[.99] transition">
+                ${escapeHtml(t('home_refresh_btn'))}
+              </button>
+              <div id="homeCloudRefreshMsg" class="text-xs text-amber-800 mt-2 min-h-[1em]"></div>
+            </div>
+          </div>
+        </div>` : ''}
 
         <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white p-5 shadow-card mb-4">
           <div class="text-xs text-brand-100 uppercase tracking-wider font-semibold">${escapeHtml(t('this_month_payroll'))}</div>
@@ -5559,6 +5673,65 @@
       $('#showPresentList')?.addEventListener('click', () => openAttendanceFilterSheet('present'));
       $('#showAbsentList')?.addEventListener('click', () => openAttendanceFilterSheet('absent'));
       $('#openLiveMapBtn')?.addEventListener('click', () => openLiveMap());
+
+      // Cloud refresh banner — explicit "give me whatever is in the cloud
+      // for this business right now" button. Reports the result inline
+      // so the user knows whether the cloud actually had data (vs. them
+      // being signed into the wrong account).
+      const refreshBtn = $('#homeCloudRefreshBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+          const msgEl = $('#homeCloudRefreshMsg');
+          const setRefreshMsg = (text, tone = 'info') => {
+            if (!msgEl) return;
+            const tones = { info: 'text-amber-800', ok: 'text-emerald-700', err: 'text-rose-700' };
+            msgEl.className = `text-xs mt-2 min-h-[1em] ${tones[tone]}`;
+            msgEl.textContent = text;
+          };
+          refreshBtn.disabled = true;
+          refreshBtn.classList.add('opacity-60');
+          setRefreshMsg(t('home_refresh_running'));
+          try {
+            const r = await cloudBiz.refreshNow();
+            if (!r || !r.ok) {
+              const reason = r?.reason || 'error';
+              const msgMap = {
+                cloud_inactive: t('home_refresh_no_session'),
+                no_session: t('home_refresh_no_session'),
+                no_business: t('home_refresh_no_business'),
+                offline: t('home_refresh_offline'),
+              };
+              const friendly = msgMap[reason] || t('home_refresh_failed', { msg: r?.msg || reason });
+              setRefreshMsg(friendly, 'err');
+              toast(friendly);
+              return;
+            }
+            // Cloud responded but had no actual config to apply — almost
+            // always means the user is signed into a different account
+            // than the one that owns the data on the other device.
+            if (!r.hasCloudConfig && (r.eventsCount || 0) === 0) {
+              setRefreshMsg(t('home_refresh_cloud_empty'), 'err');
+              toast(t('home_refresh_cloud_empty'));
+              return;
+            }
+            const okMsg = (r.eventsCount || 0) > 0
+              ? t('home_refresh_ok', { staff: r.staffCount || 0, events: r.eventsCount || 0 })
+              : t('home_refresh_ok_no_events', { staff: r.staffCount || 0 });
+            setRefreshMsg(okMsg, 'ok');
+            toast(okMsg);
+            // Re-render so the banner disappears and the staff/payroll
+            // cards reflect the freshly-pulled data immediately.
+            setTimeout(() => render(), 250);
+          } catch (e) {
+            const msg = (e && e.message) || String(e);
+            setRefreshMsg(t('home_refresh_failed', { msg }), 'err');
+            toast(t('home_refresh_failed', { msg }));
+          } finally {
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('opacity-60');
+          }
+        });
+      }
     }
 
     // ============== Leaflet lazy-loader ==============
