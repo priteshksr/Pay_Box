@@ -3280,23 +3280,67 @@
           if (!data) return;
           state.biz.joinCode = data.join_code || state.biz.joinCode;
           state.biz.ownerId  = data.owner_id  || state.biz.ownerId;
-          if (!isOwner()) applyConfig(data.config);  // owner is source of truth, don't overwrite their local
+          // Workers always trust the cloud — the owner is the writer.
+          //
+          // For owners we normally *skip* applying so a fresh pullConfig
+          // can't clobber unsaved local edits (e.g. a staff add that
+          // happened in the last 1.5 s before the debounced push fires).
+          // BUT we MUST apply when:
+          //   1. local state is empty (brand-new device sign-in — the
+          //      cloud is the only place the staff list / shifts /
+          //      rates exist; without applying, the owner sees an empty
+          //      business after signing in on phone #2), or
+          //   2. the discovered business id is different from the one
+          //      we last hydrated against (signing in as a different
+          //      owner on the same device, or moving an owner between
+          //      businesses) — otherwise stale local state from the
+          //      previous account leaks through.
+          //
+          // `hydratedFor` is set on createBusiness too, so an owner who
+          // just seeded the cloud from local edits keeps their work
+          // when they reload before the debounced push lands.
+          const localLooksEmpty =
+            (state.staff?.length || 0) === 0
+            && Object.keys(state.attendance || {}).length === 0
+            && Object.keys(state.punches || {}).length === 0;
+          const businessChanged = state.biz.hydratedFor !== state.biz.id;
+          if (!isOwner() || localLooksEmpty || businessChanged) {
+            applyConfig(data.config);
+          }
+          state.biz.hydratedFor = state.biz.id;
+          save({ silent: true });
           setStatus(channel ? 'live' : 'synced');
         } catch (e) { setStatus('error', e.message || String(e)); }
       }
 
       async function pullEventsSince(id) {
+        // Paginate from `id` forward until we run dry. Without this an
+        // owner signing in on a new device only sees the first 1000
+        // events ever recorded (oldest) — anything after id 1000 is
+        // silently missing until subscribe() picks up new live rows.
+        // PAGE_SIZE matches the previous limit so existing servers
+        // don't pay any new cost on small businesses.
+        const PAGE_SIZE = 1000;
+        const MAX_PAGES = 50; // 50 × 1000 = 50k events; sane safety cap
         try {
           const c = await client();
-          const { data, error } = await c.from('events')
-            .select('*')
-            .eq('business_id', state.biz.id)
-            .gt('id', Number(id || 0))
-            .order('id', { ascending: true })
-            .limit(1000);
-          if (error) throw error;
-          (data || []).forEach(applyEvent);
-          if (data?.length) save({ silent: true });
+          let cursor = Number(id || 0);
+          let totalApplied = 0;
+          for (let page = 0; page < MAX_PAGES; page++) {
+            const { data, error } = await c.from('events')
+              .select('*')
+              .eq('business_id', state.biz.id)
+              .gt('id', cursor)
+              .order('id', { ascending: true })
+              .limit(PAGE_SIZE);
+            if (error) throw error;
+            if (!data?.length) break;
+            data.forEach(applyEvent);
+            totalApplied += data.length;
+            cursor = data[data.length - 1].id;
+            if (data.length < PAGE_SIZE) break; // last page
+          }
+          if (totalApplied) save({ silent: true });
         } catch (_) { /* offline-safe */ }
       }
 
@@ -3477,6 +3521,11 @@
           id: row.id, role: 'owner', ownerId: sess.session.user.id,
           staffId: null, joinCode: row.join_code, lastEventId: 0, pendingWrites: [],
           status: 'synced',
+          // The cloud was just seeded from extractConfig() above, so
+          // local IS the source of truth for this business. Mark it
+          // hydrated so a reload before the first debounced push
+          // doesn't trigger pullConfig to clobber local edits.
+          hydratedFor: row.id,
         };
         save();
         await subscribe();
