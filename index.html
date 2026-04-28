@@ -464,6 +464,19 @@
         worker_loc_diag_help_install: 'Browser tabs stop GPS when minimised. Install PayBox to your home screen for steady tracking.',
         worker_loc_diag_help_indoor: 'Step near a window or outside \u2014 indoor GPS fixes are filtered out as too inaccurate.',
         worker_loc_diag_help_battery: 'Battery saver / low-power mode can suppress GPS. Disable it for the browser/app.',
+        // ----- Background-tracking environment card (worker loc sheet) -----
+        worker_loc_bg_web_title: 'Background tracking is not supported here',
+        worker_loc_bg_web_msg: 'You\'re running PayBox in a browser. When the tab is minimised the browser pauses GPS and uploads. Install the PayBox Android app to keep tracking and uploading while you\'re working.',
+        worker_loc_bg_native_no_bg_title: 'App is missing the background tracking module',
+        worker_loc_bg_native_no_bg_msg: 'This installed app build does not include the background-location plugin. Reinstall the latest PayBox APK \u2014 the new build runs a foreground service that keeps tracking when you minimise.',
+        worker_loc_bg_native_ok_title: 'Background tracking is enabled',
+        worker_loc_bg_native_ok_msg_on: 'A foreground service is running. Location keeps uploading even when you minimise the app or the screen turns off.',
+        worker_loc_bg_native_ok_msg_off: 'Background module is loaded but not currently watching. It will start automatically the next time you punch in.',
+        worker_loc_bg_android_check: 'If background tracking still seems silent',
+        worker_loc_bg_open_perms: 'Open app permissions',
+        worker_loc_bg_open_battery: 'Battery optimization',
+        worker_loc_bg_android_hint: 'In Permissions, set Location to "Allow all the time". In Battery, allow PayBox to run in the background (some phones call this "Unrestricted" or "No restrictions").',
+        worker_loc_bg_open_failed: 'Could not open settings \u2014 open phone Settings manually.',
         worker_loc_force_flush: 'Force upload now',
         worker_loc_force_flush_running: 'Uploading\u2026',
         worker_loc_force_flush_ok: 'Uploaded {n} ping(s).',
@@ -2141,6 +2154,44 @@
           if (!PN || !PN.addListener) return () => {};
           const h = PN.addListener('pushNotificationActionPerformed', (n) => { try { cb(n); } catch (_) {} });
           return () => { try { h && h.remove && h.remove(); } catch (_) {} };
+        },
+        // Deep-link helpers — open the OS settings page that lets the
+        // user grant permissions / disable battery optimization. We
+        // bridge through @capacitor/app's `openUrl` which on Android
+        // accepts `package:` and `intent:` URIs that map to specific
+        // Settings activities. Falls back to a no-op on web.
+        async openAppSettings() {
+          if (!on) return false;
+          const App = plug('App');
+          const pkg = (cap.getAppId && cap.getAppId()) || 'in.paybox.app';
+          if (!App || !App.openUrl) return false;
+          try {
+            // App-specific permission/info screen — works on every
+            // Android version we support.
+            await App.openUrl({ url: 'package:' + pkg });
+            return true;
+          } catch (_) { return false; }
+        },
+        async openBatterySettings() {
+          if (!on || cap.getPlatform?.() !== 'android') return false;
+          const App = plug('App');
+          if (!App || !App.openUrl) return false;
+          // Action ID for the per-app battery-optimization screen on
+          // Android 6+ (Doze / app standby ignore list).
+          // android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS lands
+          // on the global list; the per-app one is reached via the
+          // package-specific URI parameter.
+          const pkg = (cap.getAppId && cap.getAppId()) || 'in.paybox.app';
+          // Try the per-app request first; if that's blocked by OEM
+          // we fall back to the global list which still works.
+          const candidates = [
+            'intent:#Intent;action=android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS;package=' + pkg + ';end',
+            'intent:#Intent;action=android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS;end',
+          ];
+          for (const url of candidates) {
+            try { await App.openUrl({ url }); return true; } catch (_) { /* try next */ }
+          }
+          return false;
         },
       };
     })();
@@ -4490,6 +4541,28 @@
             if (error) sessionError = String(error.message || error).slice(0, 200);
             sessionUid = sess?.session?.user?.id || null;
           } catch (e) { sessionError = String(e?.message || 'session_unavailable'); }
+          // Background-capable runtime detection.
+          //   • `bgPluginAvailable` = the @capacitor-community/background-
+          //     geolocation plugin is loaded — only true inside the
+          //     installed Android/iOS app, never in the browser.
+          //   • `bgWatcherActive`   = we currently hold a watcher id from
+          //     the plugin, i.e. the foreground service is supposedly
+          //     up and delivering fixes.
+          //   • `runtime`           = a single concise label the UI uses
+          //     to choose which guidance to show:
+          //         'native_with_bg'  → APK + plugin loaded (✓ background)
+          //         'native_no_bg'    → APK but plugin missing (rebuild)
+          //         'web'             → browser PWA (no background ever)
+          let bgPluginAvailable = false;
+          let bgWatcherActive = false;
+          try {
+            const BG = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BackgroundGeolocation) || null;
+            bgPluginAvailable = !!(Native.on && BG && typeof BG.addWatcher === 'function');
+            bgWatcherActive = bgPluginAvailable && !!tracker._bgWatchId;
+          } catch (_) { /* defensive */ }
+          const runtime = !Native.on
+            ? 'web'
+            : (bgPluginAvailable ? 'native_with_bg' : 'native_no_bg');
           return {
             ...fp,
             online: navigator.onLine,
@@ -4504,6 +4577,7 @@
             businessId: state.biz?.id || null,
             sessionUid, sessionError,
             nativePlatform: Native.on ? Native.platform : null,
+            bgPluginAvailable, bgWatcherActive, runtime,
           };
         }
 
@@ -8036,6 +8110,7 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
           <div class="text-lg font-bold">${escapeHtml(t('worker_loc_title'))}</div>
           <div class="text-xs text-slate-500">${escapeHtml(t('worker_loc_hint'))}</div>
         </div>
+        <div id="wLocBgEnv" class="mb-3"></div>
         <div class="card p-3 mb-3">
           <div class="flex items-center justify-between gap-2">
             <div class="text-sm font-semibold text-slate-700">${escapeHtml(t('worker_loc_status'))}</div>
@@ -8131,9 +8206,84 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
         $('#wLocCount').textContent = '0';
       }
 
+      // ----- Background-tracking environment card -----
+      // The single most common silent-failure cause is "browser PWA on
+      // Android keeps tracking only while the app is foregrounded". The
+      // browser suspends `watchPosition` callbacks (and `setInterval`
+      // for the flush) the moment the page is hidden — there's nothing
+      // we can do about it inside the WebView, the user has to install
+      // the native Android app. The card below tells them this in
+      // plain language and, on the native APK, gives one-tap deep
+      // links to the OS screens that fix the two next-most-common
+      // causes (background-location permission and battery-optimization
+      // exemption).
+      const renderBgEnv = (d) => {
+        const host = $('#wLocBgEnv');
+        if (!host) return;
+        if (d.runtime === 'web') {
+          host.innerHTML = `
+            <div class="card p-3 border-amber-200 bg-amber-50">
+              <div class="flex items-start gap-2">
+                <svg class="flex-shrink-0 mt-0.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                <div class="min-w-0">
+                  <div class="text-sm font-bold text-amber-900">${escapeHtml(t('worker_loc_bg_web_title'))}</div>
+                  <div class="text-[11px] text-amber-800 mt-1 leading-relaxed">${escapeHtml(t('worker_loc_bg_web_msg'))}</div>
+                </div>
+              </div>
+            </div>`;
+          return;
+        }
+        if (d.runtime === 'native_no_bg') {
+          host.innerHTML = `
+            <div class="card p-3 border-rose-200 bg-rose-50">
+              <div class="flex items-start gap-2">
+                <svg class="flex-shrink-0 mt-0.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#be123c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div class="min-w-0">
+                  <div class="text-sm font-bold text-rose-900">${escapeHtml(t('worker_loc_bg_native_no_bg_title'))}</div>
+                  <div class="text-[11px] text-rose-800 mt-1 leading-relaxed">${escapeHtml(t('worker_loc_bg_native_no_bg_msg'))}</div>
+                </div>
+              </div>
+            </div>`;
+          return;
+        }
+        // Native APK + plugin loaded — happy path. Show whether the
+        // watcher is currently running and one-tap settings deep
+        // links so the worker can fix permission / battery issues
+        // without leaving the diagnostic sheet.
+        const isAndroid = d.nativePlatform === 'android';
+        const watcherOn = !!d.bgWatcherActive;
+        host.innerHTML = `
+          <div class="card p-3 border-emerald-200 bg-emerald-50/60">
+            <div class="flex items-start gap-2">
+              <svg class="flex-shrink-0 mt-0.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="min-w-0 flex-1">
+                <div class="text-sm font-bold text-emerald-900">${escapeHtml(t('worker_loc_bg_native_ok_title'))}</div>
+                <div class="text-[11px] text-emerald-800 mt-1 leading-relaxed">${escapeHtml(t(watcherOn ? 'worker_loc_bg_native_ok_msg_on' : 'worker_loc_bg_native_ok_msg_off'))}</div>
+                ${isAndroid ? `
+                  <div class="text-[10px] text-emerald-700 mt-2 font-semibold uppercase tracking-wider">${escapeHtml(t('worker_loc_bg_android_check'))}</div>
+                  <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button id="wLocOpenAppSettings" class="py-2 rounded-lg border border-emerald-300 bg-white text-emerald-800 text-[11px] font-semibold active:scale-[.98]">${escapeHtml(t('worker_loc_bg_open_perms'))}</button>
+                    <button id="wLocOpenBattery" class="py-2 rounded-lg border border-emerald-300 bg-white text-emerald-800 text-[11px] font-semibold active:scale-[.98]">${escapeHtml(t('worker_loc_bg_open_battery'))}</button>
+                  </div>
+                  <div class="text-[10px] text-emerald-700 mt-1.5 leading-relaxed">${escapeHtml(t('worker_loc_bg_android_hint'))}</div>
+                ` : ''}
+              </div>
+            </div>
+          </div>`;
+        $('#wLocOpenAppSettings')?.addEventListener('click', async () => {
+          const ok = await Native.openAppSettings();
+          if (!ok) toast(t('worker_loc_bg_open_failed'));
+        });
+        $('#wLocOpenBattery')?.addEventListener('click', async () => {
+          const ok = await Native.openBatterySettings();
+          if (!ok) toast(t('worker_loc_bg_open_failed'));
+        });
+      };
+
       // ----- Render diagnostic snapshot -----
       const renderDiag = async () => {
         const d = await cloudBiz.tracker.diagnose();
+        renderBgEnv(d);
         const yes = t('worker_loc_diag_yes'), no = t('worker_loc_diag_no'), none = t('worker_loc_diag_none'), never = t('worker_loc_diag_never');
         const ts = (v) => v ? new Date(v).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : never;
         const rows = [
