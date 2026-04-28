@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="color-scheme" content="dark">
+  <title>PayBox Console — Analytics</title>
+
+  <!--
+    PayBox Admin Console — single-file analytics dashboard.
+
+    This page is *intentionally separate* from index.html:
+      • Different audience: super-admins (you), not owners or workers.
+      • Different aesthetic: dark-themed, data-dense, desktop-first —
+        feels like a Grafana / DataDog console rather than a friendly
+        mobile shop app.
+      • Different entry point: /admin.html, not the PWA root, so it
+        never accidentally registers the worker/owner service worker.
+
+    What it does:
+      1. Authenticates against the same Supabase project as PayBox.
+      2. Calls the SECURITY DEFINER RPCs added in
+         supabase/migrations/0004_admin_analytics.sql.
+         Those RPCs self-check `is_admin()` so the page itself doesn't
+         have to know what tables are private.
+      3. Renders 4 KPI cards, 2 timeseries line charts, a top-business
+         leaderboard, and a recent-signups feed.
+
+    Read ADMIN.md before deploying — there's a 30-second SQL step you
+    have to run once to grant yourself admin access.
+  -->
+
+  <!-- Tailwind for layout. Same CDN as the main app. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+            sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          colors: {
+            bg:    { 950: '#070b14', 900: '#0b1220', 800: '#0f172a', 700: '#1e293b' },
+            line:  '#1f2937',
+            text:  { hi: '#e5e7eb', mid: '#94a3b8', lo: '#64748b' },
+            accent:{ teal: '#14b8a6', red: '#f43f5e', amber: '#f59e0b', blue: '#3b82f6' },
+          },
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background: #070b14; color: #e5e7eb; }
+    /* Tabular numerics so KPI digits don't dance when refreshing. */
+    .num { font-variant-numeric: tabular-nums; }
+    /* Subtle scanline pattern on the header for the "console" vibe. */
+    .header-bg {
+      background:
+        radial-gradient(1200px 200px at 50% -50%, rgba(20,184,166,0.18), transparent 60%),
+        linear-gradient(180deg, #0b1220 0%, #070b14 100%);
+      border-bottom: 1px solid #1f2937;
+    }
+    .card {
+      background: #0b1220;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+    }
+    .card-hover:hover { border-color: #334155; }
+    /* Tiny pulse for the "live" dot. */
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%     { opacity: 0.4; transform: scale(0.85); }
+    }
+    .dot-live { animation: pulse 1.6s ease-in-out infinite; }
+    /* Custom scrollbar inside cards. */
+    .scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scroll::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
+    .scroll::-webkit-scrollbar-track { background: transparent; }
+    /* Sparkline & chart canvas containers. */
+    .chart { position: relative; height: 180px; }
+    /* Skeleton shimmer used while data is loading. */
+    .skel {
+      background: linear-gradient(90deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      background-size: 200% 100%; animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+  <!-- ========== Auth gate (login + access denied screens) ========== -->
+  <div id="authGate" class="hidden min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-sm card p-6">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 rounded-lg bg-accent-teal/15 border border-accent-teal/40 flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-xs text-text-lo uppercase tracking-[0.2em] font-mono">PayBox</div>
+          <div class="text-base font-bold">Admin Console</div>
+        </div>
+      </div>
+      <div id="authMsg" class="text-xs text-text-mid mb-4">Sign in with your admin email to view analytics.</div>
+      <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email"
+             class="w-full px-3 py-2.5 rounded-lg bg-bg-700 border border-line text-sm text-text-hi focus:outline-none focus:border-accent-teal placeholder-text-lo">
+      <button id="authSend" class="mt-3 w-full py-2.5 rounded-lg bg-accent-teal text-bg-950 font-bold text-sm active:scale-[0.98] transition">
+        Send magic link
+      </button>
+      <div id="authNote" class="mt-3 text-[11px] text-text-lo leading-relaxed"></div>
+    </div>
+  </div>
+
+  <!-- ========== Access denied (signed in, but not on the allow list) ========== -->
+  <div id="denyGate" class="hidden min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-sm card p-6 text-center">
+      <div class="w-12 h-12 rounded-lg mx-auto mb-3 bg-accent-red/15 border border-accent-red/40 flex items-center justify-center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="text-base font-bold mb-1">Not authorized</div>
+      <div id="denyEmail" class="text-xs text-text-mid mb-4 font-mono"></div>
+      <div class="text-[11px] text-text-mid leading-relaxed mb-4">
+        Your email isn't in the admin allow list. Run this in Supabase SQL Editor to grant access:
+      </div>
+      <pre class="text-left text-[10px] bg-bg-800 border border-line rounded-md p-2 font-mono text-text-mid overflow-x-auto scroll mb-4">insert into public.admin_users(email)
+values('YOUR_EMAIL@example.com');</pre>
+      <button id="denySignOut" class="w-full py-2 rounded-lg border border-line text-text-mid text-xs font-semibold active:scale-[0.98] transition">
+        Sign out
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== Main dashboard ========== -->
+  <div id="dash" class="hidden">
+    <header class="header-bg sticky top-0 z-10 px-5 py-4">
+      <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-accent-teal dot-live"></span>
+            <span class="text-[10px] uppercase tracking-[0.2em] text-text-mid font-mono">PayBox Admin Console</span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-bold mt-0.5 truncate">Analytics</h1>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <span id="lastFetched" class="text-[10px] text-text-lo font-mono hidden sm:inline">—</span>
+          <button id="refreshBtn" title="Refresh" class="px-3 py-1.5 rounded-md border border-line text-xs text-text-mid hover:text-text-hi hover:border-accent-teal/50 transition">
+            <span class="inline-flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refresh
+            </span>
+          </button>
+          <button id="signOut" title="Sign out" class="px-3 py-1.5 rounded-md border border-line text-xs text-text-mid hover:text-accent-red hover:border-accent-red/50 transition">
+            Sign out
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <!-- KPI strip -->
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div data-kpi="total_businesses" class="card p-4 card-hover">
+          <div class="text-[10px] text-text-lo uppercase tracking-wider font-mono">Businesses</div>
+          <div class="text-3xl font-bold num mt-1" data-kpi-value>—</div>
+          <div class="text-[10px] text-text-mid mt-1.5" data-kpi-sub>active in last 7d: <span data-kpi-sub-val>—</span></div>
+        </div>
+        <div data-kpi="total_employees" class="card p-4 card-hover">
+          <div class="text-[10px] text-text-lo uppercase tracking-wider font-mono">Employees</div>
+          <div class="text-3xl font-bold num mt-1" data-kpi-value>—</div>
+          <div class="text-[10px] text-text-mid mt-1.5" data-kpi-sub>across all businesses</div>
+        </div>
+        <div data-kpi="total_workers" class="card p-4 card-hover">
+          <div class="text-[10px] text-text-lo uppercase tracking-wider font-mono">Active workers</div>
+          <div class="text-3xl font-bold num mt-1" data-kpi-value>—</div>
+          <div class="text-[10px] text-text-mid mt-1.5" data-kpi-sub>pending: <span data-kpi-sub-val>—</span></div>
+        </div>
+        <div data-kpi="pings_24h" class="card p-4 card-hover">
+          <div class="text-[10px] text-text-lo uppercase tracking-wider font-mono">Pings (24h)</div>
+          <div class="text-3xl font-bold num mt-1" data-kpi-value>—</div>
+          <div class="text-[10px] text-text-mid mt-1.5" data-kpi-sub>events 24h: <span data-kpi-sub-val>—</span></div>
+        </div>
+      </section>
+
+      <!-- Charts row -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="text-sm font-bold">Daily location pings</div>
+              <div class="text-[10px] text-text-lo font-mono">last 30 days</div>
+            </div>
+            <span class="text-[10px] text-accent-teal font-mono">pings</span>
+          </div>
+          <div class="chart"><canvas id="chartPings"></canvas></div>
+        </div>
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="text-sm font-bold">Daily new signups</div>
+              <div class="text-[10px] text-text-lo font-mono">last 30 days</div>
+            </div>
+            <span class="text-[10px] text-accent-blue font-mono">users</span>
+          </div>
+          <div class="chart"><canvas id="chartSignups"></canvas></div>
+        </div>
+      </section>
+
+      <!-- Leaderboard + recent signups -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <!-- Top businesses -->
+        <div class="card p-4 lg:col-span-2 min-w-0">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="text-sm font-bold">Businesses</div>
+              <div class="text-[10px] text-text-lo font-mono"><span id="bizCount">—</span> rows · sorted by recent activity</div>
+            </div>
+            <input id="bizFilter" placeholder="filter…" class="w-32 sm:w-44 px-2.5 py-1 rounded-md bg-bg-800 border border-line text-xs text-text-hi placeholder-text-lo focus:outline-none focus:border-accent-teal font-mono">
+          </div>
+          <div class="overflow-x-auto scroll">
+            <table class="w-full text-xs">
+              <thead class="text-[10px] uppercase tracking-wider text-text-lo border-b border-line">
+                <tr>
+                  <th class="text-left font-mono py-2 px-2">Name</th>
+                  <th class="text-left font-mono py-2 px-2 hidden sm:table-cell">Owner</th>
+                  <th class="text-right font-mono py-2 px-2">Staff</th>
+                  <th class="text-right font-mono py-2 px-2 hidden md:table-cell">Members</th>
+                  <th class="text-right font-mono py-2 px-2 hidden lg:table-cell">24h pings</th>
+                  <th class="text-right font-mono py-2 px-2 hidden md:table-cell">Last activity</th>
+                </tr>
+              </thead>
+              <tbody id="bizTable" class="text-text-hi"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Recent signups -->
+        <div class="card p-4 min-w-0">
+          <div class="text-sm font-bold mb-1">Recent signups</div>
+          <div class="text-[10px] text-text-lo font-mono mb-3">last 25 users</div>
+          <div id="signupList" class="space-y-2 max-h-96 overflow-y-auto scroll"></div>
+        </div>
+      </section>
+
+      <footer class="text-center text-[10px] text-text-lo font-mono py-6">
+        PayBox admin console · queries Supabase via SECURITY DEFINER RPCs
+      </footer>
+    </main>
+  </div>
+
+  <!--
+    Supabase JS client. We pin to the same v2 line the main app uses so
+    behaviour stays consistent — auth tokens persisted in localStorage,
+    auto-refresh on, etc.
+  -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
+
+    // -------------------------------------------------------------
+    // 1. Config — same Supabase project as the main PayBox app.
+    //    These two values are public by design (the anon key is
+    //    intentionally safe to publish; RLS + the is_admin() check
+    //    in admin_*.sql functions enforce the security boundary).
+    // -------------------------------------------------------------
+    const SUPABASE_URL  = 'https://laifbtwnouavnvhyaihh.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhaWZidHdub3Vhdm52aHlhaWhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NDk5MDAsImV4cCI6MjA5MjUyNTkwMH0.OecObEQG2JmCtp8Gs83TVDKzewk-CAdm1RhJNxrSZ7s';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+      auth: {
+        // Keep the admin session in its own storageKey so it doesn't
+        // clobber (or get clobbered by) the worker/owner session that
+        // the main app stores under 'sb-…-auth-token'.
+        storageKey: 'paybox-admin-auth',
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+    });
+
+    // -------------------------------------------------------------
+    // 2. Tiny DOM helpers (no jQuery, no React).
+    // -------------------------------------------------------------
+    const $  = (s) => document.querySelector(s);
+    const $$ = (s) => Array.from(document.querySelectorAll(s));
+    const setKpi = (key, val, sub) => {
+      const card = $(`[data-kpi="${key}"]`);
+      if (!card) return;
+      const v = card.querySelector('[data-kpi-value]');
+      const s = card.querySelector('[data-kpi-sub-val]');
+      if (v) v.textContent = val == null ? '—' : Number(val).toLocaleString();
+      if (s && sub != null) s.textContent = Number(sub).toLocaleString();
+    };
+    const fmtRel = (iso) => {
+      if (!iso) return '—';
+      const t = new Date(iso).getTime();
+      if (!Number.isFinite(t)) return '—';
+      const diff = Date.now() - t;
+      const m = Math.floor(diff / 60000);
+      if (m < 1) return 'now';
+      if (m < 60) return m + 'm';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + 'h';
+      const d = Math.floor(h / 24);
+      if (d < 30) return d + 'd';
+      return new Date(iso).toLocaleDateString();
+    };
+    const fmtDateShort = (d) => {
+      if (!d) return '';
+      const dt = (d instanceof Date) ? d : new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    };
+
+    // -------------------------------------------------------------
+    // 3. Auth gate — magic-link login + admin-allowlist check.
+    //    Flow:
+    //      a) Page loads → check current session.
+    //      b) If no session → show login screen, ask for email,
+    //         call signInWithOtp() (Supabase emails a magic link).
+    //         User clicks the link, returns to /admin.html with
+    //         #access_token=… in the URL — `detectSessionInUrl: true`
+    //         picks it up automatically.
+    //      c) Once a session exists → call public.is_admin(). True →
+    //         render dashboard. False → render denyGate with
+    //         instructions for adding their email to admin_users.
+    // -------------------------------------------------------------
+    const authGate = $('#authGate');
+    const denyGate = $('#denyGate');
+    const dash     = $('#dash');
+    const showOnly = (which) => {
+      authGate.classList.toggle('hidden', which !== 'auth');
+      denyGate.classList.toggle('hidden', which !== 'deny');
+      dash.classList.toggle('hidden',     which !== 'dash');
+    };
+
+    async function ensureSessionAndRoute() {
+      // 1. Read the current session (may have just been hydrated from
+      //    the URL hash by detectSessionInUrl).
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
+      if (!session) { showOnly('auth'); return; }
+
+      // 2. We're signed in. Ask the DB whether we're an admin.
+      const { data: isAdmin, error } = await supabase.rpc('is_admin');
+      if (error) {
+        showOnly('auth');
+        $('#authMsg').textContent = 'Auth check failed: ' + (error.message || error);
+        return;
+      }
+      if (!isAdmin) {
+        $('#denyEmail').textContent = session.user?.email || '';
+        showOnly('deny');
+        return;
+      }
+      showOnly('dash');
+      // First paint immediately, then refresh every 30 s while the
+      // tab is visible.
+      await refreshAll();
+      startAutoRefresh();
+    }
+
+    // Magic-link flow.
+    $('#authSend').addEventListener('click', async () => {
+      const email = ($('#authEmail').value || '').trim();
+      if (!email) { $('#authMsg').textContent = 'Enter your email first.'; return; }
+      $('#authMsg').textContent = 'Sending magic link…';
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin + window.location.pathname },
+      });
+      if (error) {
+        $('#authMsg').textContent = 'Send failed: ' + (error.message || error);
+        return;
+      }
+      $('#authMsg').textContent = 'Check your inbox at ' + email + '.';
+      $('#authNote').textContent = 'Tap the link from the same browser. The page will reload signed in.';
+    });
+
+    // Sign out from either the dashboard or the deny screen.
+    const doSignOut = async () => {
+      await supabase.auth.signOut();
+      window.location.replace(window.location.pathname);
+    };
+    $('#signOut').addEventListener('click', doSignOut);
+    $('#denySignOut').addEventListener('click', doSignOut);
+
+    // Re-run the gate logic whenever the session changes (e.g. token
+    // refresh or another tab signs out).
+    supabase.auth.onAuthStateChange((_e, session) => {
+      // We only need to re-route on real sign-in / sign-out, not on
+      // INITIAL_SESSION which we already handle.
+      if (_e === 'SIGNED_IN' || _e === 'SIGNED_OUT') ensureSessionAndRoute();
+    });
+
+    // -------------------------------------------------------------
+    // 4. Tiny Chart.js loader — lazy because the dashboard is the
+    //    only consumer and we don't want auth-gate-time pulls.
+    // -------------------------------------------------------------
+    let _chartPromise = null;
+    function loadChart() {
+      if (window.Chart) return Promise.resolve(window.Chart);
+      if (_chartPromise) return _chartPromise;
+      _chartPromise = new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+        s.onload = () => res(window.Chart);
+        s.onerror = () => { _chartPromise = null; rej(new Error('chartjs_failed')); };
+        document.head.appendChild(s);
+      });
+      return _chartPromise;
+    }
+
+    // Two cached chart instances so we update data instead of
+    // destroying + recreating each refresh (avoids a flash).
+    const charts = { pings: null, signups: null };
+    async function renderLineChart(canvasId, key, points, color) {
+      const Chart = await loadChart().catch(() => null);
+      if (!Chart) return;
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      const labels = points.map(p => fmtDateShort(p.day));
+      const data   = points.map(p => Number(p.n) || 0);
+      // Build a soft gradient fill matching the line color.
+      const g = ctx.getContext('2d').createLinearGradient(0, 0, 0, 180);
+      g.addColorStop(0, color + '40'); // 25% alpha at top
+      g.addColorStop(1, color + '00'); // 0% alpha at bottom
+      const cfg = {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            borderColor: color,
+            backgroundColor: g,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            borderWidth: 2,
+          }],
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0b1220', borderColor: '#1f2937', borderWidth: 1,
+              titleColor: '#e5e7eb', bodyColor: '#94a3b8',
+              displayColors: false,
+            },
+          },
+          scales: {
+            x: { grid: { color: '#1f2937', drawBorder: false }, ticks: { color: '#64748b', font: { size: 10, family: 'ui-monospace' }, maxRotation: 0, autoSkipPadding: 16 } },
+            y: { grid: { color: '#1f2937', drawBorder: false }, ticks: { color: '#64748b', font: { size: 10, family: 'ui-monospace' }, precision: 0 }, beginAtZero: true },
+          },
+          interaction: { intersect: false, mode: 'index' },
+        },
+      };
+      if (charts[key]) {
+        charts[key].data = cfg.data;
+        charts[key].update('none');
+      } else {
+        charts[key] = new Chart(ctx, cfg);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 5. Data fetchers — one per RPC. Each returns a normalized
+    //    shape and never throws into the caller (errors surface as
+    //    a tiny inline note instead so the rest of the dashboard
+    //    keeps working).
+    // -------------------------------------------------------------
+    async function fetchSummary() {
+      const { data, error } = await supabase.rpc('admin_summary');
+      if (error) throw error;
+      return Array.isArray(data) ? data[0] : data;
+    }
+    async function fetchBusinessList(lim = 100) {
+      const { data, error } = await supabase.rpc('admin_business_list', { lim });
+      if (error) throw error;
+      return data || [];
+    }
+    async function fetchTimeseries(metric, days = 30) {
+      const { data, error } = await supabase.rpc('admin_timeseries', { metric, days });
+      if (error) throw error;
+      return data || [];
+    }
+    async function fetchRecentSignups(lim = 25) {
+      const { data, error } = await supabase.rpc('admin_recent_signups', { lim });
+      if (error) throw error;
+      return data || [];
+    }
+
+    // -------------------------------------------------------------
+    // 6. Render functions.
+    // -------------------------------------------------------------
+    function renderSummary(s) {
+      if (!s) return;
+      setKpi('total_businesses', s.total_businesses, s.active_businesses_7d);
+      setKpi('total_employees',  s.total_employees);
+      setKpi('total_workers',    s.total_workers, s.total_pending);
+      setKpi('pings_24h',        s.pings_24h, s.events_24h);
+      $('#lastFetched').textContent = 'updated ' + fmtRel(s.fetched_at);
+    }
+
+    let bizRows = [];
+    function renderBusinessTable(filter = '') {
+      const q = (filter || '').toLowerCase().trim();
+      const rows = q
+        ? bizRows.filter(r =>
+            (r.name || '').toLowerCase().includes(q) ||
+            (r.owner_email || '').toLowerCase().includes(q) ||
+            (r.join_code || '').toLowerCase().includes(q))
+        : bizRows;
+      $('#bizCount').textContent = rows.length;
+      if (!rows.length) {
+        $('#bizTable').innerHTML = `<tr><td colspan="6" class="py-4 text-center text-text-mid">No businesses match.</td></tr>`;
+        return;
+      }
+      $('#bizTable').innerHTML = rows.map((r) => {
+        // Most-recent of last_event_at / last_ping_at — that's the
+        // "alive" signal an admin actually cares about.
+        const last = [r.last_event_at, r.last_ping_at].filter(Boolean)
+          .map(s => new Date(s).getTime()).sort((a, b) => b - a)[0];
+        const lastIso = last ? new Date(last).toISOString() : null;
+        return `
+          <tr class="border-b border-line/60 hover:bg-bg-800/50">
+            <td class="py-2 px-2 max-w-[160px] truncate">
+              <div class="font-semibold truncate">${escape(r.name || '(unnamed)')}</div>
+              <div class="text-[10px] text-text-lo font-mono truncate">${escape(r.join_code || '')}</div>
+            </td>
+            <td class="py-2 px-2 hidden sm:table-cell text-text-mid font-mono text-[11px] truncate max-w-[180px]">${escape(r.owner_email || '—')}</td>
+            <td class="py-2 px-2 text-right num">${r.staff_count || 0}</td>
+            <td class="py-2 px-2 text-right num hidden md:table-cell">${r.member_count || 0}<span class="text-text-lo">${r.pending_count ? ` +${r.pending_count}p` : ''}</span></td>
+            <td class="py-2 px-2 text-right num hidden lg:table-cell ${r.pings_24h > 0 ? 'text-accent-teal' : 'text-text-lo'}">${r.pings_24h || 0}</td>
+            <td class="py-2 px-2 text-right num hidden md:table-cell text-text-mid font-mono text-[11px]">${fmtRel(lastIso)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderSignupList(rows) {
+      if (!rows?.length) {
+        $('#signupList').innerHTML = `<div class="text-xs text-text-mid text-center py-6">No recent signups.</div>`;
+        return;
+      }
+      $('#signupList').innerHTML = rows.map(r => `
+        <div class="flex items-center gap-2 text-xs py-1.5 border-b border-line/40 last:border-0">
+          <div class="w-7 h-7 rounded-md bg-bg-800 border border-line flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-accent-teal">
+            ${(r.email || '?').slice(0, 1).toUpperCase()}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="truncate font-mono text-[11px]" title="${escape(r.email || '')}">${escape(r.email || '—')}</div>
+            <div class="text-[10px] text-text-lo">
+              joined ${fmtRel(r.created_at)}
+              ${r.business_count > 0 ? ` · <span class="text-accent-teal">${r.business_count} biz</span>` : ''}
+              ${r.last_sign_in_at ? ` · last seen ${fmtRel(r.last_sign_in_at)}` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Cheap HTML escaper for table cells. We never trust DB strings to
+    // be safe — even though admin is "trusted" in theory, a malicious
+    // worker could put HTML into a business name if RLS misbehaved.
+    const escape = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+
+    // -------------------------------------------------------------
+    // 7. The orchestration loop. Runs every refresh — pulls all
+    //    five data sources in parallel and updates the DOM. Errors
+    //    are caught per-fetcher so one bad RPC can't blank the page.
+    // -------------------------------------------------------------
+    async function refreshAll() {
+      $('#refreshBtn').setAttribute('disabled', '');
+      try {
+        const [sum, biz, pings, signups, recent] = await Promise.allSettled([
+          fetchSummary(),
+          fetchBusinessList(100),
+          fetchTimeseries('pings', 30),
+          fetchTimeseries('signups', 30),
+          fetchRecentSignups(25),
+        ]);
+
+        if (sum.status === 'fulfilled')      renderSummary(sum.value);
+        else                                 console.warn('summary failed', sum.reason);
+
+        if (biz.status === 'fulfilled')      { bizRows = biz.value; renderBusinessTable($('#bizFilter').value); }
+        else                                 console.warn('biz list failed', biz.reason);
+
+        if (pings.status === 'fulfilled')    renderLineChart('chartPings',  'pings',   pings.value,   '#14b8a6');
+        if (signups.status === 'fulfilled')  renderLineChart('chartSignups','signups', signups.value, '#3b82f6');
+
+        if (recent.status === 'fulfilled')   renderSignupList(recent.value);
+        else                                 console.warn('recent signups failed', recent.reason);
+      } finally {
+        $('#refreshBtn').removeAttribute('disabled');
+      }
+    }
+
+    let _refreshHandle = null;
+    function startAutoRefresh() {
+      if (_refreshHandle) return;
+      _refreshHandle = setInterval(() => {
+        if (document.visibilityState === 'visible') refreshAll();
+      }, 30 * 1000);
+    }
+
+    $('#refreshBtn').addEventListener('click', () => refreshAll());
+    $('#bizFilter').addEventListener('input', (e) => renderBusinessTable(e.target.value));
+
+    // Boot.
+    ensureSessionAndRoute();
+  </script>
+</body>
+</html>
