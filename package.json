@@ -1,0 +1,29 @@
+{
+  "name": "pay_box",
+  "version": "1.0.0",
+  "description": "A simple, mobile-first staff & payroll app for small businesses — built as a cleaner, smarter alternative to SalaryBox.",
+  "main": "sw.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i src/input.css -o dist/tailwind.css --minify",
+    "dev:css": "tailwindcss -i src/input.css -o dist/tailwind.css --watch",
+    "test": "cd tests && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/priteshksr/Pay_Box.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/priteshksr/Pay_Box/issues"
+  },
+  "homepage": "https://github.com/priteshksr/Pay_Box#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

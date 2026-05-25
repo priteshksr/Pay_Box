@@ -41,6 +41,12 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install root dependencies (Tailwind CSS)
+        run: npm ci
+
+      - name: Build Tailwind CSS
+        run: npm run build:css
+
       - name: Install Capacitor + plugins
         working-directory: native
         run: npm ci

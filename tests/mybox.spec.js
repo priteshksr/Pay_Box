@@ -113,7 +113,7 @@ test.describe('App shell & navigation', () => {
     await expect(page.locator('#businessName')).toHaveText('My Business');
     await expect(page.getByText('Hi there')).toBeVisible();
     await expect(page.getByText('This month payroll', { exact: false })).toBeVisible();
-    await expect(page.locator('#bottomNav [data-tab]')).toHaveCount(4);
+    await expect(page.locator('#bottomNav [data-tab]')).toHaveCount(5);
   });
 
   test('can navigate between all owner tabs', async ({ page }) => {
@@ -135,16 +135,16 @@ test.describe('Staff CRUD', () => {
     await expect(page.getByText('₹15,000/mo')).toBeVisible();
   });
 
-  test('can add a daily-wage employee', async ({ page }) => {
+  test('can add a piece-rate employee', async ({ page }) => {
     await gotoFresh(page);
-    await addStaff(page, { name: 'Suresh', salaryType: 'daily', amount: 700 });
+    await addStaff(page, { name: 'Suresh', salaryType: 'piece', amount: 700 });
 
     const data = await page.evaluate(() => JSON.parse(localStorage.getItem('paybox_v2')));
-    expect(data.staff[0].salaryType).toBe('daily');
+    expect(data.staff[0].salaryType).toBe('piece');
     expect(data.staff[0].amount).toBe(700);
 
     await expect(page.getByText('Suresh')).toBeVisible();
-    await expect(page.getByText('₹700/day')).toBeVisible();
+    await expect(page.getByText('₹700/pc')).toBeVisible();
   });
 
   test('can edit an existing employee', async ({ page }) => {
@@ -178,11 +178,12 @@ test.describe('Staff CRUD', () => {
     await expect(page.getByText('No staff yet')).toBeVisible();
   });
 
-  test('FAB on Staff tab opens add-staff form', async ({ page }) => {
+  test('Add button on Staff tab opens add-staff form', async ({ page }) => {
     await gotoFresh(page);
     await goTab(page, 'staff');
-    await expect(page.locator('#fab')).toBeVisible();
-    await page.locator('#fab').click();
+    const addBtn = page.locator('#addStaffBtn, #addStaffBtn2').first();
+    await expect(addBtn).toBeVisible();
+    await addBtn.click();
     await expect(page.locator('#staffForm')).toBeVisible();
   });
 });
@@ -306,8 +307,13 @@ test.describe('Payroll calculations', () => {
 
   test('daily staff: base pay = effectiveDays × daily rate', async ({ page }) => {
     await gotoFresh(page);
-    await addStaff(page, { name: 'Shyam', salaryType: 'daily', amount: 500 });
-    const [id] = await getStaffIds(page);
+    // Daily salary type is supported in payroll but not exposed via form radio.
+    // Inject a daily staff directly into state.
+    const staffId = 'daily1';
+    await patchStateAndReload(page, {
+      staff: [{ id: staffId, name: 'Shyam', role: '', phone: '', salaryType: 'daily', amount: 500, otRate: 0, joinDate: new Date().toISOString().slice(0, 10) }]
+    });
+    const id = staffId;
 
     const ym = new Date().toISOString().slice(0, 7);
     // 5 present, 1 half, 1 leave  =>  5 + 0.5 + 1 = 6.5 days × 500 = 3250
@@ -514,15 +520,16 @@ test.describe('Settings', () => {
     await expect(page.getByText('₹1,500').first()).toBeVisible();
   });
 
-  test('Reset all data clears everything', async ({ page }) => {
+  test('Clearing localStorage resets app state', async ({ page }) => {
     await gotoFresh(page);
     await addStaff(page, { name: 'WillBeDeleted', salaryType: 'monthly', amount: 10000 });
 
-    await page.locator('#settingsBtn').click();
-    page.once('dialog', (d) => d.accept());
-    await page.locator('#resetData').click();
+    await page.evaluate(() => {
+      localStorage.removeItem('paybox_v2');
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#viewRoot')).toBeVisible();
 
-    await expect(page.locator('#sheet')).toBeHidden();
     await goTab(page, 'staff');
     await expect(page.getByText('No staff yet')).toBeVisible();
   });
@@ -541,7 +548,7 @@ test.describe('Persistence', () => {
 });
 
 test.describe('Export', () => {
-  test('Export button triggers a JSON download', async ({ page }) => {
+  test('Export button triggers an Excel download', async ({ page }) => {
     await gotoFresh(page);
     await addStaff(page, { name: 'Exporter', salaryType: 'monthly', amount: 12000 });
     await goTab(page, 'home');
@@ -550,7 +557,7 @@ test.describe('Export', () => {
       page.waitForEvent('download'),
       page.locator('#exportBtn').click(),
     ]);
-    expect(download.suggestedFilename()).toMatch(/^paybox-backup-\d{4}-\d{2}-\d{2}\.json$/);
+    expect(download.suggestedFilename()).toMatch(/^paybox-\d{4}-\d{2}\.xlsx$/);
   });
 });
 

@@ -29,6 +29,15 @@ interface WebhookPayload {
 
 Deno.serve(async (req) => {
   try {
+    // Webhook signature validation: reject unauthorized callers.
+    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
+    if (webhookSecret) {
+      const sig = req.headers.get("x-supabase-webhook-signature") || "";
+      if (sig !== webhookSecret) {
+        return new Response("unauthorized", { status: 401 });
+      }
+    }
+
     const payload: WebhookPayload = await req.json();
     const event = payload.record;
     if (!event || !event.kind) {

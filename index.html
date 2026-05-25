@@ -13,11 +13,11 @@
   <meta name="format-detection" content="telephone=no" />
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
-    script-src  'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com;
+    script-src  'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;
     style-src   'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com;
     font-src    'self' https://fonts.gstatic.com;
     img-src     'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com;
-    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://unpkg.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com;
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://unpkg.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com;
     frame-src   'none';
     object-src  'none';
     base-uri    'self';
@@ -29,31 +29,11 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png" />
   <title>PayBox — Staff & Payroll, Simplified</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="dist/tailwind.css">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Telugu', 'system-ui', 'sans-serif'] },
-          colors: {
-            brand: {
-              50: '#eef4ff', 100: '#dbe6ff', 200: '#bfd1ff', 300: '#93b1ff',
-              400: '#6486ff', 500: '#3f60f7', 600: '#2b43ec', 700: '#2434d0',
-              800: '#212ea8', 900: '#202c85',
-            }
-          },
-          boxShadow: {
-            'soft': '0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06)',
-            'card': '0 4px 12px rgba(16,24,40,.06), 0 2px 4px rgba(16,24,40,.04)',
-          }
-        }
-      }
-    }
-  </script>
   <style>
     html, body { font-family: 'Inter','Noto Sans Devanagari','Noto Sans Tamil','Noto Sans Telugu', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: #f4f6fb; }
@@ -2789,6 +2769,28 @@
       return s;
     }
 
+    // ============== Error Reporter ==============
+    const reportError = (() => {
+      const MAX_QUEUE = 50;
+      const queue = [];
+      function report(context, err) {
+        const entry = {
+          ctx: context,
+          msg: err?.message || String(err),
+          stack: err?.stack?.split('\n').slice(0, 4).join('\n'),
+          ts: Date.now(),
+          ua: navigator.userAgent,
+          biz: state?.biz?.id || null,
+          v: document.querySelector('meta[name="version"]')?.content || 'unknown'
+        };
+        console.error(`[PayBox:${context}]`, err);
+        if (queue.length < MAX_QUEUE) queue.push(entry);
+      }
+      report.getQueue = () => [...queue];
+      report.clear = () => { queue.length = 0; };
+      return report;
+    })();
+
     // ============== Cloud sync (Supabase) ==============
     // Design:
     //   - Single row per authenticated user in table `mybox_state`:
@@ -3052,12 +3054,12 @@
       function scheduleSync() {
         if (v2Mode()) return;     // cloudBiz handles its own debounced push
         clearTimeout(pushTimer);
-        pushTimer = setTimeout(() => { push().catch(() => {}); }, 1500);
+        pushTimer = setTimeout(() => { push().catch(e => reportError('cloudSync.push', e)); }, 1500);
       }
 
       async function syncNow() {
         if (v2Mode()) {
-          try { await cloudBiz.pullConfig?.(); await cloudBiz.flushQueue?.(); } catch (_) {}
+          try { await cloudBiz.pullConfig?.(); await cloudBiz.flushQueue?.(); } catch (e) { reportError('cloudSync.boot.hydrate', e); }
           return;
         }
         // Explicit button: pull first (to pick up remote edits), then push local.
@@ -3096,7 +3098,7 @@
         if (!state.cloud?.enabled || !isConfigured()) return;
         // v2: cloudBiz.boot() handles everything; nothing to do here.
         if (v2Mode()) {
-          try { await ensureClient(); } catch (_) {}
+          try { await ensureClient(); } catch (e) { reportError('cloudSync.boot.ensureClient', e); }
           return;
         }
         try {
@@ -3351,7 +3353,7 @@
       function scheduleConfigPush() {
         if (!isOwner()) return;
         clearTimeout(cfgTimer);
-        cfgTimer = setTimeout(() => pushConfig().catch(() => {}), 1500);
+        cfgTimer = setTimeout(() => pushConfig().catch(e => reportError('cloudBiz.pushConfig', e)), 1500);
       }
 
       async function pushConfig() {
@@ -3973,11 +3975,11 @@
       }
 
       // Owner config push is debounced via save() → scheduleConfigPush().
-      window.addEventListener('online', () => { setStatus('synced'); flushQueue(); scheduleConfigPush(); tracker.flush().catch(() => {}); });
+      window.addEventListener('online', () => { setStatus('synced'); flushQueue(); scheduleConfigPush(); tracker.flush().catch(e => reportError('tracker.flush', e)); });
       window.addEventListener('offline', () => setStatus('offline'));
 
       // Periodic queue flush (every 15s) in case Supabase was transiently down.
-      flushTimer = setInterval(() => flushQueue().catch(() => {}), 15000);
+      flushTimer = setInterval(() => flushQueue().catch(e => reportError('cloudBiz.flushQueue', e)), 15000);
 
       // ============== Live location tracker ==============
       // Captures the worker's GPS while they're clocked in, applies a
@@ -8787,15 +8789,25 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
       const isWorker = state.settings.role === 'worker' || state.cloud?.isAnonymous;
       const msg = isWorker ? t('logout_worker_confirm') : t('logout_confirm');
       if (ask && !confirm(msg)) return;
-      try { await cloudSync.signOut(); } catch (_) {}
+      // Timeout the signOut so poor connectivity doesn't block logout forever.
+      try {
+        await Promise.race([
+          cloudSync.signOut(),
+          new Promise(r => setTimeout(r, 4000))
+        ]);
+      } catch (_) {}
       try { cloudBiz.teardown(); } catch (_) {}
       state.biz = { id: null, role: null, ownerId: null, staffId: null, joinCode: null, lastEventId: 0, pendingWrites: [], status: 'idle' };
       state.settings.onboarded = false;
-      // Clear worker-only fields so the welcome form starts clean.
+      // Clear auth + worker-only fields so the welcome form starts clean.
       if (state.cloud) {
+        state.cloud.userId = null;
+        state.cloud.session = null;
+        state.cloud.email = '';
         state.cloud.isAnonymous = false;
         if (isWorker) { state.cloud.phone = ''; }
       }
+      state.settings.workerId = null;
       welcomeUI.workerHasCode = false;
       if (welcomeUI.lockedRole) {
         welcomeUI.step = 'auth';
@@ -10166,8 +10178,34 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
     // both unnecessary and flaky across OS versions.
     if (!Native.on && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          reg.addEventListener('updatefound', () => {
+            const newSW = reg.installing;
+            if (!newSW) return;
+            newSW.addEventListener('statechange', () => {
+              if (newSW.state === 'activated' && navigator.serviceWorker.controller) {
+                toast('New version available — tap to refresh', 8000);
+                document.querySelector('.toast')?.addEventListener('click', () => location.reload());
+              }
+            });
+          });
+        }).catch(e => reportError('sw.register', e));
       });
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        toast('App updated — refreshing…');
+        setTimeout(() => location.reload(), 1200);
+      });
+    }
+
+    // Hash routing: honour manifest shortcuts like #/attendance, #/payroll
+    if (location.hash) {
+      const route = location.hash.replace('#/', '').replace('#', '');
+      const validTabs = ['home','attendance','payroll','staff','tasks','my_attendance','my_payslip','my_tasks'];
+      if (validTabs.includes(route)) {
+        state.currentTab = route;
+        save({ silent: true });
+        render();
+      }
     }
 
     // ============== Native: back button + deep links ==============

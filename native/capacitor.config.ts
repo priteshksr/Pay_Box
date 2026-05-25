@@ -4,17 +4,11 @@ const config: CapacitorConfig = {
   appId: 'in.paybox.app',
   appName: 'PayBox',
   webDir: 'www',
-  // Uncomment to point the native shell at a live dev server instead
-  // of the bundled www/ folder. Useful for hot reload while developing.
-  // server: {
-  //   url: 'http://192.168.1.10:8765',
-  //   cleartext: true,
-  // },
   android: {
     // Required so Service Workers / localStorage work as expected.
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: true,
+    webContentsDebuggingEnabled: false,
   },
   ios: {
     contentInset: 'always',

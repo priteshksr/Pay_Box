@@ -20,6 +20,7 @@ const COPY = [
   { src: 'sw.js', type: 'file', required: true },
   { src: 'manifest.json', type: 'file', required: true },
   { src: 'icon.svg', type: 'file', required: true },
+  { src: 'dist', type: 'dir', required: true },
   { src: 'icons', type: 'dir', required: false },
   { src: '.well-known', type: 'dir', required: false },
 ];

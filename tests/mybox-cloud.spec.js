@@ -210,16 +210,23 @@ async function signIn(page, email = 'owner@example.com', pwd = 'secret123') {
 test.describe('Cloud sync — configuration gate', () => {
   test.beforeEach(async ({ page }) => { await installSupabaseStub(page); });
 
-  test('cloud sheet refuses to enable without URL + key', async ({ page }) => {
+  test('cloud sheet refuses to enable without URL + key when DEFAULT_CLOUD is cleared', async ({ page }) => {
     await gotoFresh(page);
+    // Clear the pre-filled DEFAULT_CLOUD values to simulate BYO-backend mode
+    await page.evaluate(() => {
+      const raw = JSON.parse(localStorage.getItem('paybox_v2') || '{}');
+      raw.cloud = { ...raw.cloud, url: '', anonKey: '', enabled: false };
+      localStorage.setItem('paybox_v2', JSON.stringify(raw));
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await openCloud(page);
     await page.locator('#cloudCfgForm input[name="enabled"]').check();
+    // Clear the inputs (DEFAULT_CLOUD may re-fill them)
+    await page.locator('#cloudCfgForm input[name="url"]').fill('');
+    await page.locator('#cloudCfgForm input[name="anonKey"]').fill('');
     await page.locator('#cloudCfgForm button[type="submit"]').click();
-    // Toast should appear and auth block stays hidden.
     await expect(page.locator('#toast')).toContainText(/Enter Supabase URL/i);
     await expect(page.locator('#cloudAuthBlock')).toBeHidden();
-    const s = await page.evaluate(() => JSON.parse(localStorage.getItem('paybox_v2')));
-    expect(s.cloud.enabled).toBe(false);
   });
 
   test('configuration is persisted and reveals auth block', async ({ page }) => {

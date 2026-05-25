@@ -1,18 +1,27 @@
 # PayBox — Manual Test Checklist
 
-A human-runnable checklist that covers every feature in v0.2. Takes ~10 minutes end-to-end.
+A human-runnable checklist that covers every feature. Takes ~10 minutes end-to-end.
 
-For automated tests, see [`tests/README.md`](tests/README.md).
+For automated E2E tests, see the `tests/` directory (Playwright). Run with:
+```bash
+cd tests && npm install && npx playwright install chromium && npm test
+```
+
+**Test files:**
+- `mybox.spec.js` — Core app: staff CRUD, attendance, payroll, persistence, export
+- `mybox-cloud.spec.js` — Cloud sync configuration, sign-in/out flows
+- `smoke.spec.js` — Critical path smoke tests (boot, admin dashboard, PWA assets)
 
 ---
 
 ## Setup
 
-1. Start the server from `My_Box/`:
+1. Build CSS and start the server:
    ```bash
-   python3 -m http.server 8000
+   npm run build:css
+   python3 -m http.server 8765
    ```
-2. Open http://localhost:8000 in Chrome.
+2. Open http://localhost:8765 in Chrome.
 3. Open DevTools → Application → Local Storage → `http://localhost:8000`.
 4. If `paybox_v2` (or the legacy `mybox_v2` / `mybox_v1`) exists, delete it (right-click → Delete), then hard-reload the page (⌘⇧R / Ctrl+Shift+R).
 
@@ -21,7 +30,7 @@ For automated tests, see [`tests/README.md`](tests/README.md).
 ## 1. App shell
 
 - [ ] **1.1** Header shows "M" logo, "PayBox", and "My Business" as subtitle
-- [ ] **1.2** Bottom nav shows 4 tabs: Home, Attendance, Staff, Payroll
+- [ ] **1.2** Bottom nav shows 5 tabs: Home, Attendance, Tasks, Staff, Payroll
 - [ ] **1.3** Home tab is active by default (icon + label in brand blue)
 - [ ] **1.4** Tapping each nav tab switches the view and highlights the tab
 - [ ] **1.5** Gradient "This month payroll" card shows ₹0, 0 staff, 0 present today
@@ -38,10 +47,10 @@ For automated tests, see [`tests/README.md`](tests/README.md).
 - [ ] **2.7** Tap **Add staff** → sheet closes, toast "Staff added"
 - [ ] **2.8** Staff card shows name, "Cashier · 9876543210", "₹15,000/mo"
 
-### Add a daily-wage staff
+### Add a piece-rate staff
 - [ ] **2.9** Tap **+ Add** again
-- [ ] **2.10** Name `Suresh`, Salary type **Daily wage**, Amount `700`
-- [ ] **2.11** Card shows "₹700/day"
+- [ ] **2.10** Name `Suresh`, Salary type **Piece rate**, Amount `700`
+- [ ] **2.11** Card shows "₹700/pc"
 
 ### Edit an existing staff
 - [ ] **2.12** Tap Ramesh's card
@@ -53,10 +62,9 @@ For automated tests, see [`tests/README.md`](tests/README.md).
 - [ ] **2.16** Edit Suresh → tap **Delete** → confirm the browser alert → toast "Staff removed"
 - [ ] **2.17** Suresh's card disappears
 
-### FAB
-- [ ] **2.18** On Staff tab, a floating blue "+" button shows bottom-right
-- [ ] **2.19** FAB opens the same add-staff sheet
-- [ ] **2.20** FAB is hidden on Home / Attendance / Payroll
+### Add button
+- [ ] **2.18** On Staff tab, an **+ Add** button is visible
+- [ ] **2.19** Button opens the add-staff sheet
 
 ## 3. Attendance
 
@@ -131,7 +139,7 @@ From the payslip for any staff:
 - [ ] **6.2** Mode → **Worker**, a profile dropdown appears
 - [ ] **6.3** Pick "Ramesh Kumar" → Save
 - [ ] **6.4** Amber "Worker" chip appears next to the gear
-- [ ] **6.5** Bottom nav has 3 tabs: Home, Attendance, Payslip
+- [ ] **6.5** Bottom nav has 4 tabs: Home, My Attendance, Tasks, Payslip
 
 ### Worker Home
 - [ ] **6.6** Greeting says "Hi, Ramesh"
@@ -149,7 +157,7 @@ From the payslip for any staff:
 
 ### Return to owner
 - [ ] **6.14** Tap the **Worker** chip at top-right → Settings → Mode → **Owner** → Save
-- [ ] **6.15** Back to 4-tab layout; staff list intact
+- [ ] **6.15** Back to 5-tab layout; staff list intact
 
 ## 7. Internationalization
 
@@ -168,7 +176,7 @@ Open Settings → Language. For each language:
 - [ ] **8.1** Change Business name → header subtitle updates
 - [ ] **8.2** Change Working days per month to `30` → Payroll recalculates (lower per-day rate for monthly staff)
 - [ ] **8.3** Change back to `26`
-- [ ] **8.4** Tap **Reset all data** → confirm → app returns to empty state
+- [ ] **8.4** Clear localStorage via DevTools → reload → app returns to empty state
 
 ## 9. Persistence
 
@@ -179,14 +187,14 @@ Open Settings → Language. For each language:
 
 ## 10. Export / backup
 
-- [ ] **10.1** Home → **Export data** tile → file downloads as `paybox-backup-YYYY-MM-DD.json`
-- [ ] **10.2** Open the file → valid JSON with staff, attendance, overtime, adjustments, settings
+- [ ] **10.1** Home → **Export data** tile → file downloads as `paybox-YYYY-MM.xlsx` (Excel workbook)
+- [ ] **10.2** Open the file → contains sheets for attendance and payroll data
 
 ## 11. PWA
 
 - [ ] **11.1** DevTools → Application → Manifest → all fields populated, icon preview shows
 - [ ] **11.2** DevTools → Application → Service Workers → `sw.js` is "activated and running"
-- [ ] **11.3** DevTools → Application → Cache Storage → `paybox-v1` contains index.html, manifest.json, icon.svg
+- [ ] **11.3** DevTools → Application → Cache Storage → `paybox-v24` (or git hash) contains index.html, manifest.json, icon.svg, dist/tailwind.css
 - [ ] **11.4** In the address bar, a small install icon appears (Chrome/Edge on desktop). Click to install.
 - [ ] **11.5** Installed app opens in its own window with icon
 - [ ] **11.6** Toggle DevTools → Network → **Offline** → reload → app still loads

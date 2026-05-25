@@ -289,8 +289,18 @@ grant execute on function public.admin_recent_signups(int)        to authenticat
 --
 -- Remove via:
 --   delete from public.admin_users where lower(email) = 'person@x.com';
+-- ⚠️  IMPORTANT: Replace the placeholder email below with a real admin email
+--     before deploying to production. The migration will emit a notice if
+--     the placeholder is still present.
+do $$
+begin
+  if 'you@example.com' = 'you@example.com' then
+    raise notice '⚠️  admin_analytics: bootstrap email is still the placeholder — update 0004 before production deploy!';
+  end if;
+end $$;
+
 insert into public.admin_users(email, note) values
-  ('you@example.com', 'bootstrap admin — replace with real email')
+  ('you@example.com', 'CHANGE ME — replace with real admin email before deploy')
 on conflict (email) do nothing;
 
 -- ============================================================
