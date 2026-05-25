@@ -4263,9 +4263,11 @@
           const buf = loadBuffer();
           buf.push(point);
           saveBuffer(buf);
-          // Try to flush immediately if the buffer reached batch size; otherwise
-          // the periodic flush handles it. Errors are swallowed (will retry).
-          if (buf.length >= MAX_BATCH) flush().catch(() => {});
+          // On native, setInterval is unreliable in the background (Android
+          // suspends WebView timers). Flush eagerly: every 5 pings or when
+          // the buffer hits batch size, whichever comes first.
+          const flushThreshold = Native.on ? 5 : MAX_BATCH;
+          if (buf.length >= flushThreshold) flush().catch(() => {});
         }
 
         // Web watchPosition handler. Native shells call pushExternal()
@@ -4421,8 +4423,18 @@
 
         // Used by the native background plugin (and tests) to push a
         // single fix into the same filter / flush pipeline.
+        // On native, the plugin wakes the WebView briefly for each fix —
+        // we exploit this window to attempt a flush so pings reach the
+        // server even when the app is backgrounded.
+        let _bgFlushDebounce = null;
         function pushExternal(coords, src) {
           record(coords, src || (Native.on ? Native.platform : 'web'));
+          if (Native.on && !_bgFlushDebounce) {
+            _bgFlushDebounce = setTimeout(() => {
+              _bgFlushDebounce = null;
+              flush().catch(() => {});
+            }, 2000);
+          }
         }
 
         // Called when the worker punches in. Decides whether to start the
