@@ -3152,6 +3152,7 @@
       let flushTimer = null;      // offline queue flusher
       let listeners = new Set();
       let scopedBizId = null;
+      let lastCfgPushAt = 0;     // timestamp of our last pushConfig (self-echo guard)
 
       function setStatus(next, extra) {
         state.biz.status = next;
@@ -3380,10 +3381,12 @@
         }
         try {
           const c = await client();
+          const pushTs = Date.now();
           const { error } = await c.from('businesses')
-            .update({ config: cfg, updated_at: Date.now() })
+            .update({ config: cfg, updated_at: pushTs })
             .eq('id', state.biz.id);
           if (error) throw error;
+          lastCfgPushAt = pushTs;
           setStatus(channel ? 'live' : 'synced');
         } catch (e) { setStatus('error', e.message || String(e)); }
       }
@@ -3441,6 +3444,7 @@
           const businessChanged =
             state.biz.hydratedFor != null
             && state.biz.hydratedFor !== state.biz.id;
+          const firstHydration = state.biz.hydratedFor == null;
           let applied = false;
           if (!isOwner()) {
             applyConfig(cfg);
@@ -3449,6 +3453,9 @@
             applyConfig(cfg);
             applied = true;
           } else if (!localHasData && cloudHasData) {
+            applyConfig(cfg);
+            applied = true;
+          } else if (firstHydration && cloudHasData) {
             applyConfig(cfg);
             applied = true;
           } else if (businessChanged && cloudHasData) {
@@ -3564,7 +3571,17 @@
                 if (!row) return;
                 state.biz.joinCode = row.join_code || state.biz.joinCode;
                 state.biz.ownerId  = row.owner_id  || state.biz.ownerId;
-                if (!isOwner() && row.config) { applyConfig(row.config); render(); }
+                if (!row.config) return;
+                if (!isOwner()) {
+                  applyConfig(row.config); render();
+                } else {
+                  // Multi-device owner sync: apply if the update came from
+                  // another device (updated_at differs from our last push).
+                  const remoteAt = Number(row.updated_at || 0);
+                  if (remoteAt && remoteAt !== lastCfgPushAt) {
+                    applyConfig(row.config); render();
+                  }
+                }
               })
             .on('postgres_changes',
               { event: 'INSERT', schema: 'public', table: 'events', filter: 'business_id=eq.' + state.biz.id },
@@ -9181,7 +9198,15 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
           const pwd = (f.get('password') || '').trim();
           if (!email || !pwd) { setMsg(t('cloud_need_email_pwd'), 'red'); return; }
           setMsg(t('cloud_signing_in'));
-          try { await cloudSync.signInWithPassword(email, pwd); toast(t('cloud_signed_in')); openCloudSheet(); }
+          try {
+            await cloudSync.signInWithPassword(email, pwd);
+            // If this user belongs to a business, discover and hydrate it.
+            if (!state.biz?.id) await cloudBiz.discoverMembership();
+            if (state.biz?.id) await cloudBiz.boot();
+            toast(t('cloud_signed_in'));
+            openCloudSheet();
+            render();
+          }
           catch (err) { setMsg((err && err.message) || String(err), 'red'); }
         });
         $('#cloudSignUpBtn').addEventListener('click', async () => {
