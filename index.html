@@ -726,6 +726,8 @@
         tasks: 'Tasks', task_log: 'Task log', task_categories: 'Task categories',
         total_deliveries: 'Total', daily_average: 'Daily avg', man_days: 'Man days',
         piece_rate: 'Piece rate', per_piece: 'per piece', piece_wage: 'Piece rate',
+        task_category_rates: 'Rate per task type', task_rate_hint: 'Leave blank to use default piece rate above',
+        default_rate_placeholder: 'Default rate (if no category rate set)', custom_rates: 'Custom rates',
         add_category: 'Add category', remove_category: 'Remove',
         performance: 'Performance', top_performers: 'Top performers this month',
         task_logged: 'Task logged', no_tasks_yet: 'No tasks logged yet.',
@@ -1068,6 +1070,8 @@
         tasks: 'टास्क', task_log: 'टास्क लॉग', task_categories: 'टास्क श्रेणियां',
         total_deliveries: 'कुल', daily_average: 'दैनिक औसत', man_days: 'कार्य दिवस',
         piece_rate: 'पीस दर', per_piece: 'प्रति पीस', piece_wage: 'पीस दर',
+        task_category_rates: 'प्रति टास्क प्रकार दर', task_rate_hint: 'खाली छोड़ें तो ऊपर की डिफ़ॉल्ट दर लागू होगी',
+        default_rate_placeholder: 'डिफ़ॉल्ट दर (अगर श्रेणी दर नहीं है)', custom_rates: 'कस्टम दरें',
         add_category: 'श्रेणी जोड़ें', remove_category: 'हटाएं',
         performance: 'प्रदर्शन', top_performers: 'इस महीने के शीर्ष प्रदर्शक',
         task_logged: 'टास्क दर्ज', no_tasks_yet: 'कोई टास्क दर्ज नहीं।',
@@ -5083,7 +5087,19 @@
         if (staff.salaryType === 'piece') {
           const ts = monthTasksForStaff(staff.id, ym);
           taskCount = ts.total;
-          basePay = taskCount * (staff.pieceRate || staff.amount || 0);
+          if (staff.taskRates && Object.keys(staff.taskRates).length) {
+            // Per-category pricing: sum each category at its own rate.
+            Object.entries(ts.catTotals).forEach(([cat, count]) => {
+              const rate = staff.taskRates[cat] || staff.pieceRate || staff.amount || 0;
+              basePay += count * rate;
+            });
+            // Tasks not in any category use the default piece rate.
+            const categorized = Object.values(ts.catTotals).reduce((a, b) => a + b, 0);
+            const uncategorized = ts.total - categorized;
+            if (uncategorized > 0) basePay += uncategorized * (staff.pieceRate || staff.amount || 0);
+          } else {
+            basePay = taskCount * (staff.pieceRate || staff.amount || 0);
+          }
         } else if (staff.salaryType === 'daily') {
           basePay = effectiveDays * (staff.amount || 0);
         } else {
@@ -5121,11 +5137,22 @@
             }
           }
         }
-        // For piece rate with mid-month change, use weighted average or current rate.
+        // For piece rate with mid-month change, use per-category rates.
         if (staff.salaryType === 'piece') {
+          basePay = 0;
           const ts = monthTasksForStaff(staff.id, ym);
           taskCount = ts.total;
-          basePay = taskCount * (staff.pieceRate || staff.amount || 0);
+          if (staff.taskRates && Object.keys(staff.taskRates).length) {
+            Object.entries(ts.catTotals).forEach(([cat, count]) => {
+              const rate = staff.taskRates[cat] || staff.pieceRate || staff.amount || 0;
+              basePay += count * rate;
+            });
+            const categorized = Object.values(ts.catTotals).reduce((a, b) => a + b, 0);
+            const uncategorized = ts.total - categorized;
+            if (uncategorized > 0) basePay += uncategorized * (staff.pieceRate || staff.amount || 0);
+          } else {
+            basePay = taskCount * (staff.pieceRate || staff.amount || 0);
+          }
         }
       }
       const otPay = otHours * hourlyRateFor(staff);
@@ -7177,7 +7204,12 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
     }
 
     function salaryLabel(s) {
-      if (s.salaryType === 'piece') return `${fmtINR(s.pieceRate || s.amount)}/${t('per_piece')}`;
+      if (s.salaryType === 'piece') {
+        if (s.taskRates && Object.keys(s.taskRates).length) {
+          return t('custom_rates') || 'Custom rates';
+        }
+        return `${fmtINR(s.pieceRate || s.amount)}/${t('per_piece')}`;
+      }
       return s.salaryType === 'daily' ? `${fmtINR(s.amount)}/${t('day')}` : `${fmtINR(s.amount)}/${t('mo')}`;
     }
 
@@ -7289,7 +7321,22 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
           </div>
           <div id="pieceRateRow" class="${editing?.salaryType === 'piece' ? '' : 'hidden'}">
             <label class="label">${escapeHtml(t('piece_rate'))} (₹/${escapeHtml(t('per_piece'))}) *</label>
-            <input name="pieceRate" type="number" min="0" step="0.5" value="${editing?.pieceRate || ''}" class="input" placeholder="e.g. 5">
+            <input name="pieceRate" type="number" min="0" step="0.5" value="${editing?.pieceRate || ''}" class="input" placeholder="${escapeHtml(t('default_rate_placeholder') || 'Default rate (used if no category rate set)')}">
+            ${(state.taskCategories || []).length ? `
+            <div class="mt-3 bg-slate-50 border border-slate-100 rounded-xl p-3">
+              <div class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">${escapeHtml(t('task_category_rates') || 'Rate per task type')}</div>
+              <div class="space-y-2">
+                ${(state.taskCategories || []).map(cat => `
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-600 w-24 truncate">${escapeHtml(cat)}</span>
+                    <input name="taskRate_${cat}" type="number" min="0" step="0.5"
+                      value="${editing?.taskRates?.[cat] || ''}"
+                      class="flex-1 text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-brand-200 focus:outline-none"
+                      placeholder="₹">
+                  </div>`).join('')}
+              </div>
+              <div class="text-[10px] text-slate-400 mt-2">${escapeHtml(t('task_rate_hint') || 'Leave blank to use default piece rate above')}</div>
+            </div>` : ''}
           </div>
 
           <details class="bg-slate-50 border border-slate-100 rounded-xl p-3 group">
@@ -7483,6 +7530,14 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
           salaryType: f.get('salaryType') || 'monthly',
           amount: Number(f.get('amount') || 0),
           pieceRate: Number(f.get('pieceRate') || 0) || null,
+          taskRates: (() => {
+            const rates = {};
+            (state.taskCategories || []).forEach(cat => {
+              const v = Number(f.get(`taskRate_${cat}`) || 0);
+              if (v > 0) rates[cat] = v;
+            });
+            return Object.keys(rates).length ? rates : null;
+          })(),
           otRate: otRateVal ? Number(otRateVal) : null,
           weeklyOffs,
           active: f.get('active') === 'on',
@@ -7513,12 +7568,14 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
           const oldRate = editing[rateField] || 0;
           const newRate = data[rateField] || 0;
           const typeChanged = editing.salaryType !== data.salaryType;
-          if (typeChanged || oldRate !== newRate) {
+          const taskRatesChanged = JSON.stringify(editing.taskRates || null) !== JSON.stringify(data.taskRates || null);
+          if (typeChanged || oldRate !== newRate || taskRatesChanged) {
             editing.salaryHistory = editing.salaryHistory || [];
             editing.salaryHistory.push({
               salaryType: editing.salaryType,
               amount: editing.amount,
               pieceRate: editing.pieceRate || null,
+              taskRates: editing.taskRates || null,
               effectiveFrom: editing._lastSalaryChange || editing.joinedAt || editing.joinDate || null,
               effectiveUntil: todayISO(),
             });
@@ -7843,6 +7900,13 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
 
         <div class="bg-white border border-slate-100 rounded-xl p-3 text-sm space-y-2 mb-3">
           <div class="flex justify-between"><span class="text-slate-500">${escapeHtml(t('base_pay'))}</span><span class="font-semibold">${fmtINR(calc.basePay)}</span></div>
+          ${s.salaryType === 'piece' && s.taskRates && Object.keys(s.taskRates).length ? (() => {
+            const ts = monthTasksForStaff(s.id, ym);
+            return Object.entries(ts.catTotals).filter(([,v]) => v > 0).map(([cat, count]) => {
+              const rate = s.taskRates[cat] || s.pieceRate || s.amount || 0;
+              return `<div class="flex justify-between text-xs text-slate-400 pl-3"><span>${escapeHtml(cat)} × ${count}</span><span>₹${(count * rate).toLocaleString('en-IN')} @${fmtINR(rate)}</span></div>`;
+            }).join('');
+          })() : ''}
           ${calc.otPay > 0 ? `<div class="flex justify-between"><span class="text-slate-500">${escapeHtml(t('ot_amount'))} (${calc.otHours} h)</span><span class="font-semibold">+ ${fmtINR(calc.otPay)}</span></div>` : ''}
           ${calc.bonus > 0 ? `<div class="flex justify-between"><span class="text-slate-500">${escapeHtml(t('bonus_total'))}</span><span class="font-semibold text-emerald-700">+ ${fmtINR(calc.bonus)}</span></div>` : ''}
           ${calc.incentives > 0 ? `<div class="flex justify-between"><span class="text-slate-500">${escapeHtml(t('incentives_total'))}</span><span class="font-semibold text-emerald-700">+ ${fmtINR(calc.incentives)}</span></div>` : ''}
