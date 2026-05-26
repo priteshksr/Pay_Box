@@ -348,6 +348,7 @@
         tap_to_edit: 'Tap to edit', no_phone: 'No phone',
         payroll: 'Payroll', auto_calc: 'Auto-calculated from attendance',
         net_payable: 'Net Payable', effective_days: 'Effective days',
+        salary_changed_mid_month: 'Salary revised mid-month. Pay calculated at applicable rate for each period.',
         share: 'Share', done: 'Done', rate: 'Rate', working_days_basis: 'Working days basis',
         no_staff_for_payroll: 'Add staff to see payroll.',
         ot_amount: 'Overtime', advances_total: 'Advances', bonus_total: 'Bonus', deductions_total: 'Deductions',
@@ -793,6 +794,7 @@
         tap_to_edit: 'संपादन करें', no_phone: 'फ़ोन नहीं',
         payroll: 'पेरोल', auto_calc: 'हाज़िरी से स्वतः गणना',
         net_payable: 'शुद्ध देय', effective_days: 'प्रभावी दिन',
+        salary_changed_mid_month: 'वेतन महीने के बीच संशोधित किया गया। हर अवधि की लागू दर से वेतन गणना।',
         share: 'साझा', done: 'पूर्ण', rate: 'दर', working_days_basis: 'कार्य दिवस आधार',
         no_staff_for_payroll: 'पेरोल देखने के लिए स्टाफ़ जोड़ें।',
         ot_amount: 'ओवरटाइम', advances_total: 'अग्रिम', bonus_total: 'बोनस', deductions_total: 'कटौती',
@@ -5049,20 +5051,82 @@
       return state.adjustments.filter(a => a.staffId === staffId && a.ym === ym);
     }
 
+    // Returns the salary rate applicable on a given date for a staff member,
+    // taking salaryHistory into account. Falls back to current rate if no
+    // history exists or date is after all historical entries.
+    function rateOnDate(staff, dateStr) {
+      const history = staff.salaryHistory;
+      if (!history || !history.length) {
+        return { salaryType: staff.salaryType, amount: staff.amount || 0, pieceRate: staff.pieceRate || null };
+      }
+      // History entries are ordered chronologically. Each has effectiveUntil.
+      // If dateStr < entry.effectiveUntil, that entry's rate was active.
+      for (const h of history) {
+        if (h.effectiveUntil && dateStr < h.effectiveUntil) {
+          return { salaryType: h.salaryType, amount: h.amount || 0, pieceRate: h.pieceRate || null };
+        }
+      }
+      // Date is on or after the last change — use the current rate.
+      return { salaryType: staff.salaryType, amount: staff.amount || 0, pieceRate: staff.pieceRate || null };
+    }
+
     function salaryForMonth(staff, ym) {
-      const { present, half, leave, otHours, weeklyOffs, paidHolidays } = monthAttendanceForStaff(staff.id, ym);
+      const { present, half, leave, otHours, weeklyOffs, paidHolidays, dim } = monthAttendanceForStaff(staff.id, ym);
       const autoPaid = staff.salaryType === 'daily' ? paidHolidays : (staff.salaryType === 'piece' ? 0 : (weeklyOffs + paidHolidays));
       const effectiveDays = present + (half * 0.5) + leave + autoPaid;
-      let basePay, taskCount = 0;
-      if (staff.salaryType === 'piece') {
-        const ts = monthTasksForStaff(staff.id, ym);
-        taskCount = ts.total;
-        basePay = taskCount * (staff.pieceRate || staff.amount || 0);
-      } else if (staff.salaryType === 'daily') {
-        basePay = effectiveDays * (staff.amount || 0);
+      let basePay = 0, taskCount = 0;
+      const hasHistory = staff.salaryHistory && staff.salaryHistory.some(h =>
+        h.effectiveUntil && h.effectiveUntil > ym + '-01' && h.effectiveUntil <= ym + '-31'
+      );
+      if (!hasHistory) {
+        // No mid-month salary change — use simple calculation (fast path).
+        if (staff.salaryType === 'piece') {
+          const ts = monthTasksForStaff(staff.id, ym);
+          taskCount = ts.total;
+          basePay = taskCount * (staff.pieceRate || staff.amount || 0);
+        } else if (staff.salaryType === 'daily') {
+          basePay = effectiveDays * (staff.amount || 0);
+        } else {
+          const perDay = (staff.amount || 0) / (state.settings.workingDaysPerMonth || 26);
+          basePay = effectiveDays * perDay;
+        }
       } else {
-        const perDay = (staff.amount || 0) / (state.settings.workingDaysPerMonth || 26);
-        basePay = effectiveDays * perDay;
+        // Mid-month salary change: calculate each day at its applicable rate.
+        const wdpm = state.settings.workingDaysPerMonth || 26;
+        for (let d = 1; d <= dim; d++) {
+          const dd = String(d).padStart(2, '0');
+          const key = `${ym}-${dd}`;
+          const status = state.attendance[key]?.[staff.id];
+          const rate = rateOnDate(staff, key);
+          let dayWeight = 0;
+          if (status === 'P') dayWeight = 1;
+          else if (status === 'H') dayWeight = 0.5;
+          else if (status === 'L') dayWeight = 1;
+          else {
+            const dow = new Date(key + 'T00:00:00').getDay();
+            const hol = findHoliday(key);
+            if (rate.salaryType !== 'piece') {
+              if (isWeeklyOffFor(staff, dow) && rate.salaryType !== 'daily') dayWeight = 1;
+              else if (hol && hol.paid !== false) dayWeight = 1;
+            }
+          }
+          if (dayWeight > 0) {
+            if (rate.salaryType === 'daily') {
+              basePay += dayWeight * (rate.amount || 0);
+            } else if (rate.salaryType === 'piece') {
+              // Piece rate for individual days isn't meaningful — handled below
+            } else {
+              const perDay = (rate.amount || 0) / wdpm;
+              basePay += dayWeight * perDay;
+            }
+          }
+        }
+        // For piece rate with mid-month change, use weighted average or current rate.
+        if (staff.salaryType === 'piece') {
+          const ts = monthTasksForStaff(staff.id, ym);
+          taskCount = ts.total;
+          basePay = taskCount * (staff.pieceRate || staff.amount || 0);
+        }
       }
       const otPay = otHours * hourlyRateFor(staff);
       const adjs = adjustmentsFor(staff.id, ym);
@@ -7444,6 +7508,24 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
         else if (pendingPhoto) data.photo = pendingPhoto;
         if (!data.name) return;
         if (editing) {
+          // Track salary changes so past days keep their old rate.
+          const rateField = data.salaryType === 'piece' ? 'pieceRate' : 'amount';
+          const oldRate = editing[rateField] || 0;
+          const newRate = data[rateField] || 0;
+          const typeChanged = editing.salaryType !== data.salaryType;
+          if (typeChanged || oldRate !== newRate) {
+            editing.salaryHistory = editing.salaryHistory || [];
+            editing.salaryHistory.push({
+              salaryType: editing.salaryType,
+              amount: editing.amount,
+              pieceRate: editing.pieceRate || null,
+              effectiveFrom: editing._lastSalaryChange || editing.joinedAt || editing.joinDate || null,
+              effectiveUntil: todayISO(),
+            });
+            data._lastSalaryChange = todayISO();
+          } else {
+            data._lastSalaryChange = editing._lastSalaryChange || null;
+          }
           Object.assign(editing, data);
           audit('staff_updated', { id: editing.id, name: data.name });
           toast(t('staff_updated'));
@@ -7771,7 +7853,8 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
             <span class="font-semibold">${escapeHtml(t('net_payable'))}</span>
             <span class="font-extrabold">${fmtINR(calc.net)}</span>
           </div>
-          <div class="flex justify-between text-xs text-slate-400"><span>${escapeHtml(t('rate'))}</span><span>${salaryLabel(s)}</span></div>
+          <div class="flex justify-between text-xs text-slate-400"><span>${escapeHtml(t('rate'))}</span><span>${salaryLabel(s)}${s.salaryHistory?.some(h => h.effectiveUntil > ym + '-01' && h.effectiveUntil <= ym + '-31') ? ' *' : ''}</span></div>
+          ${s.salaryHistory?.some(h => h.effectiveUntil > ym + '-01' && h.effectiveUntil <= ym + '-31') ? `<div class="text-[11px] text-amber-700 bg-amber-50 rounded px-2 py-1">* ${escapeHtml(t('salary_changed_mid_month') || 'Salary was revised mid-month. Pay is split at the applicable rate for each period.')}</div>` : ''}
           <div class="flex justify-between text-xs text-slate-400"><span>${escapeHtml(t('effective_days'))}</span><span>${calc.effectiveDays.toFixed(2)}${(calc.weeklyOffs || calc.paidHolidays) ? ` <span class="text-slate-300">(${calc.weeklyOffs ? calc.weeklyOffs + ' ' + t('wo_label') : ''}${calc.weeklyOffs && calc.paidHolidays ? ', ' : ''}${calc.paidHolidays ? calc.paidHolidays + ' ' + t('hol_label') : ''})</span>` : ''}</span></div>
         </div>
 
