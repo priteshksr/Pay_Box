@@ -3981,6 +3981,24 @@
       // Periodic queue flush (every 15s) in case Supabase was transiently down.
       flushTimer = setInterval(() => flushQueue().catch(e => reportError('cloudBiz.flushQueue', e)), 15000);
 
+      // ============== Battery optimization exemption (Android) ==============
+      // Android aggressively kills background apps. Requesting exemption
+      // keeps the foreground location service alive while the worker is
+      // clocked in. Only prompts once per app install.
+      let _batteryOptChecked = false;
+      async function requestBatteryOptExemption() {
+        if (!Native.on || Native.platform !== 'android' || _batteryOptChecked) return;
+        _batteryOptChecked = true;
+        try {
+          const BatteryOpt = window.Capacitor?.Plugins?.BatteryOpt;
+          if (!BatteryOpt) return;
+          const { ignored } = await BatteryOpt.isIgnoringBatteryOptimizations();
+          if (!ignored) {
+            await BatteryOpt.requestIgnoreBatteryOptimizations();
+          }
+        } catch (_) {}
+      }
+
       // ============== Live location tracker ==============
       // Captures the worker's GPS while they're clocked in, applies a
       // distance + time filter, batches up to 20 pings per insert, and
@@ -4354,6 +4372,9 @@
           ensureLiveChannel();
           attachVisibilityHooks();
           scheduleFlush();
+          // On Android, prompt for battery optimization exemption so the
+          // OS doesn't kill the foreground service while the worker is on shift.
+          requestBatteryOptExemption();
           if (Native.on) {
             // The native plugin (when available) will call pushExternal()
             // for each fix. If it's not installed we fall back to the
@@ -4594,6 +4615,11 @@
           const runtime = !Native.on
             ? 'web'
             : (bgPluginAvailable ? 'native_with_bg' : 'native_no_bg');
+          let batteryOptIgnored = null;
+          try {
+            const BO = window.Capacitor?.Plugins?.BatteryOpt;
+            if (BO) batteryOptIgnored = (await BO.isIgnoringBatteryOptimizations()).ignored;
+          } catch (_) {}
           return {
             ...fp,
             online: navigator.onLine,
@@ -4609,6 +4635,7 @@
             sessionUid, sessionError,
             nativePlatform: Native.on ? Native.platform : null,
             bgPluginAvailable, bgWatcherActive, runtime,
+            batteryOptIgnored,
           };
         }
 
@@ -4740,7 +4767,11 @@
         if (!p || !p.in || p.out) return; // not currently in-shift
         const w = (state.staff || []).find(s => s.id === sid);
         if (!w) return;
-        if (w.locConsent?.agreed) cloudBiz.tracker.start(sid, 'resume').catch(() => {});
+        if (w.locConsent?.agreed) {
+          cloudBiz.tracker.start(sid, 'resume').catch(() => {});
+          // Flush any pings buffered while the app was killed.
+          setTimeout(() => cloudBiz.tracker.flush().catch(() => {}), 3000);
+        }
       } catch (_) {}
     }
 
