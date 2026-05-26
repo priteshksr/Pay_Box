@@ -728,6 +728,12 @@
         piece_rate: 'Piece rate', per_piece: 'per piece', piece_wage: 'Piece rate',
         task_category_rates: 'Rate per task type', task_rate_hint: 'Leave blank to use default piece rate above',
         default_rate_placeholder: 'Default rate (if no category rate set)', custom_rates: 'Custom rates',
+        expenses: 'Expenses', view_company_expenses: 'View total company expenses',
+        total_expenses: 'Total Company Expenses', salary_expense: 'Salaries', other_expenses: 'Other Expenses',
+        expense_list: 'Expense Items', add_expense: '+ Add Expense', no_expenses: 'No expenses added for this month.',
+        expense_title: 'Title', expense_title_placeholder: 'e.g. Rent, Fuel, Internet',
+        amount_label: 'Amount', expense_category: 'Category', expense_cat_placeholder: 'e.g. Rent, Travel, Utilities',
+        confirm_delete_expense: 'Delete this expense?', expense_added: 'Expense added',
         add_category: 'Add category', remove_category: 'Remove',
         performance: 'Performance', top_performers: 'Top performers this month',
         task_logged: 'Task logged', no_tasks_yet: 'No tasks logged yet.',
@@ -1072,6 +1078,12 @@
         piece_rate: 'पीस दर', per_piece: 'प्रति पीस', piece_wage: 'पीस दर',
         task_category_rates: 'प्रति टास्क प्रकार दर', task_rate_hint: 'खाली छोड़ें तो ऊपर की डिफ़ॉल्ट दर लागू होगी',
         default_rate_placeholder: 'डिफ़ॉल्ट दर (अगर श्रेणी दर नहीं है)', custom_rates: 'कस्टम दरें',
+        expenses: 'खर्चे', view_company_expenses: 'कुल कंपनी खर्चे देखें',
+        total_expenses: 'कुल कंपनी खर्च', salary_expense: 'वेतन', other_expenses: 'अन्य खर्चे',
+        expense_list: 'खर्च सूची', add_expense: '+ खर्च जोड़ें', no_expenses: 'इस महीने कोई खर्च नहीं जोड़ा।',
+        expense_title: 'शीर्षक', expense_title_placeholder: 'जैसे किराया, ईंधन, इंटरनेट',
+        amount_label: 'राशि', expense_category: 'श्रेणी', expense_cat_placeholder: 'जैसे किराया, यात्रा, बिजली',
+        confirm_delete_expense: 'इस खर्च को हटाएं?', expense_added: 'खर्च जोड़ा गया',
         add_category: 'श्रेणी जोड़ें', remove_category: 'हटाएं',
         performance: 'प्रदर्शन', top_performers: 'इस महीने के शीर्ष प्रदर्शक',
         task_logged: 'टास्क दर्ज', no_tasks_yet: 'कोई टास्क दर्ज नहीं।',
@@ -2457,6 +2469,7 @@
       announcements: [],  // [{id, title, body, createdAt, pinned, readBy: [staffId]}]
       taskLog: {},        // { 'YYYY-MM-DD': { staffId: { total: N, categories: { cat: N } } } }
       taskCategories: ['COD', 'Prepaid', 'CR Card', 'Open RVP', 'Close RVP'],
+      expenses: [],       // [{id, ym, title, amount, category, note, createdAt}]
       auditLog: [],       // [{ts, type, data?}] capped at 500
       settings: {
         workingDaysPerMonth: 26, language: 'en', role: 'owner', workerId: null,
@@ -2533,6 +2546,7 @@
       s.shifts = s.shifts || [];
       s.announcements = s.announcements || [];
       s.taskLog = s.taskLog || {};
+      s.expenses = s.expenses || [];
       if (!Array.isArray(s.taskCategories) || !s.taskCategories.length) {
         s.taskCategories = ['COD', 'Prepaid', 'CR Card', 'Open RVP', 'Close RVP'];
       }
@@ -3147,7 +3161,7 @@
     //   Both sides subscribe to postgres_changes on the two tables filtered
     //   by business_id, so every member sees changes within ~1-2s.
     const cloudBiz = (() => {
-      const CONFIG_KEYS = ['business','staff','shifts','holidays','announcements','loans','adjustments','settings','attendance','overtime','punches','taskCategories','taskLog'];
+      const CONFIG_KEYS = ['business','staff','shifts','holidays','announcements','loans','adjustments','settings','attendance','overtime','punches','taskCategories','taskLog','expenses'];
       // Per-device settings that must NEVER cross between owner and worker:
       // - role / workerId / onboarded: identity of the device
       // - language: per-user UI preference
@@ -5679,6 +5693,7 @@
         else if (tab === 'tasks') renderTasks(root);
         else if (tab === 'staff') renderStaff(root);
         else if (tab === 'payroll') renderPayroll(root);
+        else if (tab === 'expenses') renderExpenses(root);
         else renderHome(root);
       }
       setupFab();
@@ -7835,6 +7850,19 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
           <div class="text-xs text-slate-300 mt-2">${escapeHtml(t('days_basis', { n: state.settings.workingDaysPerMonth }))}</div>
         </div>
 
+        <button id="goExpenses" class="w-full mb-4 py-3 rounded-xl bg-white border border-slate-200 shadow-soft flex items-center justify-between px-4 active:scale-[.99] transition">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17L12 22L22 17"/><path d="M2 12L12 17L22 12"/><path d="M12 2L2 7L12 12L22 7L12 2Z"/></svg>
+            </div>
+            <div class="text-left">
+              <div class="text-sm font-semibold">${escapeHtml(t('expenses') || 'Expenses')}</div>
+              <div class="text-[11px] text-slate-400">${escapeHtml(t('view_company_expenses') || 'View total company expenses')}</div>
+            </div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+
         ${state.staff.length === 0
           ? `<div class="card p-8 text-center"><div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div><div class="text-sm text-slate-700 font-semibold">${escapeHtml(t('no_staff_for_payroll'))}</div></div>`
           : `<div class="space-y-2.5">${state.staff.map(s => payrollCard(s, ym)).join('')}</div>`
@@ -7843,6 +7871,7 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
 
       $('#monthPick').addEventListener('change', (e) => { state.currentPayrollMonth = e.target.value; save(); render(); });
       $$('[data-payslip]').forEach(b => b.addEventListener('click', () => openPayslip(b.dataset.payslip, ym)));
+      $('#goExpenses')?.addEventListener('click', () => { state.currentTab = 'expenses'; save(); render(); });
     }
 
     function payrollCard(s, ym) {
@@ -8202,6 +8231,143 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
       win.document.open();
       win.document.write(html);
       win.document.close();
+    }
+
+    // ============== Owner: Expenses ==============
+    function renderExpenses(root) {
+      const ym = state.currentPayrollMonth;
+      const lang = state.settings.language || 'en';
+      const monthLabel = new Date(ym + '-01').toLocaleDateString(lang === 'en' ? 'en-IN' : lang, { month: 'long', year: 'numeric' });
+      state.expenses = state.expenses || [];
+      const monthExpenses = state.expenses.filter(e => e.ym === ym);
+      const customTotal = monthExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+      const { total: salaryTotal } = monthTotals(ym);
+      const grandTotal = salaryTotal + customTotal;
+
+      function expenseRow(e) {
+        return `
+          <div class="flex items-center justify-between bg-white border border-slate-100 rounded-xl p-3 shadow-soft">
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-semibold truncate">${escapeHtml(e.title)}</div>
+              <div class="text-[11px] text-slate-400">${e.category ? escapeHtml(e.category) : ''}${e.category && e.note ? ' · ' : ''}${e.note ? escapeHtml(e.note) : ''}</div>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <span class="text-sm font-bold text-rose-600">${fmtINR(e.amount)}</span>
+              <button data-exp-del="${e.id}" class="p-1 rounded hover:bg-rose-50">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              </button>
+            </div>
+          </div>`;
+      }
+
+      root.innerHTML = `
+        <div class="mb-4 flex items-center gap-3">
+          <button id="expBack" class="p-2 -ml-2 rounded-lg hover:bg-slate-100">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="min-w-0">
+            <h1 class="text-xl font-extrabold tracking-tight">${escapeHtml(t('expenses') || 'Expenses')}</h1>
+            <p class="text-sm text-slate-500 truncate">${escapeHtml(monthLabel)}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 mb-4">
+          <div class="rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 text-white p-5 shadow-card">
+            <div class="text-xs text-violet-200 uppercase tracking-wider font-semibold">${escapeHtml(t('total_expenses') || 'Total Company Expenses')}</div>
+            <div class="text-3xl font-extrabold mt-1 tracking-tight">${fmtINR(grandTotal)}</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white border border-slate-100 rounded-xl p-3 shadow-soft text-center">
+              <div class="text-[10px] text-slate-400 uppercase font-semibold">${escapeHtml(t('salary_expense') || 'Salaries')}</div>
+              <div class="text-lg font-bold mt-0.5">${fmtINR(salaryTotal)}</div>
+            </div>
+            <div class="bg-white border border-slate-100 rounded-xl p-3 shadow-soft text-center">
+              <div class="text-[10px] text-slate-400 uppercase font-semibold">${escapeHtml(t('other_expenses') || 'Other Expenses')}</div>
+              <div class="text-lg font-bold mt-0.5 text-violet-700">${fmtINR(customTotal)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-sm font-bold">${escapeHtml(t('expense_list') || 'Expense Items')}</div>
+          <button id="addExpBtn" class="text-xs font-semibold text-violet-600 bg-violet-50 px-3 py-1.5 rounded-lg">${escapeHtml(t('add_expense') || '+ Add Expense')}</button>
+        </div>
+
+        ${monthExpenses.length === 0
+          ? `<div class="bg-white border border-slate-100 rounded-2xl p-6 text-center shadow-soft">
+              <div class="text-slate-400 text-sm">${escapeHtml(t('no_expenses') || 'No expenses added for this month.')}</div>
+            </div>`
+          : `<div class="space-y-2">${monthExpenses.map(expenseRow).join('')}</div>`
+        }
+
+        <div class="mt-4">
+          <input type="month" id="expMonthPick" value="${ym}" class="text-sm font-semibold bg-white border border-slate-200 rounded-lg px-2.5 py-2 w-full">
+        </div>
+      `;
+
+      $('#expBack')?.addEventListener('click', () => { state.currentTab = 'payroll'; save(); render(); });
+      $('#expMonthPick')?.addEventListener('change', (e) => { state.currentPayrollMonth = e.target.value; save(); render(); });
+      $('#addExpBtn')?.addEventListener('click', () => openAddExpenseSheet(ym));
+      $$('[data-exp-del]').forEach(b => b.addEventListener('click', () => {
+        if (!confirm(t('confirm_delete_expense') || 'Delete this expense?')) return;
+        state.expenses = state.expenses.filter(e => e.id !== b.dataset.expDel);
+        save(); render();
+        audit('expense_deleted', { id: b.dataset.expDel });
+      }));
+    }
+
+    function openAddExpenseSheet(ym) {
+      openSheet(`
+        <div class="mb-3">
+          <h2 class="text-lg font-extrabold">${escapeHtml(t('add_expense') || 'Add Expense')}</h2>
+        </div>
+        <form id="expForm" class="space-y-3">
+          <div>
+            <label class="label">${escapeHtml(t('expense_title') || 'Title')} *</label>
+            <input name="title" required class="input" placeholder="${escapeHtml(t('expense_title_placeholder') || 'e.g. Rent, Fuel, Internet')}">
+          </div>
+          <div>
+            <label class="label">${escapeHtml(t('amount_label') || 'Amount')} (₹) *</label>
+            <input name="amount" type="number" min="0" step="0.01" required class="input" placeholder="0">
+          </div>
+          <div>
+            <label class="label">${escapeHtml(t('expense_category') || 'Category')}</label>
+            <input name="category" class="input" placeholder="${escapeHtml(t('expense_cat_placeholder') || 'e.g. Rent, Travel, Utilities')}">
+          </div>
+          <div>
+            <label class="label">${escapeHtml(t('note'))}</label>
+            <input name="note" class="input" placeholder="${escapeHtml(t('optional') || 'Optional')}">
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button type="button" id="expCancel" class="flex-1 py-3 rounded-xl border border-slate-200 font-semibold text-sm">${escapeHtml(t('cancel'))}</button>
+            <button type="submit" class="flex-1 py-3 rounded-xl bg-violet-600 text-white font-semibold text-sm">${escapeHtml(t('save'))}</button>
+          </div>
+        </form>
+      `);
+
+      $('#expCancel')?.addEventListener('click', () => { closeSheet(); render(); });
+      $('#expForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const f = new FormData(e.target);
+        const title = (f.get('title') || '').trim();
+        const amount = Number(f.get('amount') || 0);
+        if (!title || !amount) return;
+        state.expenses = state.expenses || [];
+        const exp = {
+          id: uid(),
+          ym,
+          title,
+          amount,
+          category: (f.get('category') || '').trim() || null,
+          note: (f.get('note') || '').trim() || null,
+          createdAt: new Date().toISOString(),
+        };
+        state.expenses.push(exp);
+        save();
+        audit('expense_added', { id: exp.id, title, amount });
+        toast(t('expense_added') || 'Expense added');
+        closeSheet(); render();
+      });
     }
 
     // ============== Worker views ==============
