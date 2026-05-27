@@ -738,6 +738,9 @@
         performance: 'Performance', top_performers: 'Top performers this month',
         task_logged: 'Task logged', no_tasks_yet: 'No tasks logged yet.',
         task_total: 'Total', task_save: 'Save tasks', task_saved: 'Tasks saved',
+        monthly_task_log: 'Monthly task log',
+        monthly_task_hint: 'Enter total tasks each employee completed this month. Salary = rate × tasks.',
+        monthly_tasks_readonly: 'Recorded by your employer',
         task_categories_hint: 'Categories your employees log (e.g. COD, Prepaid)',
         category_name: 'Category name', task_date: 'Task date',
         performance_detail: 'Performance detail', shipment_total: 'Shipment total',
@@ -1087,6 +1090,9 @@
         add_category: 'श्रेणी जोड़ें', remove_category: 'हटाएं',
         performance: 'प्रदर्शन', top_performers: 'इस महीने के शीर्ष प्रदर्शक',
         task_logged: 'टास्क दर्ज', no_tasks_yet: 'कोई टास्क दर्ज नहीं।',
+        monthly_task_log: 'मासिक टास्क लॉग',
+        monthly_task_hint: 'इस महीने हर कर्मचारी द्वारा किए गए कुल टास्क दर्ज करें। वेतन = दर × टास्क।',
+        monthly_tasks_readonly: 'आपके मालिक द्वारा दर्ज',
         task_total: 'कुल', task_save: 'टास्क सहेजें', task_saved: 'टास्क सहेजा',
         task_categories_hint: 'श्रेणियां जो कर्मचारी लॉग करते हैं',
         category_name: 'श्रेणी नाम', task_date: 'टास्क तिथि',
@@ -1402,6 +1408,9 @@
         add_category: 'श्रेणी जोडा', remove_category: 'काढा',
         performance: 'कामगिरी', top_performers: 'या महिन्यातील सर्वोत्तम',
         task_logged: 'टास्क नोंदवले', no_tasks_yet: 'कोणतेही टास्क नोंदवले नाहीत.',
+        monthly_task_log: 'मासिक टास्क लॉग',
+        monthly_task_hint: 'या महिन्यात प्रत्येक कर्मचाऱ्याने केलेले एकूण टास्क प्रविष्ट करा. पगार = दर × टास्क.',
+        monthly_tasks_readonly: 'तुमच्या मालकाने नोंदवले',
         task_total: 'एकूण', task_save: 'टास्क जतन', task_saved: 'टास्क जतन केले',
         task_categories_hint: 'कर्मचारी लॉग करतात अशा श्रेणी',
         category_name: 'श्रेणी नाव', task_date: 'टास्क तारीख',
@@ -1717,6 +1726,9 @@
         add_category: 'வகை சேர்', remove_category: 'நீக்கு',
         performance: 'செயல்திறன்', top_performers: 'இந்த மாதம் சிறந்தவர்கள்',
         task_logged: 'பணி பதிவு', no_tasks_yet: 'பணிகள் எதுவும் பதிவாகவில்லை.',
+        monthly_task_log: 'மாதாந்திர பணி பதிவு',
+        monthly_task_hint: 'இந்த மாதம் ஒவ்வொரு ஊழியரும் முடித்த மொத்த பணிகளை உள்ளிடவும். சம்பளம் = கட்டணம் × பணிகள்.',
+        monthly_tasks_readonly: 'உங்கள் முதலாளியால் பதிவு செய்யப்பட்டது',
         task_total: 'மொத்தம்', task_save: 'பணி சேமி', task_saved: 'பணிகள் சேமிக்கப்பட்டன',
         task_categories_hint: 'ஊழியர் பதிவுக்கான வகைகள்',
         category_name: 'வகை பெயர்', task_date: 'பணி தேதி',
@@ -2032,6 +2044,9 @@
         add_category: 'వర్గం జోడించు', remove_category: 'తొలగించు',
         performance: 'పనితీరు', top_performers: 'ఈ నెల అగ్రస్థానంలో',
         task_logged: 'టాస్క్ నమోదు', no_tasks_yet: 'టాస్క్‌లు ఏవీ నమోదు కాలేదు.',
+        monthly_task_log: 'నెలవారీ టాస్క్ లాగ్',
+        monthly_task_hint: 'ఈ నెలలో ప్రతి ఉద్యోగి పూర్తి చేసిన మొత్తం టాస్క్‌లను నమోదు చేయండి. జీతం = రేటు × టాస్క్‌లు.',
+        monthly_tasks_readonly: 'మీ యజమాని రికార్డ్ చేశారు',
         task_total: 'మొత్తం', task_save: 'టాస్క్ సేవ్', task_saved: 'టాస్క్‌లు సేవ్ చేయబడ్డాయి',
         task_categories_hint: 'ఉద్యోగులు లాగ్ చేసే వర్గాలు',
         category_name: 'వర్గం పేరు', task_date: 'టాస్క్ తేదీ',
@@ -2467,7 +2482,8 @@
       holidays: [],       // [{id, date: 'YYYY-MM-DD', name, paid: true}]
       shifts: [],         // [{id, name, startTime: 'HH:MM', endTime: 'HH:MM'}]
       announcements: [],  // [{id, title, body, createdAt, pinned, readBy: [staffId]}]
-      taskLog: {},        // { 'YYYY-MM-DD': { staffId: { total: N, categories: { cat: N } } } }
+      taskLog: {},        // { 'YYYY-MM-DD': { staffId: { total: N, categories: { cat: N } } } } (legacy daily)
+      monthlyTaskLog: {}, // { 'YYYY-MM': { staffId: { total: N, categories: { cat: N } } } } — employer enters monthly counts
       taskCategories: ['COD', 'Prepaid', 'CR Card', 'Open RVP', 'Close RVP'],
       expenses: [],       // [{id, ym, title, amount, category, note, createdAt}]
       auditLog: [],       // [{ts, type, data?}] capped at 500
@@ -2546,6 +2562,7 @@
       s.shifts = s.shifts || [];
       s.announcements = s.announcements || [];
       s.taskLog = s.taskLog || {};
+      s.monthlyTaskLog = s.monthlyTaskLog || {};
       s.expenses = s.expenses || [];
       if (!Array.isArray(s.taskCategories) || !s.taskCategories.length) {
         s.taskCategories = ['COD', 'Prepaid', 'CR Card', 'Open RVP', 'Close RVP'];
@@ -3161,7 +3178,7 @@
     //   Both sides subscribe to postgres_changes on the two tables filtered
     //   by business_id, so every member sees changes within ~1-2s.
     const cloudBiz = (() => {
-      const CONFIG_KEYS = ['business','staff','shifts','holidays','announcements','loans','adjustments','settings','attendance','overtime','punches','taskCategories','taskLog','expenses'];
+          const CONFIG_KEYS = ['business','staff','shifts','holidays','announcements','loans','adjustments','settings','attendance','overtime','punches','taskCategories','taskLog','monthlyTaskLog','expenses'];
       // Per-device settings that must NEVER cross between owner and worker:
       // - role / workerId / onboarded: identity of the device
       // - language: per-user UI preference
@@ -3293,6 +3310,16 @@
             if (!d.date) break;
             state.taskLog[d.date] = state.taskLog[d.date] || {};
             state.taskLog[d.date][sid] = {
+              total: Number(d.total) || 0,
+              categories: d.categories || {},
+            };
+            break;
+          }
+          case 'monthly_task_log': {
+            if (!d.ym) break;
+            state.monthlyTaskLog = state.monthlyTaskLog || {};
+            state.monthlyTaskLog[d.ym] = state.monthlyTaskLog[d.ym] || {};
+            state.monthlyTaskLog[d.ym][sid] = {
               total: Number(d.total) || 0,
               categories: d.categories || {},
             };
@@ -6815,11 +6842,32 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
     }
 
     // ============== Owner: Tasks ==============
+    // Aggregate monthly task counts for a staff member. Prefers the employer's
+    // monthly entry in `state.monthlyTaskLog[ym][staffId]` (canonical going
+    // forward). Falls back to summing the legacy per-day `state.taskLog`
+    // entries so older devices / pre-migration data keep working.
     function monthTasksForStaff(staffId, ym) {
-      const dim = daysInMonth(ym);
-      let total = 0; const catTotals = {};
-      let manDays = 0;
+      const catTotals = {};
       (state.taskCategories || []).forEach(c => { catTotals[c] = 0; });
+
+      const monthly = state.monthlyTaskLog?.[ym]?.[staffId];
+      if (monthly && (monthly.total || Object.keys(monthly.categories || {}).length)) {
+        let total = Number(monthly.total) || 0;
+        Object.entries(monthly.categories || {}).forEach(([k, v]) => {
+          catTotals[k] = (catTotals[k] || 0) + (Number(v) || 0);
+        });
+        // If the employer only filled per-category and left total blank, derive
+        // total from categories so pay still matches the obvious intent.
+        if (!total) total = Object.values(catTotals).reduce((a, b) => a + (Number(b) || 0), 0);
+        const dim = daysInMonth(ym);
+        const manDays = dim; // monthly entry has no day-level granularity
+        return { total, catTotals, manDays, avg: manDays ? Math.round(total / manDays) : 0 };
+      }
+
+      // Legacy: aggregate per-day entries.
+      const dim = daysInMonth(ym);
+      let total = 0;
+      let manDays = 0;
       for (let d = 1; d <= dim; d++) {
         const key = `${ym}-${String(d).padStart(2, '0')}`;
         const entry = state.taskLog[key]?.[staffId];
@@ -6832,25 +6880,42 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
       return { total, catTotals, manDays, avg: manDays ? Math.round(total / manDays) : 0 };
     }
 
+    // Employer enters task counts for the whole month per employee. The
+    // calculation engine multiplies these counts by each employee's
+    // per-category rate (or the default piece rate when no per-category rate
+    // is set) — see salaryForMonth() for the formula `rate × count`.
     function renderTasks(root) {
-      const date = state.currentAttendanceDate;
-      const dayLog = state.taskLog[date] || {};
+      const ym = state.currentPayrollMonth;
+      state.monthlyTaskLog = state.monthlyTaskLog || {};
+      const monthLog = state.monthlyTaskLog[ym] || {};
       const cats = state.taskCategories || [];
       const active = state.staff.filter(s => s.active !== false);
+      const lang = state.settings.language || 'en';
+      const monthLabel = new Date(ym + '-01').toLocaleDateString(lang === 'en' ? 'en-IN' : lang, { month: 'long', year: 'numeric' });
+
+      function rateLabel(s) {
+        if (s.salaryType !== 'piece') return '';
+        const hasCat = s.taskRates && Object.keys(s.taskRates).length;
+        if (hasCat) return t('custom_rates') || 'Custom rates';
+        const r = s.pieceRate || s.amount || 0;
+        return r ? `${fmtINR(r)}/${t('per_piece')}` : '';
+      }
 
       function taskRow(s) {
-        const entry = dayLog[s.id] || { total: 0, categories: {} };
+        const entry = monthLog[s.id] || { total: 0, categories: {} };
+        const rt = rateLabel(s);
         return `
           <div class="bg-white border border-slate-100 rounded-xl p-3 shadow-soft">
             <div class="flex items-center gap-2 mb-2">
               ${avatarHTML(s, 'w-8 h-8')}
               <div class="flex-1 min-w-0">
                 <div class="font-semibold text-sm truncate">${escapeHtml(s.name)}</div>
-                <div class="text-[11px] text-slate-500">${escapeHtml(s.role || '—')}</div>
+                <div class="text-[11px] text-slate-500 truncate">${escapeHtml(s.role || '—')}${rt ? ` · ${escapeHtml(rt)}` : ''}</div>
               </div>
               <div class="text-right">
+                <div class="text-[10px] text-slate-400">${escapeHtml(t('task_total'))}</div>
                 <input data-task-total="${s.id}" type="number" min="0" value="${entry.total || ''}" placeholder="0"
-                  class="w-16 text-right text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-brand-200 focus:outline-none">
+                  class="w-20 text-right text-sm font-bold border border-slate-200 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-brand-200 focus:outline-none">
               </div>
             </div>
             ${cats.length ? `
@@ -6866,19 +6931,17 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
       }
 
       root.innerHTML = `
-        <div class="mb-4">
-          <h1 class="text-xl font-extrabold tracking-tight">${escapeHtml(t('tasks'))}</h1>
-          <p class="text-sm text-slate-500">${escapeHtml(t('task_log'))}</p>
+        <div class="mb-4 flex items-end justify-between gap-3">
+          <div class="min-w-0">
+            <h1 class="text-xl font-extrabold tracking-tight">${escapeHtml(t('tasks'))}</h1>
+            <p class="text-sm text-slate-500 truncate">${escapeHtml(t('monthly_task_log') || 'Monthly task log')}</p>
+          </div>
+          <input type="month" id="taskMonth" value="${ym}" class="text-sm font-semibold bg-white border border-slate-200 rounded-lg px-2.5 py-2 flex-shrink-0">
         </div>
 
-        <div class="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-3 py-2 shadow-soft mb-4">
-          <button id="prevTaskDay" class="p-1.5 rounded-lg hover:bg-slate-100">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <input type="date" id="taskDate" value="${date}" class="text-sm font-semibold bg-transparent border-0 text-center focus:ring-0" />
-          <button id="nextTaskDay" class="p-1.5 rounded-lg hover:bg-slate-100">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
+        <div class="bg-brand-50 border border-brand-100 rounded-xl p-3 mb-4">
+          <div class="text-[11px] font-semibold text-brand-700">${escapeHtml(t('monthly_task_hint') || 'Enter total tasks completed by each employee this month. Salary = rate × tasks.')}</div>
+          <div class="text-[10px] text-brand-600 mt-1">${escapeHtml(monthLabel)}</div>
         </div>
 
         ${active.length === 0 ? `
@@ -6890,29 +6953,31 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
         `}
       `;
 
-      const shiftTaskDay = (dir) => {
-        const d = new Date(state.currentAttendanceDate + 'T00:00:00');
-        d.setDate(d.getDate() + dir);
-        state.currentAttendanceDate = d.toISOString().slice(0, 10);
+      $('#taskMonth')?.addEventListener('change', e => {
+        state.currentPayrollMonth = e.target.value;
         save(); render();
-      };
-      $('#taskDate')?.addEventListener('change', e => { state.currentAttendanceDate = e.target.value; save(); render(); });
-      $('#prevTaskDay')?.addEventListener('click', () => shiftTaskDay(-1));
-      $('#nextTaskDay')?.addEventListener('click', () => shiftTaskDay(1));
+      });
 
       $('#saveTasksBtn')?.addEventListener('click', () => {
-        state.taskLog[date] = state.taskLog[date] || {};
+        state.monthlyTaskLog = state.monthlyTaskLog || {};
+        state.monthlyTaskLog[ym] = state.monthlyTaskLog[ym] || {};
         active.forEach(s => {
           const totalEl = $(`[data-task-total="${s.id}"]`);
-          const total = Math.max(0, parseInt(totalEl?.value) || 0);
+          let total = Math.max(0, parseInt(totalEl?.value) || 0);
           const categories = {};
+          let catSum = 0;
           cats.forEach(c => {
             const el = $(`[data-task-cat="${s.id}|${c}"]`);
-            categories[c] = Math.max(0, parseInt(el?.value) || 0);
+            const v = Math.max(0, parseInt(el?.value) || 0);
+            categories[c] = v;
+            catSum += v;
           });
-          state.taskLog[date][s.id] = { total, categories };
+          // If total was left blank but per-category numbers were given, fall
+          // back to the sum — owner clearly meant "this is everything".
+          if (!total && catSum) total = catSum;
+          state.monthlyTaskLog[ym][s.id] = { total, categories };
           if (cloudBiz.emit) {
-            cloudBiz.emit('task_log', s.id, { date, total, categories });
+            cloudBiz.emit('monthly_task_log', s.id, { ym, total, categories });
           }
         });
         save(); toast(t('task_saved')); render();
@@ -8982,99 +9047,43 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
       `;
     }
 
+    // Workers see their monthly task totals as read-only. The employer is the
+    // sole authority on task counts now (entered monthly in the Tasks page),
+    // so the worker form / save button has been removed.
     function renderWorkerTasks(root, w) {
       const ym = monthKey();
-      const dim = daysInMonth(ym);
       const cats = state.taskCategories || [];
       const stats = monthTasksForStaff(w.id, ym);
-      const today = todayISO();
-      const isEx = w.active === false;
+      const lang = state.settings.language || 'en';
+      const monthLabel = new Date(ym + '-01').toLocaleDateString(lang === 'en' ? 'en-IN' : lang, { month: 'long', year: 'numeric' });
 
-      const cells = [];
-      for (let d = 1; d <= dim; d++) {
-        const key = `${ym}-${String(d).padStart(2, '0')}`;
-        const entry = state.taskLog[key]?.[w.id];
-        const val = entry?.total || 0;
-        const isToday = key === today;
-        cells.push(`
-          <div class="${isToday ? 'ring-2 ring-brand-400 ' : ''}${val > 0 ? 'bg-brand-50 text-brand-700' : 'bg-slate-50 text-slate-400'} rounded-lg h-12 flex flex-col items-center justify-center border border-slate-100 relative cursor-pointer" data-task-day="${key}">
-            <div class="text-xs font-semibold">${d}</div>
-            <div class="text-[10px] font-bold">${val || '·'}</div>
-          </div>`);
-      }
-      const dows = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-      const [y, m] = ym.split('-').map(Number);
-      const firstDow = new Date(y, m - 1, 1).getDay();
-      const padCells = Array.from({ length: firstDow }, () => '<div></div>');
+      const categoryRows = cats.map(c => {
+        const val = stats.catTotals?.[c] || 0;
+        return `
+          <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+            <span class="text-sm text-slate-600">${escapeHtml(c)}</span>
+            <span class="text-sm font-bold text-slate-800">${val}</span>
+          </div>`;
+      }).join('');
 
       root.innerHTML = `
         <div class="mb-4">
           <h1 class="text-xl font-extrabold tracking-tight">${escapeHtml(t('nav_my_tasks'))}</h1>
-          <p class="text-sm text-slate-500">${new Date(ym + '-01').toLocaleDateString(state.settings.language === 'en' ? 'en-IN' : state.settings.language, { month: 'long', year: 'numeric' })}</p>
+          <p class="text-sm text-slate-500">${escapeHtml(monthLabel)}</p>
         </div>
 
-        <div class="bg-white border border-slate-100 rounded-2xl shadow-soft p-4 mb-4">
-          <div class="grid grid-cols-4 gap-2 text-center">
-            <div class="bg-brand-50 rounded-lg py-2"><div class="text-lg font-bold text-brand-700">${stats.total}</div><div class="text-[10px] text-brand-700 font-semibold">${escapeHtml(t('total_deliveries'))}</div></div>
-            <div class="bg-emerald-50 rounded-lg py-2"><div class="text-lg font-bold text-emerald-700">${stats.avg}</div><div class="text-[10px] text-emerald-700 font-semibold">${escapeHtml(t('daily_average'))}</div></div>
-            <div class="bg-amber-50 rounded-lg py-2"><div class="text-lg font-bold text-amber-700">${stats.manDays}</div><div class="text-[10px] text-amber-700 font-semibold">${escapeHtml(t('man_days'))}</div></div>
-            <div class="bg-slate-50 rounded-lg py-2"><div class="text-lg font-bold text-slate-700">${cats.length}</div><div class="text-[10px] text-slate-700 font-semibold">${escapeHtml(t('task_categories'))}</div></div>
-          </div>
+        <div class="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white p-5 shadow-card mb-4">
+          <div class="text-xs text-brand-100 uppercase tracking-wider font-semibold">${escapeHtml(t('total_deliveries'))}</div>
+          <div class="text-3xl font-extrabold mt-1 tracking-tight">${stats.total}</div>
+          <div class="text-xs text-brand-100 mt-2">${escapeHtml(t('monthly_tasks_readonly') || 'Recorded by your employer')}</div>
         </div>
 
-        <div class="bg-white border border-slate-100 rounded-2xl shadow-soft p-4 mb-4">
-          <div class="grid grid-cols-7 gap-1 mb-2 text-[11px] text-slate-500 text-center font-semibold">
-            ${dows.map(d => `<div>${d}</div>`).join('')}
-          </div>
-          <div class="grid grid-cols-7 gap-1">${padCells.join('')}${cells.join('')}</div>
-        </div>
-
-        ${!isEx ? `
+        ${cats.length ? `
         <div class="bg-white border border-slate-100 rounded-2xl shadow-soft p-4">
-          <div class="text-xs font-bold text-slate-700 mb-2">${escapeHtml(t('date_today'))} — ${escapeHtml(t('task_log'))}</div>
-          <div class="flex gap-2 items-end mb-3">
-            <div class="flex-1">
-              <div class="text-[10px] text-slate-400 mb-0.5">${escapeHtml(t('task_total'))}</div>
-              <input id="workerTaskTotal" type="number" min="0" value="${state.taskLog[today]?.[w.id]?.total || ''}" placeholder="0"
-                class="w-full text-sm font-bold border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-200 focus:outline-none">
-            </div>
-          </div>
-          ${cats.length ? `
-          <div class="grid gap-2" style="grid-template-columns: repeat(${Math.min(cats.length, 3)}, 1fr);">
-            ${cats.map(c => `
-              <div>
-                <div class="text-[10px] text-slate-400 truncate mb-0.5">${escapeHtml(c)}</div>
-                <input data-wt-cat="${c}" type="number" min="0" value="${state.taskLog[today]?.[w.id]?.categories?.[c] || ''}" placeholder="0"
-                  class="w-full text-xs border border-slate-100 rounded px-2 py-1.5 text-center focus:ring-1 focus:ring-brand-200 focus:outline-none">
-              </div>`).join('')}
-          </div>` : ''}
-          <button id="workerTaskSave" class="mt-3 w-full py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm active:scale-[.99] transition">${escapeHtml(t('task_save'))}</button>
+          <div class="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">${escapeHtml(t('task_categories'))}</div>
+          ${stats.total === 0 ? `<div class="text-sm text-slate-400 text-center py-3">${escapeHtml(t('no_tasks_yet'))}</div>` : categoryRows}
         </div>` : ''}
       `;
-
-      $$('[data-task-day]').forEach(el => el.addEventListener('click', () => {
-        const key = el.dataset.taskDay;
-        const entry = state.taskLog[key]?.[w.id];
-        if (!entry || !entry.total) return;
-        const lines = [`${t('task_date')}: ${key}`, `${t('task_total')}: ${entry.total}`];
-        Object.entries(entry.categories || {}).forEach(([k, v]) => { if (v) lines.push(`${k}: ${v}`); });
-        openSheet(`<div class="space-y-1 text-sm">${lines.map(l => `<div>${escapeHtml(l)}</div>`).join('')}</div>`);
-      }));
-
-      $('#workerTaskSave')?.addEventListener('click', () => {
-        const total = Math.max(0, parseInt($('#workerTaskTotal')?.value) || 0);
-        const categories = {};
-        cats.forEach(c => {
-          const el = $(`[data-wt-cat="${c}"]`);
-          categories[c] = Math.max(0, parseInt(el?.value) || 0);
-        });
-        state.taskLog[today] = state.taskLog[today] || {};
-        state.taskLog[today][w.id] = { total, categories };
-        if (cloudBiz.emit) {
-          cloudBiz.emit('task_log', w.id, { date: today, total, categories });
-        }
-        save(); toast(t('task_saved')); render();
-      });
     }
 
     function renderWorkerPayslip(root, w) {
@@ -10556,7 +10565,7 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
     // Hash routing: honour manifest shortcuts like #/attendance, #/payroll
     if (location.hash) {
       const route = location.hash.replace('#/', '').replace('#', '');
-      const validTabs = ['home','attendance','payroll','staff','tasks','my_attendance','my_payslip','my_tasks'];
+      const validTabs = ['home','attendance','payroll','staff','tasks','expenses','my_attendance','my_payslip','my_tasks'];
       if (validTabs.includes(route)) {
         state.currentTab = route;
         save({ silent: true });
