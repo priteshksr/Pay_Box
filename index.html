@@ -2530,11 +2530,12 @@
         // the `structure` percentages (remainder → Special Allowance) and
         // statutory deductions (PF/ESIC/PT/MLWF) are auto-calculated and
         // subtracted from net pay. Owners can override any deduction per month.
-        // Defaults reproduce the ALPHA SOLUTIONS sample (Basic 30 / DA 10 /
-        // Washing 10 / HRA 50).
+        // Defaults reproduce the ALPHA SOLUTIONS payslip exactly. For a
+        // gross of ₹16,450 these percentages yield Basic 5000, DA 1580,
+        // Washing 1645, HRA 8225 (Basic+DA = 40%, HRA = 50%, Washing = 10%).
         payslipStatutory: {
           enabled: false, // opt-in: turn on in Settings → Payslip & statutory
-          structure: { basic: 30, da: 10, washing: 10, hra: 50 }, // % of gross; remainder → special
+          structure: { basic: 30.395, da: 9.605, washing: 10, hra: 50 }, // % of gross; remainder → special
           pf:   { enabled: true, rate: 12, wageCeiling: 15000 },   // 12% of (Basic+DA), capped
           esic: { enabled: true, rate: 0.75, grossCeiling: 21000 },// 0.75% of gross if gross ≤ ceiling
           pt:   { enabled: true },                                  // Maharashtra monthly slab
@@ -2605,7 +2606,7 @@
       if (!s.settings.payslipStatutory || typeof s.settings.payslipStatutory !== 'object') {
         s.settings.payslipStatutory = {
           enabled: false,
-          structure: { basic: 30, da: 10, washing: 10, hra: 50 },
+          structure: { basic: 30.395, da: 9.605, washing: 10, hra: 50 },
           pf: { enabled: true, rate: 12, wageCeiling: 15000 },
           esic: { enabled: true, rate: 0.75, grossCeiling: 21000 },
           pt: { enabled: true },
@@ -2613,11 +2614,23 @@
         };
       } else {
         const ps = s.settings.payslipStatutory;
-        ps.structure = ps.structure || { basic: 30, da: 10, washing: 10, hra: 50 };
+        ps.structure = ps.structure || { basic: 30.395, da: 9.605, washing: 10, hra: 50 };
         ps.pf = ps.pf || { enabled: true, rate: 12, wageCeiling: 15000 };
         ps.esic = ps.esic || { enabled: true, rate: 0.75, grossCeiling: 21000 };
         ps.pt = ps.pt || { enabled: true };
         ps.mlwf = ps.mlwf || { enabled: true, amount: 25, months: [6, 12] };
+        // One-time correction: the first release shipped a rounded structure
+        // (Basic 30 / DA 10) that produced Basic 4935 / DA 1645 instead of the
+        // ALPHA SOLUTIONS payslip's 5000 / 1580. Nudge the old default to the
+        // exact split — but only if the owner hasn't customised it themselves.
+        const st = ps.structure;
+        if (!s.settings._statutoryStructV2) {
+          if (st.basic === 30 && st.da === 10 && st.washing === 10 && st.hra === 50) {
+            st.basic = 30.395;
+            st.da = 9.605;
+          }
+          s.settings._statutoryStructV2 = true;
+        }
       }
       if (!Array.isArray(s.taskCategories) || !s.taskCategories.length) {
         s.taskCategories = ['COD', 'Prepaid', 'CR Card', 'Open RVP', 'Close RVP'];
@@ -8478,16 +8491,18 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
           ${(fs.washing || es.washing) ? er(t('washing_allowance') || 'Washing Allowance', fs.washing, es.washing) : ''}
           ${er(t('hra') || 'HRA', fs.hra, es.hra)}
           ${(fs.special || es.special) ? er(t('special_allowance') || 'Special Allowance', fs.special, es.special) : ''}
-          ${st.extra > 0 ? er(t('extra_days') || 'Extra Days', 0, st.extra) : ''}
+          ${er(t('extra_days') || 'Extra Days', 0, st.extra)}
           <tr class="tot"><td>${escapeHtml(t('gross_salary') || 'Gross Salary')}</td><td class="r">${fmtINR(st.fullGross)}</td><td class="r">${fmtINR(st.earnedGross)}</td></tr>`;
         const dr = (label, v) => `<tr><td>${escapeHtml(label)}</td><td class="r minus">${fmtINR(v)}</td></tr>`;
         const totalDed = st.total + calc.advances + calc.deductions + calc.loanEmi;
+        // Order mirrors the sample payslip: PF, ESIC, PT, Advance, MLWF. Advance
+        // and MLWF are always shown (even ₹0) so the layout matches exactly.
         statDedHtml = `
           ${ps.pf?.enabled ? dr(t('pf_short') || 'PF', st.pf) : ''}
           ${ps.esic?.enabled ? dr(t('esic') || 'ESIC', st.esic) : ''}
           ${ps.pt?.enabled ? dr(t('pt_short') || 'PT', st.pt) : ''}
+          ${dr(t('adj_advance') || 'Advance', calc.advances)}
           ${ps.mlwf?.enabled ? dr(t('mlwf_short') || 'MLWF', st.mlwf) : ''}
-          ${calc.advances > 0 ? dr(t('adj_advance') || 'Advance', calc.advances) : ''}
           ${calc.deductions > 0 ? dr(t('deductions_total') || 'Deductions', calc.deductions) : ''}
           ${calc.loanEmi > 0 ? dr(t('emi_deduction') || 'Loan EMI', calc.loanEmi) : ''}
           <tr class="tot"><td>${escapeHtml(t('total_deductions') || 'Total Deductions')}</td><td class="r minus">${fmtINR(totalDed)}</td></tr>`;
