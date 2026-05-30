@@ -7,6 +7,13 @@ name: Deploy PayBox PWA to GitHub Pages
 on:
   push:
     branches: [main]
+    # Skip the web test+deploy pipeline for commits that can't affect the
+    # published PWA (native shell, DB migrations, docs).
+    paths-ignore:
+      - 'native/**'
+      - 'supabase/**'
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 
 permissions:
@@ -31,9 +38,22 @@ jobs:
       - name: Install dependencies
         working-directory: tests
         run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('tests/package-lock.json') }}
       - name: Install Playwright browsers
         working-directory: tests
-        run: npx playwright install chromium --with-deps
+        # When the browser cache hits we still need the OS-level deps, but can
+        # skip the (slow) browser download.
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install chromium --with-deps
+          fi
       - name: Run tests
         working-directory: tests
         run: npx playwright test
