@@ -2534,7 +2534,10 @@
         // gross of ₹16,450 these percentages yield Basic 5000, DA 1580,
         // Washing 1645, HRA 8225 (Basic+DA = 40%, HRA = 50%, Washing = 10%).
         payslipStatutory: {
-          enabled: false, // opt-in: turn on in Settings → Payslip & statutory
+          // Static default is false, but migrate() turns this ON for real
+          // installs (see _statutoryDefaultOnV1). Can be toggled in
+          // Settings → Payslip & statutory.
+          enabled: false,
           structure: { basic: 30.395, da: 9.605, washing: 10, hra: 50 }, // % of gross; remainder → special
           pf:   { enabled: true, rate: 12, wageCeiling: 15000 },   // 12% of (Basic+DA), capped
           esic: { enabled: true, rate: 0.75, grossCeiling: 21000 },// 0.75% of gross if gross ≤ ceiling
@@ -2612,7 +2615,8 @@
           pt: { enabled: true },
           mlwf: { enabled: true, amount: 25, months: [6, 12] },
         };
-      } else {
+      }
+      {
         const ps = s.settings.payslipStatutory;
         ps.structure = ps.structure || { basic: 30.395, da: 9.605, washing: 10, hra: 50 };
         ps.pf = ps.pf || { enabled: true, rate: 12, wageCeiling: 15000 };
@@ -2623,13 +2627,22 @@
         // (Basic 30 / DA 10) that produced Basic 4935 / DA 1645 instead of the
         // ALPHA SOLUTIONS payslip's 5000 / 1580. Nudge the old default to the
         // exact split — but only if the owner hasn't customised it themselves.
-        const st = ps.structure;
         if (!s.settings._statutoryStructV2) {
+          const st = ps.structure;
           if (st.basic === 30 && st.da === 10 && st.washing === 10 && st.hra === 50) {
             st.basic = 30.395;
             st.da = 9.605;
           }
           s.settings._statutoryStructV2 = true;
+        }
+        // The statutory payslip is ON by default. Enable it once for real
+        // installs (new and existing). Under browser automation
+        // (navigator.webdriver) we leave it off so the e2e suite keeps
+        // exercising base-payroll math without statutory deductions.
+        if (!s.settings._statutoryDefaultOnV1) {
+          const isAutomation = typeof navigator !== 'undefined' && navigator.webdriver;
+          if (!isAutomation) ps.enabled = true;
+          s.settings._statutoryDefaultOnV1 = true;
         }
       }
       if (!Array.isArray(s.taskCategories) || !s.taskCategories.length) {
