@@ -26,6 +26,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ── Smoke tests: fast, stable critical paths (app boots, worker punch,
+  #    manifest/SW/CSS reachable). These GATE the deploy — if they fail the
+  #    site really is broken and we should not publish.
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - name: Install dependencies
+        working-directory: tests
+        run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('tests/package-lock.json') }}
+      - name: Install Playwright browsers
+        working-directory: tests
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install chromium --with-deps
+          fi
+      - name: Run smoke tests
+        working-directory: tests
+        run: npx playwright test smoke.spec.js
+
+  # ── Full suite: runs independently for visibility. It does NOT gate the
+  #    deploy, so a flaky/non-critical failure can no longer silently block
+  #    publishing — but a failure still turns the run red and files an issue
+  #    (see the `notify` job below).
   test:
     runs-on: ubuntu-latest
     steps:
@@ -46,15 +83,13 @@ jobs:
           key: pw-${{ runner.os }}-${{ hashFiles('tests/package-lock.json') }}
       - name: Install Playwright browsers
         working-directory: tests
-        # When the browser cache hits we still need the OS-level deps, but can
-        # skip the (slow) browser download.
         run: |
           if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
             npx playwright install-deps chromium
           else
             npx playwright install chromium --with-deps
           fi
-      - name: Run tests
+      - name: Run full test suite
         working-directory: tests
         run: npx playwright test
       - name: Upload report on failure
@@ -66,7 +101,8 @@ jobs:
           retention-days: 14
 
   deploy:
-    needs: test
+    # Gate publishing on the smoke tests only — the full suite is non-blocking.
+    needs: smoke
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -98,3 +134,54 @@ jobs:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # ── Make failures loud, never silent: if smoke or the full suite fails,
+  #    open (or comment on) a tracking issue so a broken pipeline can't go
+  #    unnoticed the way it did before.
+  notify:
+    needs: [smoke, test, deploy]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          SMOKE_RESULT: ${{ needs.smoke.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+        with:
+          script: |
+            const smoke = process.env.SMOKE_RESULT;
+            const test = process.env.TEST_RESULT;
+            const deploy = process.env.DEPLOY_RESULT;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const deployNote = smoke === 'failure'
+              ? '⛔ Smoke tests failed — **the deploy was blocked**. The live site is stale until this is fixed.'
+              : '✅ Smoke tests passed, so the site still deployed. The full test suite failed and needs attention (non-blocking).';
+            const body = [
+              `CI failed on \`main\` at commit ${context.sha.slice(0, 7)}.`,
+              '',
+              `- Smoke tests: **${smoke}**`,
+              `- Full suite: **${test}**`,
+              `- Deploy: **${deploy}**`,
+              `- Run: ${runUrl}`,
+              '',
+              deployNote,
+            ].join('\n');
+            const title = 'CI failing on main';
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'ci-failure',
+            });
+            if (open.length) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: open[0].number, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ['ci-failure'],
+              });
+            }
