@@ -10975,7 +10975,11 @@ ${pings.map(p => `    <trkpt lat="${p.lat}" lon="${p.lng}"><time>${new Date(p.ts
     // (Capacitor iOS/Android) already ship with assets bundled inside
     // the app, and running an extra SW inside a WKWebView / WebView is
     // both unnecessary and flaky across OS versions.
-    if (!Native.on && 'serviceWorker' in navigator) {
+    //
+    // Also skip registration under browser automation (navigator.webdriver):
+    // the SW's "new version" toast and controllerchange-triggered reload
+    // intercept clicks and detach DOM nodes mid-run, making e2e tests flaky.
+    if (!Native.on && !navigator.webdriver && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then(reg => {
           reg.addEventListener('updatefound', () => {

@@ -17,16 +17,14 @@ module.exports = defineConfig({
   // is mocked), so specs are safe to run in parallel. This is the biggest
   // wall-time win on multi-core CI runners.
   fullyParallel: true,
-  // Retry on CI to absorb the remaining timing-sensitive specs so deploys
-  // aren't blocked by non-deterministic failures. (Follow-up: de-flake these
-  // and drop retries to 0.)
-  retries: process.env.CI ? 2 : 0,
+  // One retry on CI as light insurance against transient CPU contention under
+  // parallel execution. (The main flakiness source — the service worker update
+  // toast/reload — is now disabled under automation in index.html.)
+  retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 4 : undefined,
-  timeout: 45_000,
-  // Some specs assert on async-rendered UI (charts, worker home, payroll
-  // re-renders); a 5s expect timeout is too tight under CI load and causes
-  // non-deterministic failures. Give the renders more headroom.
-  expect: { timeout: 10_000 },
+  timeout: 30_000,
+  // Small cushion over the 5s default for async-rendered UI under parallel load.
+  expect: { timeout: 7_000 },
   reporter: [['list'], ['html', { open: 'never' }]],
 
   use: {

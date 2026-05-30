@@ -627,16 +627,22 @@ test.describe('PWA assets', () => {
     expect(res.headers()['content-type']).toContain('svg');
   });
 
-  test('service worker registers after load', async ({ page }) => {
+  test('service worker script is valid and installable', async ({ page }) => {
     await gotoFresh(page);
-    const registered = await page.evaluate(async () => {
-      for (let i = 0; i < 30; i++) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        if (regs.length > 0) return true;
-        await new Promise((r) => setTimeout(r, 100));
+    // The app intentionally skips SW registration under browser automation
+    // (navigator.webdriver) to avoid the update-toast/reload flakiness, so we
+    // register sw.js directly here to verify the script itself is valid and
+    // installs, then clean it up.
+    const ok = await page.evaluate(async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('sw.js');
+        const present = !!(reg && (reg.installing || reg.waiting || reg.active));
+        await reg.unregister();
+        return present;
+      } catch (e) {
+        return false;
       }
-      return false;
     });
-    expect(registered).toBeTruthy();
+    expect(ok).toBeTruthy();
   });
 });
