@@ -293,7 +293,12 @@ test.describe('Overtime', () => {
     const [id] = await getStaffIds(page);
 
     await markAttendance(page, id, 'P');
-    await page.locator(`[data-ot="${id}"]`).click();
+    // The attendance row re-renders after marking present; wait for the OT
+    // trigger to settle before opening the sheet to avoid a stale-click race.
+    const otBtn = page.locator(`[data-ot="${id}"]`);
+    await expect(otBtn).toBeVisible();
+    await otBtn.click();
+    await expect(page.locator('#otForm')).toBeVisible();
     await page.locator('#otForm input[name="hours"]').fill('3');
     await page.locator('#otForm button[type="submit"]').click();
     await expect(page.locator('#sheet')).toBeHidden();
@@ -469,11 +474,9 @@ test.describe('Worker mode', () => {
     await addStaff(page, { name: 'Worker One', salaryType: 'monthly', amount: 15000 });
     const [id] = await getStaffIds(page);
 
-    await page.locator('#settingsBtn').click();
-    await pickRadio(page, '#settingsForm', 'role', 'worker');
-    await page.locator('select[name="workerId"]').selectOption(id);
-    await page.locator('#settingsForm button[type="submit"]').click();
-    await expect(page.locator('#sheet')).toBeHidden();
+    // Worker mode is entered via role selection at login (no in-Settings role
+    // switcher anymore), so drive it through persisted state like the app does.
+    await patchStateAndReload(page, { settings: { role: 'worker', workerId: id } });
 
     await expect(page.locator('#roleChip')).toBeVisible();
     await expect(page.locator('#bottomNav [data-tab]')).toHaveCount(4);

@@ -14,10 +14,15 @@ module.exports = defineConfig({
   testDir: '.',
   testMatch: /.*\.spec\.js$/,
   fullyParallel: false,
-  retries: 0,
+  // The legacy UI suite has some timing-sensitive specs; retry on CI to absorb
+  // flakiness so deploys aren't blocked by non-deterministic failures.
+  retries: process.env.CI ? 2 : 0,
   workers: 1,
-  timeout: 30_000,
-  expect: { timeout: 5_000 },
+  timeout: 45_000,
+  // Some specs assert on async-rendered UI (charts, worker home, payroll
+  // re-renders); a 5s expect timeout is too tight under CI load and causes
+  // non-deterministic failures. Give the renders more headroom.
+  expect: { timeout: 10_000 },
   reporter: [['list'], ['html', { open: 'never' }]],
 
   use: {

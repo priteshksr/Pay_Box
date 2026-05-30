@@ -2533,7 +2533,7 @@
         // Defaults reproduce the ALPHA SOLUTIONS sample (Basic 30 / DA 10 /
         // Washing 10 / HRA 50).
         payslipStatutory: {
-          enabled: true,
+          enabled: false, // opt-in: turn on in Settings → Payslip & statutory
           structure: { basic: 30, da: 10, washing: 10, hra: 50 }, // % of gross; remainder → special
           pf:   { enabled: true, rate: 12, wageCeiling: 15000 },   // 12% of (Basic+DA), capped
           esic: { enabled: true, rate: 0.75, grossCeiling: 21000 },// 0.75% of gross if gross ≤ ceiling
@@ -2604,7 +2604,7 @@
       // Backfill statutory payslip config for devices that pre-date the feature.
       if (!s.settings.payslipStatutory || typeof s.settings.payslipStatutory !== 'object') {
         s.settings.payslipStatutory = {
-          enabled: true,
+          enabled: false,
           structure: { basic: 30, da: 10, washing: 10, hra: 50 },
           pf: { enabled: true, rate: 12, wageCeiling: 15000 },
           esic: { enabled: true, rate: 0.75, grossCeiling: 21000 },
